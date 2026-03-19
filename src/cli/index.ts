@@ -4,9 +4,9 @@ import cac from "cac";
 const cli = cac("drc");
 
 cli
-  .command("analyze <file>", "Figma 파일 분석")
-  .option("--output <path>", "리포트 출력 경로")
-  .option("--format <format>", "출력 포맷 (json | html)", { default: "json" })
+  .command("analyze <file>", "Analyze a Figma file")
+  .option("--output <path>", "Report output path")
+  .option("--format <format>", "Output format (json | html)", { default: "json" })
   .action((file, options) => {
     console.log(`Analyzing: ${file}`);
     console.log(`Options:`, options);

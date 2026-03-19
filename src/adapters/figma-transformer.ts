@@ -2,7 +2,7 @@ import type { GetFileResponse, Node } from "@figma/rest-api-spec";
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 
 /**
- * Figma API 응답을 분석용 타입으로 변환
+ * Transform Figma API response to analysis types
  */
 export function transformFigmaResponse(
   fileKey: string,
@@ -27,7 +27,7 @@ function transformNode(node: Node): AnalysisNode {
     visible: "visible" in node ? (node.visible ?? true) : true,
   };
 
-  // 레이아웃 속성 추출
+  // Layout properties
   if ("layoutMode" in node && node.layoutMode) {
     base.layoutMode = node.layoutMode as AnalysisNode["layoutMode"];
   }
@@ -60,12 +60,12 @@ function transformNode(node: Node): AnalysisNode {
     base.paddingBottom = node.paddingBottom as number;
   }
 
-  // 크기/위치
+  // Size/position
   if ("absoluteBoundingBox" in node && node.absoluteBoundingBox) {
     base.absoluteBoundingBox = node.absoluteBoundingBox;
   }
 
-  // 컴포넌트 속성
+  // Component properties
   if ("componentId" in node) {
     base.componentId = node.componentId as string;
   }
@@ -80,7 +80,7 @@ function transformNode(node: Node): AnalysisNode {
     >;
   }
 
-  // 스타일 속성
+  // Style properties
   if ("styles" in node) {
     base.styles = node.styles as Record<string, string>;
   }
@@ -94,12 +94,12 @@ function transformNode(node: Node): AnalysisNode {
     base.effects = node.effects as unknown[];
   }
 
-  // 변수 바인딩
+  // Variable bindings
   if ("boundVariables" in node && node.boundVariables) {
     base.boundVariables = node.boundVariables as Record<string, unknown>;
   }
 
-  // 텍스트 속성
+  // Text properties
   if ("characters" in node) {
     base.characters = node.characters as string;
   }
@@ -107,12 +107,12 @@ function transformNode(node: Node): AnalysisNode {
     base.style = node.style as Record<string, unknown>;
   }
 
-  // 핸드오프 상태
+  // Handoff status
   if ("devStatus" in node && node.devStatus) {
     base.devStatus = node.devStatus as AnalysisNode["devStatus"];
   }
 
-  // children 재귀 변환
+  // Recursively transform children
   if ("children" in node && Array.isArray(node.children)) {
     base.children = node.children.map(transformNode);
   }

@@ -1,4 +1,4 @@
-// Contracts module - 타입 정의 및 Zod 스키마
+// Contracts module - Type definitions and Zod schemas
 
 export * from "./severity.js";
 export * from "./category.js";

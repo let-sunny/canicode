@@ -1,1 +1,1 @@
-// Rules module - 분석 규칙 정의
+// Rules module - Analysis rule definitions

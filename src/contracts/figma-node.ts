@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 /**
- * 분석에 필요한 Figma 노드 타입만 정의
- * 실제 Figma API 타입은 @figma/rest-api-spec 참조
+ * Figma node types required for analysis
+ * See @figma/rest-api-spec for full API types
  */
 
 export const AnalysisNodeTypeSchema = z.enum([
@@ -45,17 +45,17 @@ export const LayoutPositioningSchema = z.enum(["AUTO", "ABSOLUTE"]);
 export type LayoutPositioning = z.infer<typeof LayoutPositioningSchema>;
 
 /**
- * 분석용 경량 FigmaNode 타입
- * rules에서 실제로 필요한 속성만 포함
+ * Lightweight FigmaNode type for analysis
+ * Contains only properties needed by rules
  */
 const BaseAnalysisNodeSchema = z.object({
-  // 기본 식별
+  // Basic identification
   id: z.string(),
   name: z.string(),
   type: AnalysisNodeTypeSchema,
   visible: z.boolean().default(true),
 
-  // 레이아웃 분석용
+  // Layout analysis
   layoutMode: LayoutModeSchema.optional(),
   layoutAlign: LayoutAlignSchema.optional(),
   layoutPositioning: LayoutPositioningSchema.optional(),
@@ -67,7 +67,7 @@ const BaseAnalysisNodeSchema = z.object({
   paddingTop: z.number().optional(),
   paddingBottom: z.number().optional(),
 
-  // 크기/위치 분석용
+  // Size/position analysis
   absoluteBoundingBox: z
     .object({
       x: z.number(),
@@ -78,25 +78,25 @@ const BaseAnalysisNodeSchema = z.object({
     .nullable()
     .optional(),
 
-  // 컴포넌트 분석용
+  // Component analysis
   componentId: z.string().optional(),
   componentPropertyDefinitions: z.record(z.string(), z.unknown()).optional(),
   componentProperties: z.record(z.string(), z.unknown()).optional(),
 
-  // 스타일/토큰 분석용
+  // Style/token analysis
   styles: z.record(z.string(), z.string()).optional(),
   fills: z.array(z.unknown()).optional(),
   strokes: z.array(z.unknown()).optional(),
   effects: z.array(z.unknown()).optional(),
 
-  // 변수 바인딩 분석용 (디자인 토큰)
+  // Variable binding analysis (design tokens)
   boundVariables: z.record(z.string(), z.unknown()).optional(),
 
-  // 텍스트 분석용
+  // Text analysis
   characters: z.string().optional(),
   style: z.record(z.string(), z.unknown()).optional(),
 
-  // 핸드오프 분석용
+  // Handoff analysis
   devStatus: z
     .object({
       type: z.enum(["NONE", "READY_FOR_DEV", "COMPLETED"]),
@@ -104,7 +104,7 @@ const BaseAnalysisNodeSchema = z.object({
     })
     .optional(),
 
-  // 네이밍 분석에 활용할 메타 정보
+  // Naming analysis metadata
   isAsset: z.boolean().optional(),
 });
 
@@ -118,7 +118,7 @@ export const AnalysisNodeSchema: z.ZodType<AnalysisNode> =
   }) as z.ZodType<AnalysisNode>;
 
 /**
- * 분석용 Figma 파일 메타데이터
+ * Figma file metadata for analysis
  */
 export const AnalysisFileSchema = z.object({
   fileKey: z.string(),

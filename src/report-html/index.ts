@@ -1,1 +1,1 @@
-// Report HTML module - HTML 리포트 생성
+// Report HTML module - HTML report generation

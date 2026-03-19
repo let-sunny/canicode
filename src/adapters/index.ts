@@ -1,4 +1,4 @@
-// Adapters module - 외부 서비스 연동 (Figma API 등)
+// Adapters module - External service integrations (Figma API, etc.)
 
 export * from "./figma-url-parser.js";
 export * from "./figma-client.js";

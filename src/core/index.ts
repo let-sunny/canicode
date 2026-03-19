@@ -1,1 +1,1 @@
-// Core module - 분석 엔진 및 핵심 로직
+// Core module - Analysis engine and core logic
