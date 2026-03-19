@@ -47,7 +47,7 @@ URLS=("$CALIBRATE_URL_1" "$CALIBRATE_URL_2")
 
 # ── Logging setup ───────────────────────────────────────────────────
 
-LOG_DIR="logs"
+LOG_DIR="logs/activity"
 mkdir -p "$LOG_DIR"
 
 DATE=$(date +%Y-%m-%d)
@@ -129,7 +129,7 @@ for cycle in $(seq 1 "$MAX_CYCLES"); do
 
   # Commit & push if changed
   if [ "$HAS_CHANGES" = true ]; then
-    git add src/rules/rule-config.ts "$LOG_FILE"
+    git add src/rules/rule-config.ts logs/
     git commit -m "chore: calibrate rule scores — cycle $cycle ($DATE)
 
 Passed: $PASS / ${#URLS[@]}, Failed: $FAIL

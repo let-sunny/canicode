@@ -33,6 +33,6 @@ coverage/
 *.temp
 .cache/
 
-# Generated reports
-*.html
-!src/**/*.html
+# Generated reports and logs
+reports/
+logs/

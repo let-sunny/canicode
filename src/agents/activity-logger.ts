@@ -26,7 +26,7 @@ export class ActivityLogger {
   private logPath: string;
   private initialized = false;
 
-  constructor(logDir = "logs") {
+  constructor(logDir = "logs/activity") {
     const dateStr = getDateString();
     this.logPath = resolve(logDir, `agent-activity-${dateStr}.md`);
   }

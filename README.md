@@ -69,13 +69,14 @@ Requires Node.js >= 18 and pnpm.
 
 ```bash
 # From a Figma URL (requires FIGMA_TOKEN env var or --token flag)
+# Report auto-saved to reports/YYYY-MM-DD-HH-mm-<filekey>.html
 drc analyze https://www.figma.com/design/ABC123/MyDesign
 
 # From a JSON fixture
 drc analyze ./fixtures/design.json
 
-# With a preset and HTML report output
-drc analyze https://www.figma.com/design/ABC123/MyDesign --preset strict --output report.html
+# With a preset and custom output path
+drc analyze https://www.figma.com/design/ABC123/MyDesign --preset strict --output my-report.html
 ```
 
 ### Presets
@@ -93,6 +94,20 @@ drc analyze https://www.figma.com/design/ABC123/MyDesign --preset strict --outpu
 |----------|----------|-------------|
 | `FIGMA_TOKEN` | For Figma URLs | Figma personal access token |
 | `ANTHROPIC_API_KEY` | For `--deep-compare` | Anthropic API key for Claude Vision comparison |
+
+### Output Paths
+
+```
+reports/                              # HTML analysis reports (gitignored)
+  YYYY-MM-DD-HH-mm-<filekey>.html
+
+logs/                                 # All logs and calibration data (gitignored)
+  activity/
+    agent-activity-YYYY-MM-DD.md      # Pipeline step logs
+  calibration/
+    calibration-analysis.json         # Step 1 output
+    calibration-YYYY-MM-DD-HH-mm.md  # Calibration report
+```
 
 ## Calibration Agent
 
@@ -112,17 +127,17 @@ If a rule flagged something as blocking but the conversion was easy, the rule is
 Step 2 (conversion) requires a Claude Code session with Figma MCP access, so the pipeline is split:
 
 ```bash
-# Step 1: Analyze and output JSON
+# Step 1: Analyze → logs/calibration/calibration-analysis.json
 drc calibrate-analyze ./fixtures/design.json
 
 # Step 2: Convert nodes in Claude Code session with Figma MCP
 # (produces calibration-conversion.json)
 
-# Step 3: Evaluate and generate report
-drc calibrate-evaluate calibration-analysis.json calibration-conversion.json
+# Step 3: Evaluate → logs/calibration/calibration-YYYY-MM-DD-HH-mm.md
+drc calibrate-evaluate logs/calibration/calibration-analysis.json calibration-conversion.json
 ```
 
-The output is `CALIBRATION_REPORT.md` — a human-reviewed report with proposed score changes. Final edits to `rule-config.ts` are always manual.
+The output goes to `logs/calibration/` — a human-reviewed report with proposed score changes. Final edits to `rule-config.ts` are always manual.
 
 ### Visual comparison
 

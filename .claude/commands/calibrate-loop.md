@@ -10,8 +10,8 @@ Run the calibration pipeline and extract proposals.
 
 1. Execute: `pnpm exec drc calibrate-analyze $ARGUMENTS`
 2. Read the output file `calibration-analysis.json`
-3. Read the most recent `CALIBRATION_REPORT.md` if it exists from a prior run
-4. Read `logs/` for the most recent `agent-activity-*.md` file
+3. Read the most recent `logs/calibration/calibration-report.md` if it exists from a prior run
+4. Read `logs/activity/` for the most recent `agent-activity-*.md` file
 5. Extract the list of score adjustment proposals. For each proposal, capture:
    - `ruleId`
    - `currentScore`
@@ -22,7 +22,7 @@ Run the calibration pipeline and extract proposals.
    - `supportingCases` (number)
    - `reasoning`
 6. If there are zero proposals, stop and report: "No calibration adjustments needed."
-7. Log the Runner output to `logs/agent-activity-YYYY-MM-DD.md`:
+7. Log the Runner output to `logs/activity/agent-activity-YYYY-MM-DD.md`:
 
 ```
 ## HH:mm — Runner
@@ -60,7 +60,7 @@ If any proposal is marked `REVIEW`, re-run with visual comparison:
 `pnpm exec drc calibrate-analyze $ARGUMENTS`
 Then re-evaluate the `REVIEW` items using the visual comparison data to make a final `ACCEPT` or `REJECT` decision.
 
-Log the Critic output to `logs/agent-activity-YYYY-MM-DD.md`:
+Log the Critic output to `logs/activity/agent-activity-YYYY-MM-DD.md`:
 
 ```
 ## HH:mm — Critic
@@ -92,7 +92,7 @@ Choose one of:
 
 For each decision, write exactly one line of reasoning. Keep it factual.
 
-Output a final list of changes to apply and log to `logs/agent-activity-YYYY-MM-DD.md`:
+Output a final list of changes to apply and log to `logs/activity/agent-activity-YYYY-MM-DD.md`:
 
 ```
 ## HH:mm — Arbitrator
@@ -130,7 +130,7 @@ Source: calibration against <input>
 
 ## Step 5 — Log Summary
 
-Append to `logs/agent-activity-YYYY-MM-DD.md`:
+Append to `logs/activity/agent-activity-YYYY-MM-DD.md`:
 
 ```
 ## HH:mm — Applied Changes

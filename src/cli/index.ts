@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
 import { config } from "dotenv";
 import cac from "cac";
 
@@ -123,13 +123,21 @@ cli
       console.log(formatScoreSummary(scores));
       console.log("=".repeat(50));
 
-      // Generate HTML report if output specified
-      if (options.output) {
-        const outputPath = resolve(options.output);
-        const html = generateHtmlReport(file, result, scores);
-        await writeFile(outputPath, html, "utf-8");
-        console.log(`\nReport saved: ${outputPath}`);
+      // Generate HTML report
+      const now = new Date();
+      const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}-${String(now.getMinutes()).padStart(2, "0")}`;
+      const defaultOutput = `reports/${ts}-${file.fileKey}.html`;
+      const reportOutput = options.output ?? defaultOutput;
+      const outputPath = resolve(reportOutput);
+      const outputDir = dirname(outputPath);
+
+      if (!existsSync(outputDir)) {
+        mkdirSync(outputDir, { recursive: true });
       }
+
+      const html = generateHtmlReport(file, result, scores);
+      await writeFile(outputPath, html, "utf-8");
+      console.log(`\nReport saved: ${outputPath}`);
 
       // Exit with error code if grade is F
       if (scores.overall.grade === "F") {
@@ -159,7 +167,7 @@ cli
     "calibrate-analyze <input>",
     "Run calibration analysis and output JSON for conversion step"
   )
-  .option("--output <path>", "Output JSON path", { default: "calibration-analysis.json" })
+  .option("--output <path>", "Output JSON path", { default: "logs/calibration/calibration-analysis.json" })
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
   .option("--target-node-id <nodeId>", "Scope analysis to a specific node")
   .example("  drc calibrate-analyze ./fixtures/sample.json")
@@ -172,7 +180,7 @@ cli
         input,
         maxConversionNodes: 20,
         samplingStrategy: "top-issues" as const,
-        outputPath: "CALIBRATION_REPORT.md",
+        outputPath: "logs/calibration/calibration-report.md",
         ...(options.token && { token: options.token }),
         ...(options.targetNodeId && { targetNodeId: options.targetNodeId }),
       };
@@ -191,7 +199,11 @@ cli
         ruleScores,
       };
 
-      const outputPath = resolve(options.output ?? "calibration-analysis.json");
+      const outputPath = resolve(options.output ?? "logs/calibration/calibration-analysis.json");
+      const outputDir = dirname(outputPath);
+      if (!existsSync(outputDir)) {
+        mkdirSync(outputDir, { recursive: true });
+      }
       await writeFile(outputPath, JSON.stringify(outputData, null, 2), "utf-8");
 
       console.log(`\nAnalysis complete.`);
@@ -221,7 +233,7 @@ cli
     "calibrate-evaluate <analysisJson> <conversionJson>",
     "Evaluate conversion results and generate calibration report"
   )
-  .option("--output <path>", "Report output path", { default: "CALIBRATION_REPORT.md" })
+  .option("--output <path>", "Report output path")
   .option("--visual", "Enable visual comparison (requires visualData in conversion JSON)")
   .option("--deep-compare", "Use Claude Vision for deep image comparison (requires ANTHROPIC_API_KEY)")
   .example("  drc calibrate-evaluate calibration-analysis.json calibration-conversion.json")
@@ -270,7 +282,14 @@ cli
         visualComparisons
       );
 
-      const outputPath = resolve(options.output ?? "CALIBRATION_REPORT.md");
+      const calNow = new Date();
+      const calTs = `${calNow.getFullYear()}-${String(calNow.getMonth() + 1).padStart(2, "0")}-${String(calNow.getDate()).padStart(2, "0")}-${String(calNow.getHours()).padStart(2, "0")}-${String(calNow.getMinutes()).padStart(2, "0")}`;
+      const defaultCalOutput = `logs/calibration/calibration-${calTs}.md`;
+      const outputPath = resolve(options.output ?? defaultCalOutput);
+      const calOutputDir = dirname(outputPath);
+      if (!existsSync(calOutputDir)) {
+        mkdirSync(calOutputDir, { recursive: true });
+      }
       await writeFile(outputPath, report, "utf-8");
 
       const mismatchCounts = {
@@ -319,7 +338,7 @@ cli
     "calibrate-run <input>",
     "Run full calibration pipeline (requires ConversionExecutor)"
   )
-  .option("--output <path>", "Report output path", { default: "CALIBRATION_REPORT.md" })
+  .option("--output <path>", "Report output path (default: logs/calibration/calibration-YYYY-MM-DD-HH-mm.md)")
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
   .option("--max-nodes <count>", "Max nodes to convert", { default: 20 })
   .option("--sampling <strategy>", "Sampling strategy (all | top-issues | random)", { default: "top-issues" })
