@@ -12,7 +12,10 @@ export interface CategoryScoreResult {
   maxScore: number;
   percentage: number;
   issueCount: number;
+  uniqueRuleCount: number;
   weightedIssueCount: number;
+  densityScore: number;
+  diversityScore: number;
   bySeverity: Record<Severity, number>;
 }
 
@@ -53,6 +56,18 @@ const SEVERITY_DENSITY_WEIGHT: Record<Severity, number> = {
 };
 
 /**
+ * Total rules per category
+ */
+const TOTAL_RULES_PER_CATEGORY: Record<Category, number> = {
+  layout: 11,
+  token: 7,
+  component: 6,
+  naming: 5,
+  "ai-readability": 5,
+  "handoff-risk": 5,
+};
+
+/**
  * Category weights for overall score (all equal by default)
  */
 const CATEGORY_WEIGHT: Record<Category, number> = {
@@ -63,6 +78,17 @@ const CATEGORY_WEIGHT: Record<Category, number> = {
   "ai-readability": 1.0,
   "handoff-risk": 1.0,
 };
+
+/**
+ * Score composition weights
+ */
+const DENSITY_WEIGHT = 0.7;
+const DIVERSITY_WEIGHT = 0.3;
+
+/**
+ * Minimum score floor
+ */
+const SCORE_FLOOR = 5;
 
 /**
  * Calculate grade from percentage
@@ -83,37 +109,64 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /**
- * Calculate scores from analysis result using density-based scoring
+ * Calculate scores from analysis result using density + diversity scoring
  *
- * Category Score = 100 - (weighted issue count / node count) * 100
- * Weighted issue count = sum of (severity weight) for each issue
+ * Density Score = 100 - (weighted issue count / node count) * 100
+ * Diversity Score = (1 - unique rules / total category rules) * 100
+ * Final Score = density * 0.7 + diversity * 0.3
  */
 export function calculateScores(result: AnalysisResult): ScoreReport {
   const categoryScores = initializeCategoryScores();
   const nodeCount = result.nodeCount;
 
-  // Count issues by severity per category
+  // Track unique rules per category
+  const uniqueRulesPerCategory = new Map<Category, Set<string>>();
+  for (const category of CATEGORIES) {
+    uniqueRulesPerCategory.set(category, new Set());
+  }
+
+  // Count issues by severity per category and track unique rules
   for (const issue of result.issues) {
     const category = issue.rule.definition.category;
     const severity = issue.config.severity;
+    const ruleId = issue.rule.definition.id;
 
     categoryScores[category].issueCount++;
     categoryScores[category].bySeverity[severity]++;
     categoryScores[category].weightedIssueCount += SEVERITY_DENSITY_WEIGHT[severity];
+    uniqueRulesPerCategory.get(category)!.add(ruleId);
   }
 
-  // Calculate percentage for each category based on density
+  // Calculate percentage for each category based on density + diversity
   for (const category of CATEGORIES) {
     const catScore = categoryScores[category];
+    const uniqueRules = uniqueRulesPerCategory.get(category)!;
+    const totalRules = TOTAL_RULES_PER_CATEGORY[category];
 
-    if (nodeCount > 0) {
-      // Density = weighted issues / nodes
-      // Score = 100 - (density * 100), clamped to 0-100
+    catScore.uniqueRuleCount = uniqueRules.size;
+
+    // Density score: lower density = higher score
+    let densityScore = 100;
+    if (nodeCount > 0 && catScore.issueCount > 0) {
       const density = catScore.weightedIssueCount / nodeCount;
-      catScore.percentage = clamp(Math.round(100 - density * 100), 0, 100);
-    } else {
-      catScore.percentage = 100; // No nodes = perfect score
+      densityScore = clamp(Math.round(100 - density * 100), 0, 100);
     }
+    catScore.densityScore = densityScore;
+
+    // Diversity score: fewer unique rules = higher score (issues are concentrated)
+    // If no issues, diversity score is 100 (perfect)
+    let diversityScore = 100;
+    if (catScore.issueCount > 0) {
+      const diversityRatio = uniqueRules.size / totalRules;
+      diversityScore = clamp(Math.round((1 - diversityRatio) * 100), 0, 100);
+    }
+    catScore.diversityScore = diversityScore;
+
+    // Combined score with floor
+    const combinedScore = densityScore * DENSITY_WEIGHT + diversityScore * DIVERSITY_WEIGHT;
+    catScore.percentage = catScore.issueCount > 0
+      ? clamp(Math.round(combinedScore), SCORE_FLOOR, 100)
+      : 100;
 
     catScore.score = catScore.percentage;
     catScore.maxScore = 100;
@@ -185,7 +238,10 @@ function initializeCategoryScores(): Record<Category, CategoryScoreResult> {
       maxScore: 100,
       percentage: 100,
       issueCount: 0,
+      uniqueRuleCount: 0,
       weightedIssueCount: 0,
+      densityScore: 100,
+      diversityScore: 100,
       bySeverity: {
         blocking: 0,
         risk: 0,
@@ -210,7 +266,7 @@ export function formatScoreSummary(report: ScoreReport): string {
 
   for (const category of CATEGORIES) {
     const cat = report.byCategory[category];
-    lines.push(`  ${category}: ${cat.percentage}% (${cat.issueCount} issues)`);
+    lines.push(`  ${category}: ${cat.percentage}% (${cat.issueCount} issues, ${cat.uniqueRuleCount} rules)`);
   }
 
   lines.push("");
