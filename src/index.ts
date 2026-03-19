@@ -13,3 +13,6 @@ export * from "./rules/index.js";
 
 // Adapters for Figma API
 export * from "./adapters/index.js";
+
+// Calibration agents
+export * from "./agents/index.js";
