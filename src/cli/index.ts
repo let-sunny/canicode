@@ -34,6 +34,7 @@ interface AnalyzeOptions {
   output?: string;
   token?: string;
   visual?: boolean;
+  verbose?: boolean;
 }
 
 function isFigmaUrl(input: string): boolean {
@@ -97,6 +98,7 @@ cli
   .option("--output <path>", "HTML report output path")
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
   .option("--visual", "Capture Figma screenshots for blocking/risk nodes and include visual comparison in report")
+  .option("--verbose", "Show detailed logs for visual capture and other operations")
   .example("  drc analyze https://www.figma.com/design/ABC123/MyDesign")
   .example("  drc analyze ./fixtures/design.json --output report.html")
   .example("  drc analyze https://www.figma.com/design/ABC123/MyDesign --visual")
@@ -167,30 +169,54 @@ cli
             try {
               const imageUrls = await client.getNodeImages(file.fileKey, nodeIdList);
 
+              if (options.verbose) {
+                const urlCount = Object.values(imageUrls).filter(Boolean).length;
+                const nullCount = Object.values(imageUrls).filter((v) => v === null).length;
+                console.log(`  [verbose] Image API returned ${urlCount} URLs, ${nullCount} null`);
+              }
+
               const visualInputs: VisualComparisonInput[] = [];
               for (const nid of nodeIdList) {
                 const imageUrl = imageUrls[nid];
-                if (!imageUrl) continue;
+                if (!imageUrl) {
+                  if (options.verbose) {
+                    console.log(`  [verbose] Node ${nid}: no image URL returned (null)`);
+                  }
+                  continue;
+                }
 
                 try {
+                  if (options.verbose) {
+                    console.log(`  [verbose] Node ${nid}: downloading ${imageUrl.slice(0, 80)}...`);
+                  }
                   const base64 = await client.fetchImageAsBase64(imageUrl);
+                  if (options.verbose) {
+                    console.log(`  [verbose] Node ${nid}: OK (${Math.round(base64.length / 1024)}KB base64)`);
+                  }
                   visualInputs.push({
                     nodeId: nid,
                     nodePath: nodePathMap.get(nid) ?? nid,
                     figmaScreenshotBase64: base64,
                     renderedScreenshotBase64: base64,
                   });
-                } catch {
-                  // Skip nodes where screenshot download fails
+                } catch (dlErr) {
+                  if (options.verbose) {
+                    console.warn(`  [verbose] Node ${nid}: download failed — ${dlErr instanceof Error ? dlErr.message : String(dlErr)}`);
+                  }
                 }
               }
 
               if (visualInputs.length > 0) {
                 visualComparisons = await runVisualComparison(visualInputs);
                 console.log(`  Captured ${visualComparisons.length} screenshots.`);
+              } else if (options.verbose) {
+                console.log(`  [verbose] No screenshots downloaded successfully.`);
               }
             } catch (err) {
               console.warn(`  Screenshot capture failed: ${err instanceof Error ? err.message : String(err)}`);
+              if (options.verbose && err instanceof Error && err.stack) {
+                console.warn(`  [verbose] ${err.stack}`);
+              }
             }
           }
         }
