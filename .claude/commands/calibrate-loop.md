@@ -8,7 +8,7 @@ Input: $ARGUMENTS (a Figma URL or JSON fixture path)
 
 Run the calibration pipeline and extract proposals.
 
-1. Execute: `pnpm exec drc calibrate analyze $ARGUMENTS`
+1. Execute: `pnpm exec drc calibrate-analyze $ARGUMENTS`
 2. Read the output file `calibration-analysis.json`
 3. Read the most recent `CALIBRATION_REPORT.md` if it exists from a prior run
 4. Read `logs/` for the most recent `agent-activity-*.md` file
@@ -22,7 +22,14 @@ Run the calibration pipeline and extract proposals.
    - `supportingCases` (number)
    - `reasoning`
 6. If there are zero proposals, stop and report: "No calibration adjustments needed."
-7. Log the Runner output to `logs/agent-activity-YYYY-MM-DD.md` under `## HH:mm — Runner` with the full proposal list.
+7. Log the Runner output to `logs/agent-activity-YYYY-MM-DD.md`:
+
+```
+## HH:mm — Runner
+- 제안 목록:
+  - ruleId: current→proposed, confidence (supportingCases cases). reasoning
+  - ruleId: current→proposed, confidence (supportingCases cases). reasoning
+```
 
 ---
 
@@ -50,10 +57,21 @@ For each proposal, output one of:
 - `REVIEW` — borderline case, needs visual confirmation
 
 If any proposal is marked `REVIEW`, re-run with visual comparison:
-`pnpm exec drc calibrate analyze $ARGUMENTS`
+`pnpm exec drc calibrate-analyze $ARGUMENTS`
 Then re-evaluate the `REVIEW` items using the visual comparison data to make a final `ACCEPT` or `REJECT` decision.
 
-Log the Critic output to `logs/agent-activity-YYYY-MM-DD.md` under `## HH:mm — Critic` with the verdict for each proposal.
+Log the Critic output to `logs/agent-activity-YYYY-MM-DD.md`:
+
+```
+## HH:mm — Critic
+- 반박:
+  - ruleId: REJECT — reason
+  - ruleId: REJECT — reason
+- 동의:
+  - ruleId: ACCEPT
+- deep-compare 재실행:
+  - ruleId: REVIEW — reason (재실행 후 최종 판정 기록)
+```
 
 ---
 
@@ -74,12 +92,15 @@ Choose one of:
 
 For each decision, write exactly one line of reasoning. Keep it factual.
 
-Output a final list of changes to apply:
-```
-ruleId | currentScore → newScore | severity change | reason
-```
+Output a final list of changes to apply and log to `logs/agent-activity-YYYY-MM-DD.md`:
 
-Log the Arbitrator output to `logs/agent-activity-YYYY-MM-DD.md` under `## HH:mm — Arbitrator` with the decision table.
+```
+## HH:mm — Arbitrator
+- 최종 결정:
+  - ruleId: current → newScore — reason
+  - ruleId: KEEP -6 — reason
+  - ruleId: current → newScore (severity: old → new) — reason
+```
 
 ---
 
@@ -125,7 +146,7 @@ Total: N rules adjusted, M proposals rejected, K kept unchanged.
 
 ## Error Handling
 
-- If `drc calibrate analyze` fails, report the error and stop.
+- If `drc calibrate-analyze` fails, report the error and stop.
 - If a test or lint failure occurs after applying changes, revert all changes to `rule-config.ts` and report which rule change caused the issue.
 - Never force-push or amend existing commits.
 - If the Figma URL requires a token and `FIGMA_TOKEN` is not set, stop and ask the user.

@@ -92,7 +92,7 @@ for i in "${!URLS[@]}"; do
 
   RUN_START=$SECONDS
 
-  if claude /calibrate-loop "$url"; then
+  if claude --dangerously-skip-permissions /calibrate-loop "$url"; then
     DURATION=$(( SECONDS - RUN_START ))
     log "Calibration Loop Complete — File $idx" "Duration: ${DURATION}s"
     echo "  Complete (${DURATION}s)"
