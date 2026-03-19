@@ -21,10 +21,51 @@ src/
 ├── contracts/      # Type definitions and Zod schemas
 ├── cli/            # CLI entry point
 ├── report-html/    # HTML report generation
-└── adapters/       # External service integrations (Figma API, etc.)
+├── adapters/       # External service integrations (Figma API, etc.)
+└── agents/         # Calibration pipeline (analysis, conversion, evaluation, tuning)
 ```
 
-## Commands
+## Architecture
+
+### Commands
+
+**`drc analyze`**
+- Role: Analyze Figma file structure + generate report (user-facing)
+- Input: Figma URL or JSON fixture
+- Output: HTML report in `reports/`
+- No code generation — pure structural analysis only
+- Each issue includes a Figma deep link (click → navigate to node in Figma)
+
+**`drc calibrate-run`**
+- Role: Automated rule score improvement (internal dev tool, not user-facing)
+- Input: Figma URL
+- Pipeline:
+  1. Analysis Agent: collect issues and scores
+  2. Conversion Agent: generate code for nodes via Claude API
+  3. Evaluation Agent: compare conversion difficulty vs rule scores
+  4. Tuning Agent: propose score adjustments
+- Output: analysis results in `logs/calibration/`
+
+**`drc calibrate-run --export-report`**
+- Role: Export calibration results as a user-facing HTML report
+- Output: HTML report in `reports/`
+- Content: Figma original screenshot + Claude implementation screenshot side by side
+
+**`/calibrate-loop` (Claude Code command)**
+- Role: Autonomous rule-config.ts improvement via 3-agent debate
+- Flow: Runner → Critic → Arbitrator
+- Auto-commits agreed score changes
+- Full debate transcript logged to `logs/activity/`
+
+### File Output Structure
+
+```
+reports/            # HTML reports (analyze + calibrate export)
+logs/calibration/   # Calibration analysis results
+logs/activity/      # Agent activity logs
+```
+
+## Dev Commands
 
 ```bash
 pnpm build          # Production build
@@ -86,28 +127,16 @@ Rules are classified into 4 severity levels:
 
 ## Score Calibration
 
-Current rule scores are intuition-based and require validation.
+Rule scores started as intuition-based estimates. The calibration pipeline validates them against actual code conversion difficulty.
 
-Planned calibration process:
-1. Connect Figma MCP + Claude after MVP completion
-2. Run analysis on real Figma files
-3. Claude attempts to convert nodes to actual CSS/components
-4. Collect mismatch cases:
-   - Conversion failed or required guessing → increase rule score
-   - Conversion was easy but got penalized → decrease rule score
-5. Repeat until scores reflect actual implementation difficulty
+Process:
+1. Run analysis on real Figma files (`drc calibrate-analyze`)
+2. Convert flagged nodes to code via Claude API (Conversion Agent)
+3. Compare conversion difficulty vs rule scores (Evaluation Agent)
+4. Propose adjustments: overscored rules get reduced, underscored rules get increased (Tuning Agent)
+5. 3-agent debate loop (`/calibrate-loop`) applies conservative changes automatically
 
-Long-term: Automate calibration using a multi-agent architecture.
-
-```
-Orchestrator Agent
-├── Analysis Agent     → runs design-readiness-checker, outputs scores
-├── Conversion Agent   → reads nodes via Figma MCP, attempts CSS/component conversion
-├── Evaluation Agent   → measures conversion difficulty, detects score mismatches
-└── Tuning Agent       → proposes rule-config.ts adjustments as a PR
-```
-
-Final score adjustments are reviewed and merged by the developer.
+Final score adjustments in `rule-config.ts` are always reviewed by the developer via `CALIBRATION_REPORT.md` or the calibrate-loop's Arbitrator decisions.
 
 ## Adjustable Rule Config
 
