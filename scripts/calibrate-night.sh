@@ -3,10 +3,20 @@ set -euo pipefail
 
 # Nightly calibration script
 # Runs /calibrate-loop against Figma files provided via environment variables.
+# Reads from .env if present.
 # Usage:
-#   export CALIBRATE_URL_1="https://www.figma.com/design/..."
-#   export CALIBRATE_URL_2="https://www.figma.com/design/..."
 #   caffeinate -i ./scripts/calibrate-night.sh
+
+# ── Load .env ───────────────────────────────────────────────────────
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+if [ -f "$PROJECT_ROOT/.env" ]; then
+  set -a
+  source "$PROJECT_ROOT/.env"
+  set +a
+fi
 
 # ── Validate env vars ───────────────────────────────────────────────
 
