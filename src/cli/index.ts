@@ -2,7 +2,11 @@
 import { existsSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { config } from "dotenv";
 import cac from "cac";
+
+// Load .env file
+config();
 
 import { FigmaClient } from "../adapters/figma-client.js";
 import { loadFigmaFileFromJson } from "../adapters/figma-file-loader.js";

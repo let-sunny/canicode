@@ -39,6 +39,7 @@
   "dependencies": {
     "@figma/rest-api-spec": "^0.36.0",
     "cac": "^7.0.0",
+    "dotenv": "^17.3.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
