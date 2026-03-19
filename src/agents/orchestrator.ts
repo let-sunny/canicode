@@ -21,24 +21,14 @@ import type { ScoreAdjustment, NewRuleProposal } from "./contracts/tuning-agent.
 import type { MismatchCase } from "./contracts/evaluation-agent.js";
 import type { ScoreReport } from "@/core/scoring.js";
 
-import type {
-  VisualComparisonInput,
-  VisualComparisonRecord,
-  VisualDataProvider,
-} from "./contracts/visual-comparison.js";
-
 import { runAnalysisAgent, extractRuleScores } from "./analysis-agent.js";
 import { runConversionAgent } from "./conversion-agent.js";
 import { runEvaluationAgent } from "./evaluation-agent.js";
 import { runTuningAgent } from "./tuning-agent.js";
 import { generateCalibrationReport } from "./report-generator.js";
-import { runVisualComparison } from "./visual-comparator.js";
 import { ActivityLogger } from "./activity-logger.js";
 
 export interface CalibrationRunOptions {
-  visualDataProvider?: VisualDataProvider;
-  deepCompare?: boolean;
-  anthropicApiKey?: string;
   enableActivityLog?: boolean;
 }
 
@@ -50,7 +40,6 @@ export interface CalibrationRunResult {
   validatedRules: string[];
   adjustments: ScoreAdjustment[];
   newRuleProposals: NewRuleProposal[];
-  visualComparisons: VisualComparisonRecord[];
   reportPath: string;
   logPath?: string | undefined;
   error?: string;
@@ -199,8 +188,7 @@ export function runCalibrationEvaluate(
     }>;
     skippedNodeIds: string[];
   },
-  ruleScores: Record<string, { score: number; severity: string }>,
-  visualComparisons?: VisualComparisonRecord[]
+  ruleScores: Record<string, { score: number; severity: string }>
 ) {
   const evaluationOutput = runEvaluationAgent({
     nodeIssueSummaries: analysisJson.nodeIssueSummaries.map((s) => ({
@@ -230,14 +218,12 @@ export function runCalibrationEvaluate(
     validatedRules: evaluationOutput.validatedRules,
     adjustments: tuningOutput.adjustments,
     newRuleProposals: tuningOutput.newRuleProposals,
-    ...(visualComparisons && { visualComparisons }),
   });
 
   return {
     evaluationOutput,
     tuningOutput,
     report,
-    visualComparisons,
   };
 }
 
@@ -301,41 +287,6 @@ export async function runCalibration(
       durationMs: Date.now() - stepStart,
     });
 
-    // Step 2.5: Visual comparison (if provider available)
-    stepStart = Date.now();
-    let visualComparisons: VisualComparisonRecord[] = [];
-
-    if (options?.visualDataProvider) {
-      const visualInputs: VisualComparisonInput[] = [];
-
-      for (const record of conversionOutput.records) {
-        try {
-          const screenshots = await options.visualDataProvider(record.nodeId, fileKey);
-          visualInputs.push({
-            nodeId: record.nodeId,
-            nodePath: record.nodePath,
-            figmaScreenshotBase64: screenshots.figmaScreenshotBase64,
-            renderedScreenshotBase64: screenshots.renderedScreenshotBase64,
-          });
-        } catch {
-          // Skip nodes where screenshots can't be obtained
-        }
-      }
-
-      if (visualInputs.length > 0) {
-        visualComparisons = await runVisualComparison(visualInputs, {
-          ...(options.deepCompare && { deepCompare: options.deepCompare }),
-          ...(options.anthropicApiKey && { anthropicApiKey: options.anthropicApiKey }),
-        });
-      }
-
-      await logger?.logStep({
-        step: "Visual Comparison",
-        result: `${visualComparisons.length} nodes compared${options.deepCompare ? " (with deep compare)" : ""}`,
-        durationMs: Date.now() - stepStart,
-      });
-    }
-
     // Step 3: Evaluate
     stepStart = Date.now();
     const evaluationOutput = runEvaluationAgent({
@@ -381,7 +332,6 @@ export async function runCalibration(
       validatedRules: evaluationOutput.validatedRules,
       adjustments: tuningOutput.adjustments,
       newRuleProposals: tuningOutput.newRuleProposals,
-      ...(visualComparisons.length > 0 && { visualComparisons }),
     });
 
     // Write report
@@ -405,7 +355,6 @@ export async function runCalibration(
       validatedRules: evaluationOutput.validatedRules,
       adjustments: tuningOutput.adjustments,
       newRuleProposals: tuningOutput.newRuleProposals,
-      visualComparisons,
       reportPath,
       logPath: logger?.getLogPath(),
     };
@@ -433,7 +382,6 @@ export async function runCalibration(
       validatedRules: [],
       adjustments: [],
       newRuleProposals: [],
-      visualComparisons: [],
       reportPath: parsed.outputPath,
       error: errorMessage,
     };

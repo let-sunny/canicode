@@ -21,9 +21,6 @@ import {
   runCalibrationAnalyze,
   runCalibrationEvaluate,
 } from "../agents/orchestrator.js";
-import { runVisualComparison } from "../agents/visual-comparator.js";
-import type { VisualComparisonInput } from "../agents/contracts/visual-comparison.js";
-import type { NodeScreenshot } from "../report-html/index.js";
 
 // Import rules to register them
 import "../rules/index.js";
@@ -34,9 +31,6 @@ interface AnalyzeOptions {
   preset?: Preset;
   output?: string;
   token?: string;
-  visual?: boolean;
-  visualLimit?: number;
-  verbose?: boolean;
 }
 
 function isFigmaUrl(input: string): boolean {
@@ -99,12 +93,9 @@ cli
   .option("--preset <preset>", "Analysis preset (relaxed | dev-friendly | ai-ready | strict)")
   .option("--output <path>", "HTML report output path")
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
-  .option("--visual", "Capture Figma screenshots for blocking/risk nodes and include in report")
-  .option("--visual-limit <count>", "Max nodes to capture screenshots for (default: 5)")
-  .option("--verbose", "Show detailed logs for visual capture and other operations")
   .example("  drc analyze https://www.figma.com/design/ABC123/MyDesign")
   .example("  drc analyze ./fixtures/design.json --output report.html")
-  .example("  drc analyze https://www.figma.com/design/ABC123/MyDesign --visual")
+  .example("  drc analyze ./fixtures/design.json --preset strict")
   .action(async (input: string, options: AnalyzeOptions) => {
     try {
       // Load file
@@ -130,110 +121,6 @@ cli
       console.log(formatScoreSummary(scores));
       console.log("=".repeat(50));
 
-      // Visual node screenshots (if --visual and Figma URL)
-      let nodeScreenshots: NodeScreenshot[] | undefined;
-
-      if (options.visual && isFigmaUrl(input)) {
-        const figmaToken = options.token ?? process.env["FIGMA_TOKEN"];
-        if (!figmaToken) {
-          console.warn("--visual requires FIGMA_TOKEN. Skipping screenshots.");
-        } else {
-          const maxNodes = options.visualLimit ?? 5;
-
-          // Collect unique nodeIds with blocking/risk issues, ranked by score
-          const nodeInfoMap = new Map<string, { path: string; score: number; issueCount: number; topSeverity: string }>();
-
-          for (const issue of result.issues) {
-            if (issue.config.severity === "blocking" || issue.config.severity === "risk") {
-              const existing = nodeInfoMap.get(issue.violation.nodeId);
-              if (existing) {
-                existing.score += issue.calculatedScore;
-                existing.issueCount++;
-                if (issue.config.severity === "blocking") {
-                  existing.topSeverity = "blocking";
-                }
-              } else {
-                nodeInfoMap.set(issue.violation.nodeId, {
-                  path: issue.violation.nodePath,
-                  score: issue.calculatedScore,
-                  issueCount: 1,
-                  topSeverity: issue.config.severity,
-                });
-              }
-            }
-          }
-
-          // Sort by score (most negative first), take top N
-          const rankedNodes = [...nodeInfoMap.entries()]
-            .sort((a, b) => a[1].score - b[1].score)
-            .slice(0, maxNodes);
-
-          if (rankedNodes.length > 0) {
-            const totalCandidates = nodeInfoMap.size;
-            console.log(`\nCapturing screenshots for ${rankedNodes.length} nodes${totalCandidates > maxNodes ? ` (top ${maxNodes} of ${totalCandidates})` : ""}...`);
-
-            const client = new FigmaClient({ token: figmaToken });
-            const nodeIdList = rankedNodes.map(([id]) => id);
-
-            try {
-              const imageUrls = await client.getNodeImages(file.fileKey, nodeIdList);
-
-              if (options.verbose) {
-                const urlCount = Object.values(imageUrls).filter(Boolean).length;
-                const nullCount = Object.values(imageUrls).filter((v) => v === null).length;
-                console.log(`  [verbose] Image API returned ${urlCount} URLs, ${nullCount} null`);
-              }
-
-              const screenshots: NodeScreenshot[] = [];
-              for (const [nid, info] of rankedNodes) {
-                const imageUrl = imageUrls[nid];
-                if (!imageUrl) {
-                  if (options.verbose) {
-                    console.log(`  [verbose] Node ${nid}: no image URL (null)`);
-                  }
-                  continue;
-                }
-
-                try {
-                  if (options.verbose) {
-                    console.log(`  [verbose] Node ${nid}: downloading...`);
-                  }
-                  const base64 = await client.fetchImageAsBase64(imageUrl);
-                  if (options.verbose) {
-                    console.log(`  [verbose] Node ${nid}: OK (${Math.round(base64.length / 1024)}KB)`);
-                  }
-                  screenshots.push({
-                    nodeId: nid,
-                    nodePath: info.path,
-                    screenshotBase64: base64,
-                    issueCount: info.issueCount,
-                    topSeverity: info.topSeverity,
-                  });
-                } catch (dlErr) {
-                  if (options.verbose) {
-                    console.warn(`  [verbose] Node ${nid}: download failed — ${dlErr instanceof Error ? dlErr.message : String(dlErr)}`);
-                  }
-                }
-              }
-
-              if (screenshots.length > 0) {
-                nodeScreenshots = screenshots;
-                console.log(`  Captured ${screenshots.length} screenshots.`);
-              } else if (options.verbose) {
-                console.log(`  [verbose] No screenshots downloaded successfully.`);
-              }
-            } catch (err) {
-              console.warn(`  Screenshot capture failed: ${err instanceof Error ? err.message : String(err)}`);
-              if (options.verbose && err instanceof Error && err.stack) {
-                console.warn(`  [verbose] ${err.stack}`);
-              }
-            }
-          }
-        }
-      } else if (options.visual && !isFigmaUrl(input)) {
-        console.warn("--visual requires a Figma URL input. Skipping screenshots.");
-      }
-
       // Generate HTML report
       const now = new Date();
       const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}-${String(now.getMinutes()).padStart(2, "0")}`;
@@ -246,9 +133,7 @@ cli
         mkdirSync(outputDir, { recursive: true });
       }
 
-      const html = generateHtmlReport(file, result, scores,
-        nodeScreenshots ? { nodeScreenshots } : undefined
-      );
+      const html = generateHtmlReport(file, result, scores);
       await writeFile(outputPath, html, "utf-8");
       console.log(`\nReport saved: ${outputPath}`);
 
@@ -337,8 +222,6 @@ cli
 
 interface CalibrateEvaluateOptions {
   output?: string;
-  visual?: boolean;
-  deepCompare?: boolean;
 }
 
 cli
@@ -347,10 +230,7 @@ cli
     "Evaluate conversion results and generate calibration report"
   )
   .option("--output <path>", "Report output path")
-  .option("--visual", "Enable visual comparison (requires visualData in conversion JSON)")
-  .option("--deep-compare", "Use Claude Vision for deep image comparison (requires ANTHROPIC_API_KEY)")
   .example("  drc calibrate-evaluate calibration-analysis.json calibration-conversion.json")
-  .example("  drc calibrate-evaluate analysis.json conversion.json --visual --deep-compare")
   .action(async (analysisJsonPath: string, conversionJsonPath: string, options: CalibrateEvaluateOptions) => {
     try {
       console.log("Running calibration evaluation...");
@@ -365,34 +245,14 @@ cli
         throw new Error(`Conversion file not found: ${conversionPath}`);
       }
 
-      if (options.deepCompare && !process.env["ANTHROPIC_API_KEY"]) {
-        throw new Error(
-          "--deep-compare requires ANTHROPIC_API_KEY environment variable."
-        );
-      }
-
       const { readFile } = await import("node:fs/promises");
       const analysisData = JSON.parse(await readFile(analysisPath, "utf-8"));
       const conversionData = JSON.parse(await readFile(conversionPath, "utf-8"));
 
-      // Run visual comparison if enabled and visual data is present
-      let visualComparisons;
-      if (options.visual && conversionData.visualData) {
-        console.log("Running visual comparison...");
-        const visualInputs: VisualComparisonInput[] = conversionData.visualData;
-        const anthropicKey = process.env["ANTHROPIC_API_KEY"];
-        visualComparisons = await runVisualComparison(visualInputs, {
-          ...(options.deepCompare && { deepCompare: options.deepCompare }),
-          ...(anthropicKey && { anthropicApiKey: anthropicKey }),
-        });
-        console.log(`  Compared ${visualComparisons.length} nodes.`);
-      }
-
       const { evaluationOutput, tuningOutput, report } = runCalibrationEvaluate(
         analysisData,
         conversionData,
-        analysisData.ruleScores,
-        visualComparisons
+        analysisData.ruleScores
       );
 
       const calNow = new Date();
@@ -423,12 +283,6 @@ cli
       console.log(`  Missing rules: ${mismatchCounts["missing-rule"]}`);
       console.log(`  Score adjustments proposed: ${tuningOutput.adjustments.length}`);
       console.log(`  New rule proposals: ${tuningOutput.newRuleProposals.length}`);
-      if (visualComparisons && visualComparisons.length > 0) {
-        const avgSimilarity = visualComparisons.reduce(
-          (sum, vc) => sum + (100 - vc.pixelComparison.pixelDiffPercentage), 0
-        ) / visualComparisons.length;
-        console.log(`  Visual comparisons: ${visualComparisons.length} (avg similarity: ${avgSimilarity.toFixed(1)}%)`);
-      }
       console.log(`\nReport saved: ${outputPath}`);
     } catch (error) {
       console.error(

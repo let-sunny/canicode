@@ -1,7 +1,6 @@
 import type { ScoreReport } from "@/core/scoring.js";
 import type { MismatchCase } from "./contracts/evaluation-agent.js";
 import type { ScoreAdjustment, NewRuleProposal } from "./contracts/tuning-agent.js";
-import type { VisualComparisonRecord } from "./contracts/visual-comparison.js";
 
 export interface CalibrationReportData {
   fileKey: string;
@@ -16,7 +15,6 @@ export interface CalibrationReportData {
   validatedRules: string[];
   adjustments: ScoreAdjustment[];
   newRuleProposals: NewRuleProposal[];
-  visualComparisons?: VisualComparisonRecord[];
 }
 
 /**
@@ -32,9 +30,6 @@ export function generateCalibrationReport(data: CalibrationReportData): string {
   lines.push(renderAdjustmentProposals(data.adjustments));
   lines.push(renderNewRuleProposals(data.newRuleProposals));
   lines.push(renderValidatedRules(data.validatedRules));
-  if (data.visualComparisons && data.visualComparisons.length > 0) {
-    lines.push(renderVisualComparisons(data.visualComparisons));
-  }
   lines.push(renderMismatchDetails(data.mismatches));
   lines.push(renderApplicationGuide(data.adjustments));
 
@@ -169,38 +164,6 @@ function renderMismatchDetails(mismatches: MismatchCase[]): string {
       const scoreInfo = c.currentScore !== undefined ? ` | Score: ${c.currentScore}` : "";
       lines.push(`- **${c.nodePath}** (${c.nodeId})${ruleInfo}${scoreInfo} | Difficulty: ${c.actualDifficulty}`);
       lines.push(`  > ${c.reasoning}`);
-    }
-
-    lines.push("");
-  }
-
-  return lines.join("\n");
-}
-
-function renderVisualComparisons(comparisons: VisualComparisonRecord[]): string {
-  const lines: string[] = [];
-  lines.push("## Visual Comparison");
-  lines.push("");
-
-  for (const vc of comparisons) {
-    const similarity = 100 - vc.pixelComparison.pixelDiffPercentage;
-    const sizeNote = vc.pixelComparison.sizeMatch ? "" : " (size mismatch)";
-    const status = similarity >= 70 ? "GOOD" : similarity >= 40 ? "WARN" : "POOR";
-
-    lines.push(`### ${vc.nodePath} (${vc.nodeId})`);
-    lines.push("");
-    lines.push(`- **Similarity**: ${similarity.toFixed(1)}% [${status}]${sizeNote}`);
-    lines.push(`- **Diff pixels**: ${vc.pixelComparison.diffPixels} / ${vc.pixelComparison.totalPixels}`);
-    lines.push(`- **Dimensions**: ${vc.pixelComparison.width}x${vc.pixelComparison.height}`);
-
-    if (vc.deepComparison) {
-      lines.push(`- **AI Similarity Score**: ${vc.deepComparison.similarityScore}%`);
-      if (vc.deepComparison.diffAreas.length > 0) {
-        lines.push(`- **Diff Areas**: ${vc.deepComparison.diffAreas.join("; ")}`);
-      }
-      if (vc.deepComparison.causeRuleIds.length > 0) {
-        lines.push(`- **Cause Rules**: ${vc.deepComparison.causeRuleIds.map(r => `\`${r}\``).join(", ")}`);
-      }
     }
 
     lines.push("");

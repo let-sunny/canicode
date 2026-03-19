@@ -12,9 +12,4 @@ export {
   runCalibrationAnalyze,
   runCalibrationEvaluate,
 } from "./orchestrator.js";
-export {
-  compareImages,
-  deepCompareImages,
-  runVisualComparison,
-} from "./visual-comparator.js";
 export { ActivityLogger } from "./activity-logger.js";

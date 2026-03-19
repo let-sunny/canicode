@@ -93,7 +93,6 @@ drc analyze https://www.figma.com/design/ABC123/MyDesign --preset strict --outpu
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `FIGMA_TOKEN` | For Figma URLs | Figma personal access token |
-| `ANTHROPIC_API_KEY` | For `--deep-compare` | Anthropic API key for Claude Vision comparison |
 
 ### Output Paths
 
@@ -139,18 +138,6 @@ drc calibrate-evaluate logs/calibration/calibration-analysis.json calibration-co
 
 The output goes to `logs/calibration/` — a human-reviewed report with proposed score changes. Final edits to `rule-config.ts` are always manual.
 
-### Visual comparison
-
-When conversion data includes screenshots, pixelmatch-based visual comparison is available:
-
-```bash
-# Enable visual comparison (deterministic pixel diff, no cost)
-drc calibrate-evaluate analysis.json conversion.json --visual
-
-# Add Claude Vision analysis (requires ANTHROPIC_API_KEY)
-drc calibrate-evaluate analysis.json conversion.json --visual --deep-compare
-```
-
 ## Tech Stack
 
 | Layer | Tool |
@@ -162,7 +149,6 @@ drc calibrate-evaluate analysis.json conversion.json --visual --deep-compare
 | Testing | Vitest |
 | CLI | cac |
 | Build | tsup |
-| Visual Diff | pixelmatch + pngjs |
 
 ## Roadmap
 
@@ -172,7 +158,7 @@ drc calibrate-evaluate analysis.json conversion.json --visual --deep-compare
 
 ### Phase 2 — Calibration Pipeline (done)
 
-4-agent calibration system, 3-step CLI workflow, markdown calibration reports, visual comparison with pixelmatch, optional Claude Vision deep compare, activity logging.
+4-agent calibration system, 3-step CLI workflow, markdown calibration reports, activity logging.
 
 ### Phase 3 — Automated Calibration
 
