@@ -34,5 +34,5 @@ coverage/
 .cache/
 
 # Generated reports
-*.report.html
-fixtures/*.html
+*.html
+!src/**/*.html
