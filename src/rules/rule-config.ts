@@ -28,7 +28,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "missing-responsive-behavior": {
     severity: "blocking",
-    score: -8,
+    score: -7,
     depthWeight: 1.5,
     enabled: true,
   },
@@ -77,7 +77,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ============================================
   "raw-color": {
     severity: "blocking",
-    score: -10,
+    score: -6,
     enabled: true,
   },
   "raw-font": {
@@ -200,7 +200,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "z-index-dependent-layout": {
     severity: "blocking",
-    score: -8,
+    score: -5,
     depthWeight: 1.3,
     enabled: true,
   },
