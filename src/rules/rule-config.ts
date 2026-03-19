@@ -10,7 +10,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ============================================
   "no-auto-layout": {
     severity: "blocking",
-    score: -12,
+    score: -10,
     depthWeight: 1.5,
     enabled: true,
   },
@@ -28,7 +28,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "missing-responsive-behavior": {
     severity: "blocking",
-    score: -10,
+    score: -8,
     depthWeight: 1.5,
     enabled: true,
   },
@@ -162,7 +162,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ============================================
   "default-name": {
     severity: "blocking",
-    score: -8,
+    score: -5,
     enabled: true,
   },
   "non-semantic-name": {

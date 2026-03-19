@@ -113,13 +113,13 @@ Step 2 (conversion) requires a Claude Code session with Figma MCP access, so the
 
 ```bash
 # Step 1: Analyze and output JSON
-drc calibrate analyze ./fixtures/design.json
+drc calibrate-analyze ./fixtures/design.json
 
 # Step 2: Convert nodes in Claude Code session with Figma MCP
 # (produces calibration-conversion.json)
 
 # Step 3: Evaluate and generate report
-drc calibrate evaluate calibration-analysis.json calibration-conversion.json
+drc calibrate-evaluate calibration-analysis.json calibration-conversion.json
 ```
 
 The output is `CALIBRATION_REPORT.md` — a human-reviewed report with proposed score changes. Final edits to `rule-config.ts` are always manual.
@@ -130,10 +130,10 @@ When conversion data includes screenshots, pixelmatch-based visual comparison is
 
 ```bash
 # Enable visual comparison (deterministic pixel diff, no cost)
-drc calibrate evaluate analysis.json conversion.json --visual
+drc calibrate-evaluate analysis.json conversion.json --visual
 
 # Add Claude Vision analysis (requires ANTHROPIC_API_KEY)
-drc calibrate evaluate analysis.json conversion.json --visual --deep-compare
+drc calibrate-evaluate analysis.json conversion.json --visual --deep-compare
 ```
 
 ## Tech Stack
