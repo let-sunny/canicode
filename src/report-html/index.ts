@@ -7,7 +7,6 @@ import { CATEGORIES, CATEGORY_LABELS } from "../contracts/category.js";
 import { SEVERITY_LABELS } from "../contracts/severity.js";
 import type { AnalysisResult, AnalysisIssue } from "../core/rule-engine.js";
 import type { ScoreReport, Grade } from "../core/scoring.js";
-import { gradeToClassName } from "../core/scoring.js";
 import { buildFigmaDeepLink } from "../adapters/figma-url-parser.js";
 
 /**
@@ -169,10 +168,9 @@ function renderGauge(
   const color = gaugeColor(percentage);
   const offset = gaugeDashOffset(percentage);
   const sizeClass = isLarge ? "lh-gauge--large" : "lh-gauge--small";
-  const gradeClass = grade ? ` grade-${gradeToClassName(grade)}` : "";
-  const gradeHtml = grade ? `\n        <text x="60" y="82" class="lh-gauge__grade">${escapeHtml(grade)}</text>` : "";
+  const gradeLabel = grade ? `${label} · ${grade}` : label;
 
-  return `      <div class="lh-gauge ${sizeClass}${gradeHtml ? gradeClass : ""}">
+  return `      <div class="lh-gauge ${sizeClass}">
         <svg viewBox="0 0 120 120" class="lh-gauge__svg">
           <circle class="lh-gauge__track" cx="60" cy="60" r="${GAUGE_RADIUS}" />
           <circle class="lh-gauge__fill" cx="60" cy="60" r="${GAUGE_RADIUS}"
@@ -180,9 +178,9 @@ function renderGauge(
             stroke-dasharray="${GAUGE_CIRCUMFERENCE}"
             stroke-dashoffset="${offset}"
             transform="rotate(-90 60 60)" />
-          <text x="60" y="${grade ? "65" : "68"}" class="lh-gauge__score">${percentage}</text>${gradeHtml}
+          <text x="60" y="68" class="lh-gauge__score">${percentage}</text>
         </svg>
-        <div class="lh-gauge__label">${escapeHtml(label)}</div>
+        <div class="lh-gauge__label">${escapeHtml(gradeLabel)}</div>
       </div>`;
 }
 
@@ -529,12 +527,6 @@ function getStyles(): string {
       dominant-baseline: central;
     }
 
-    .lh-gauge__grade {
-      font-size: 14px;
-      font-weight: 600;
-      fill: #757575;
-      text-anchor: middle;
-    }
 
     .lh-gauge__label {
       font-size: 13px;
