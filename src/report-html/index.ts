@@ -35,6 +35,16 @@ const LH_GRAY = "#c7c7c7";
 const GAUGE_RADIUS = 53;
 const GAUGE_CIRCUMFERENCE = Math.round(2 * Math.PI * GAUGE_RADIUS); // ~333
 
+// Category descriptions for tooltips
+const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
+  layout: "Auto Layout usage, responsive constraints, nesting depth, absolute positioning",
+  token: "Design token binding for colors, fonts, shadows, spacing grid consistency",
+  component: "Component reuse, detached instances, variant coverage, property usage",
+  naming: "Semantic layer names, naming conventions, default/auto-generated names",
+  "ai-readability": "Structure clarity for AI code generation, z-index reliance, empty frames",
+  "handoff-risk": "Hardcoded values, text truncation handling, image placeholders, dev status",
+};
+
 // Severity ordering for display (highest first)
 const SEVERITY_ORDER: Severity[] = ["blocking", "risk", "missing-info", "suggestion"];
 
@@ -107,9 +117,11 @@ ${renderGauge(scores.overall.percentage, "Overall", true, scores.overall.grade)}
     <section class="lh-category-gauges">
 ${CATEGORIES.map(cat => {
     const catScore = scores.byCategory[cat];
-    return `      <div class="lh-gauge-category">
+    const desc = CATEGORY_DESCRIPTIONS[cat];
+    return `      <div class="lh-gauge-category lh-tooltip-wrap">
 ${renderGauge(catScore.percentage, CATEGORY_LABELS[cat], false)}
         <div class="lh-gauge-issues">${catScore.issueCount} issues</div>
+        <div class="lh-tooltip">${escapeHtml(desc)}</div>
       </div>`;
   }).join("\n")}
     </section>
@@ -280,7 +292,10 @@ function renderCategoryDetail(
                 <text x="60" y="68" class="lh-gauge__score--inline">${catScore.percentage}</text>
               </svg>
             </div>
-            <h2 class="lh-category-name">${CATEGORY_LABELS[category]}</h2>
+            <div class="lh-category-name-wrap">
+              <h2 class="lh-category-name">${CATEGORY_LABELS[category]}</h2>
+              <span class="lh-category-desc">${escapeHtml(CATEGORY_DESCRIPTIONS[category])}</span>
+            </div>
             <span class="lh-category-count" style="color: ${color}">${catScore.issueCount} issues</span>
             <span class="lh-category-chevron"></span>
           </div>
@@ -489,6 +504,44 @@ function getStyles(): string {
       font-size: 11px;
       color: #757575;
       margin-top: -4px;
+    }
+
+    /* ===== Tooltip ===== */
+    .lh-tooltip-wrap {
+      position: relative;
+      cursor: default;
+    }
+
+    .lh-tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #303030;
+      color: #fff;
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 8px 12px;
+      border-radius: 6px;
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .lh-tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #303030;
+    }
+
+    .lh-tooltip-wrap:hover .lh-tooltip {
+      display: block;
     }
 
     /* ===== SVG Gauge ===== */
@@ -750,11 +803,22 @@ function getStyles(): string {
       height: 40px;
     }
 
+    .lh-category-name-wrap {
+      flex: 1;
+    }
+
     .lh-category-name {
       font-size: 16px;
       font-weight: 600;
       color: #3d3d3d;
-      flex: 1;
+    }
+
+    .lh-category-desc {
+      display: block;
+      font-size: 12px;
+      font-weight: 400;
+      color: #757575;
+      margin-top: 2px;
     }
 
     .lh-category-count {
