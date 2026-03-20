@@ -31,6 +31,18 @@ const cli = cac("drc");
 
 type LoadMode = "mcp" | "api" | "auto";
 
+const MAX_NODES_WITHOUT_SCOPE = 500;
+
+function countNodes(node: { children?: readonly unknown[] | undefined }): number {
+  let count = 1;
+  if (node.children) {
+    for (const child of node.children) {
+      count += countNodes(child as { children?: readonly unknown[] | undefined });
+    }
+  }
+  return count;
+}
+
 interface AnalyzeOptions {
   preset?: Preset;
   output?: string;
@@ -195,14 +207,23 @@ cli
       // Load file
       const { file, nodeId } = await loadFile(input, options.token, mode);
 
-      // Warn if analyzing full file without node-id
-      if (isFigmaUrl(input) && !nodeId) {
-        console.warn("\nWarning: No node-id specified. Analyzing entire file may produce noisy results.");
+      // Block unscoped analysis on large files
+      const totalNodes = countNodes(file.document);
+      if (!nodeId && totalNodes > MAX_NODES_WITHOUT_SCOPE) {
+        throw new Error(
+          `Too many nodes (${totalNodes}) for unscoped analysis. ` +
+          `Max ${MAX_NODES_WITHOUT_SCOPE} nodes without a node-id scope.\n\n` +
+          `Add ?node-id=XXX to the Figma URL to target a specific section, or use a scoped fixture.\n` +
+          `Example: drc analyze "https://www.figma.com/design/.../MyDesign?node-id=1-234"`
+        );
+      }
+      if (!nodeId && totalNodes > 100) {
+        console.warn(`\nWarning: Analyzing ${totalNodes} nodes without scope. Results may be noisy.`);
         console.warn("Tip: Add ?node-id=XXX to analyze a specific section.\n");
       }
 
       console.log(`\nAnalyzing: ${file.name}`);
-      console.log(`Nodes: analyzing...`);
+      console.log(`Nodes: ${totalNodes}`);
 
       // Build analysis options
       const analyzeOptions = {
@@ -519,18 +540,6 @@ cli
 
       console.log(`Fixture saved: ${outputPath}`);
       console.log(`  File: ${file.name}`);
-      console.log(`  Nodes: counting...`);
-
-      // Count nodes
-      function countNodes(node: AnalysisFile["document"]): number {
-        let count = 1;
-        if ("children" in node && node.children) {
-          for (const child of node.children) {
-            count += countNodes(child);
-          }
-        }
-        return count;
-      }
       console.log(`  Nodes: ${countNodes(file.document)}`);
     } catch (error) {
       console.error(
