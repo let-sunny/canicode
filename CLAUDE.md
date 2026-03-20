@@ -38,18 +38,14 @@ src/
 
 **`drc calibrate-run`**
 - Role: Automated rule score improvement (internal dev tool, not user-facing)
-- Input: Figma URL
+- Input: Figma URL or JSON fixture
 - Pipeline:
   1. Analysis Agent: collect issues and scores
-  2. Conversion Agent: generate code for nodes via Claude API
+  2. Conversion Agent: generate code for nodes (via Anthropic API or Claude Code)
   3. Evaluation Agent: compare conversion difficulty vs rule scores
   4. Tuning Agent: propose score adjustments
-- Output: analysis results in `logs/calibration/`
-
-**`drc calibrate-run`** (auto-generates HTML report)
-- Role: Export calibration results as a user-facing HTML report
-- Output: HTML report in `reports/`
-- Content: Figma original screenshot + Claude implementation screenshot side by side
+- Output: markdown report + data in `logs/calibration/`, debate log in `logs/activity/`
+- No HTML report — calibration is data-only
 
 **`/calibrate-loop` (Claude Code command)**
 - Role: Autonomous rule-config.ts improvement via 3-agent debate

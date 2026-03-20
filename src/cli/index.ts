@@ -346,7 +346,6 @@ interface CalibrateRunOptions {
   token?: string;
   maxNodes?: number;
   sampling?: string;
-  exportReport?: boolean;
 }
 
 cli
@@ -358,9 +357,8 @@ cli
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
   .option("--max-nodes <count>", "Max nodes to convert", { default: 5 })
   .option("--sampling <strategy>", "Sampling strategy (all | top-issues | random)", { default: "top-issues" })
-  .option("--export-report", "Generate HTML report in reports/")
   .example("  drc calibrate-run https://www.figma.com/design/ABC123/MyDesign")
-  .example("  drc calibrate-run fixtures/sample.json --export-report")
+  .example("  drc calibrate-run fixtures/sample.json --max-nodes 5")
   .action(async (input: string, options: CalibrateRunOptions) => {
     try {
       const anthropicKey = process.env["ANTHROPIC_API_KEY"];
@@ -376,9 +374,6 @@ cli
       console.log(`  Input: ${input}`);
       console.log(`  Max nodes: ${options.maxNodes ?? 5}`);
       console.log(`  Sampling: ${options.sampling ?? "top-issues"}`);
-      if (options.exportReport) {
-        console.log("  HTML report: enabled");
-      }
       console.log("");
 
       const calNow = new Date();
@@ -412,10 +407,7 @@ cli
           ...(figmaToken && { token: figmaToken }),
         },
         executor,
-        {
-          enableActivityLog: true,
-          ...(options.exportReport && { exportHtmlReport: true }),
-        }
+        { enableActivityLog: true }
       );
 
       if (result.status === "failed") {
@@ -428,9 +420,6 @@ cli
       console.log(`  Mismatches: ${result.mismatches.length}`);
       console.log(`  Adjustments proposed: ${result.adjustments.length}`);
       console.log(`  Report: ${result.reportPath}`);
-      if (result.htmlReportPath) {
-        console.log(`  HTML report: ${result.htmlReportPath}`);
-      }
       if (result.logPath) {
         console.log(`  Activity log: ${result.logPath}`);
       }
