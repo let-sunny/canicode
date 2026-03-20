@@ -5,6 +5,7 @@ import { loadFigmaFileFromJson } from "../adapters/figma-file-loader.js";
 import { transformFigmaResponse } from "../adapters/figma-transformer.js";
 import { parseFigmaUrl } from "../adapters/figma-url-parser.js";
 import { parseMcpMetadataXml } from "../adapters/figma-mcp-adapter.js";
+import { getFigmaToken } from "./config-store.js";
 import type { AnalysisFile } from "../contracts/figma-node.js";
 
 export type LoadMode = "mcp" | "api" | "auto";
@@ -83,10 +84,10 @@ async function loadFromApi(
     console.log(`Target node: ${nodeId}`);
   }
 
-  const figmaToken = token ?? process.env["FIGMA_TOKEN"];
+  const figmaToken = token ?? getFigmaToken();
   if (!figmaToken) {
     throw new Error(
-      "FIGMA_TOKEN required. Run 'aiready init --token YOUR_TOKEN' or set FIGMA_TOKEN env var."
+      "Figma token required. Run 'aiready init --token YOUR_TOKEN' or set FIGMA_TOKEN env var."
     );
   }
 

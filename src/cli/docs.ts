@@ -86,11 +86,12 @@ export function printDocsInstall(): void {
 INSTALLATION GUIDE
 
 SETUP (required first)
-  aiready init --token YOUR_TOKEN   Save Figma API token to .env
+  aiready init --token YOUR_TOKEN   Save Figma token to ~/.config/aiready/
   aiready init --mcp                Show MCP bridge setup instructions
   aiready init                      See all options
 
   Get token: figma.com > Settings > Personal access tokens
+  Token is stored in ~/.config/aiready/config.json (not in project dir)
 
 CLI
   npm install -g aiready

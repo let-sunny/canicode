@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { config } from "dotenv";
@@ -13,6 +13,7 @@ import type { AnalysisFile } from "../contracts/figma-node.js";
 import type { RuleConfig, RuleId } from "../contracts/rule.js";
 import { analyzeFile } from "../core/rule-engine.js";
 import { loadFile, isFigmaUrl, isJsonFile, type LoadMode } from "../core/loader.js";
+import { getFigmaToken, setFigmaToken, getConfigPath } from "../core/config-store.js";
 import { calculateScores, formatScoreSummary } from "../core/scoring.js";
 import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../rules/rule-config.js";
 import { ruleRegistry } from "../rules/rule-registry.js";
@@ -380,7 +381,7 @@ cli
   .option("--sampling <strategy>", "Sampling strategy (all | top-issues | random)", { default: "top-issues" })
   .action(async (input: string, options: CalibrateRunOptions) => {
     try {
-      const figmaToken = options.token ?? process.env["FIGMA_TOKEN"];
+      const figmaToken = options.token ?? getFigmaToken();
 
       if (isFigmaUrl(input) && !parseFigmaUrl(input).nodeId) {
         console.warn("\nWarning: No node-id specified. Calibrating entire file may produce noisy results.");
@@ -512,26 +513,14 @@ interface InitOptions {
 
 cli
   .command("init", "Set up aiready (Figma token or MCP)")
-  .option("--token <token>", "Save Figma API token to .env")
+  .option("--token <token>", "Save Figma API token to ~/.config/aiready/")
   .option("--mcp", "Show Figma MCP setup instructions")
-  .action(async (options: InitOptions) => {
+  .action((options: InitOptions) => {
     try {
       if (options.token) {
-        const envPath = resolve(".env");
-        let envContent = "";
-        if (existsSync(envPath)) {
-          envContent = readFileSync(envPath, "utf-8");
-        }
+        setFigmaToken(options.token);
 
-        if (envContent.includes("FIGMA_TOKEN=")) {
-          envContent = envContent.replace(/FIGMA_TOKEN=.*/, `FIGMA_TOKEN=${options.token}`);
-        } else {
-          const sep = envContent.length > 0 && !envContent.endsWith("\n") ? "\n" : "";
-          envContent = envContent + sep + `FIGMA_TOKEN=${options.token}\n`;
-        }
-        await writeFile(envPath, envContent, "utf-8");
-
-        console.log(`FIGMA_TOKEN saved to .env`);
+        console.log(`Figma token saved to ${getConfigPath()}`);
         console.log(`\nYou can now run:`);
         console.log(`  aiready analyze "https://www.figma.com/design/..."`);
         return;
@@ -543,7 +532,7 @@ cli
         console.log(`   claude mcp add figma -- npx -y @anthropic-ai/claude-code-mcp-figma\n`);
         console.log(`2. Add aiready MCP server:`);
         console.log(`   claude mcp add --transport stdio aiready npx aiready-mcp\n`);
-        console.log(`3. Set FIGMA_TOKEN for the MCP server:`);
+        console.log(`3. Set Figma token (for MCP server's REST API fallback):`);
         console.log(`   aiready init --token YOUR_TOKEN\n`);
         console.log(`4. Use in Claude Code:`);
         console.log(`   "Analyze this Figma design: https://www.figma.com/design/..."`);
@@ -585,7 +574,7 @@ cli.help((sections) => {
     {
       title: "\nSetup",
       body: [
-        `  aiready init --token <token>   Save Figma API token to .env`,
+        `  aiready init --token <token>   Save Figma token to ~/.config/aiready/`,
         `  aiready init --mcp             Show MCP setup instructions`,
       ].join("\n"),
     },
