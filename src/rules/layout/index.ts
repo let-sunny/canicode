@@ -64,10 +64,40 @@ const absolutePositionInAutoLayoutDef: RuleDefinition = {
   fix: "Remove absolute positioning or use proper Auto Layout alignment",
 };
 
+/**
+ * Name patterns that indicate intentional absolute positioning
+ * (badges, close buttons, decorations, overlays, floating elements)
+ */
+const INTENTIONAL_ABSOLUTE_PATTERNS = /^(badge|close|dismiss|overlay|float|fab|dot|indicator|corner|decoration|tag|status|notification|x|icon[-_ ]?(close|dismiss|x)|btn[-_ ]?(close|dismiss))/i;
+
+/**
+ * Check if a node is small relative to its parent (decoration/badge pattern).
+ * Returns true if the node is less than 25% of the parent's width AND height.
+ */
+function isSmallRelativeToParent(node: AnalysisNode, parent: AnalysisNode): boolean {
+  const nodeBB = node.absoluteBoundingBox;
+  const parentBB = parent.absoluteBoundingBox;
+  if (!nodeBB || !parentBB) return false;
+  if (parentBB.width === 0 || parentBB.height === 0) return false;
+
+  const widthRatio = nodeBB.width / parentBB.width;
+  const heightRatio = nodeBB.height / parentBB.height;
+  return widthRatio < 0.25 && heightRatio < 0.25;
+}
+
 const absolutePositionInAutoLayoutCheck: RuleCheckFn = (node, context) => {
   if (!context.parent) return null;
   if (!hasAutoLayout(context.parent)) return null;
   if (node.layoutPositioning !== "ABSOLUTE") return null;
+
+  // Exception: intentional name patterns (badge, close, overlay, etc.)
+  if (INTENTIONAL_ABSOLUTE_PATTERNS.test(node.name)) return null;
+
+  // Exception: small decoration relative to parent (< 25% size)
+  if (isSmallRelativeToParent(node, context.parent)) return null;
+
+  // Exception: inside a component definition (designer's intentional layout)
+  if (context.parent.type === "COMPONENT") return null;
 
   return {
     ruleId: absolutePositionInAutoLayoutDef.id,
