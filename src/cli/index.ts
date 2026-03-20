@@ -27,6 +27,7 @@ import {
   runCalibrationEvaluate,
 } from "../agents/orchestrator.js";
 import { parseMcpMetadataXml } from "../adapters/figma-mcp-adapter.js";
+import { handleDocs } from "./docs.js";
 
 // Import rules to register them
 import "../rules/index.js";
@@ -624,7 +625,45 @@ cli
     }
   });
 
-cli.help();
+// ============================================
+// Documentation command
+// ============================================
+
+cli
+  .command("docs [topic]", "Show documentation (topics: rules, config, install)")
+  .action((topic?: string) => {
+    handleDocs(topic);
+  });
+
+cli.help((sections) => {
+  sections.push(
+    {
+      title: "\nCustomization",
+      body: [
+        `  Run 'aiready docs' for full guide`,
+        `  --custom-rules <path>   Add custom rules`,
+        `  --config <path>         Override rule settings`,
+      ].join("\n"),
+    },
+    {
+      title: "\nExamples",
+      body: [
+        `  $ aiready analyze "https://www.figma.com/design/..."`,
+        `  $ aiready analyze "https://www.figma.com/design/..." --preset strict`,
+        `  $ aiready analyze "https://www.figma.com/design/..." --config ./my-config.json`,
+        `  $ aiready analyze "https://www.figma.com/design/..." --custom-rules ./my-rules.json`,
+      ].join("\n"),
+    },
+    {
+      title: "\nInstallation",
+      body: [
+        `  CLI:     npm install -g aiready`,
+        `  MCP:     claude mcp add --transport stdio aiready npx aiready-mcp`,
+        `  Skills:  github.com/let-sunny/aiready`,
+      ].join("\n"),
+    },
+  );
+});
 cli.version("0.1.0");
 
 cli.parse();
