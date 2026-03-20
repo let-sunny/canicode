@@ -10,7 +10,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ============================================
   "no-auto-layout": {
     severity: "blocking",
-    score: -5,
+    score: -7,
     depthWeight: 1.5,
     enabled: true,
   },
@@ -28,7 +28,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "missing-responsive-behavior": {
     severity: "risk",
-    score: -3,
+    score: -4,
     depthWeight: 1.5,
     enabled: true,
   },
