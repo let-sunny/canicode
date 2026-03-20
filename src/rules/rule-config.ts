@@ -77,7 +77,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ============================================
   "raw-color": {
     severity: "missing-info",
-    score: -4,
+    score: -3,
     enabled: true,
   },
   "raw-font": {
@@ -194,13 +194,13 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ============================================
   "ambiguous-structure": {
     severity: "blocking",
-    score: -7,
+    score: -10,
     depthWeight: 1.3,
     enabled: true,
   },
   "z-index-dependent-layout": {
-    severity: "blocking",
-    score: -3,
+    severity: "risk",
+    score: -4,
     depthWeight: 1.3,
     enabled: true,
   },
