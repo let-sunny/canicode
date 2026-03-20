@@ -1,22 +1,20 @@
 # AIReady
 
-A CLI tool that analyzes Figma design files and scores how development-friendly and AI-friendly they are.
+Analyze Figma designs. Score how dev-friendly and AI-friendly they are. Get actionable issues before writing code.
 
-> **Note:** This project was previously named `design-readiness-checker`. The GitHub repository is planned to be renamed from `let-sunny/design-readiness-checker` to `let-sunny/aiready`.
+```bash
+npm install -g aiready
+aiready init --token YOUR_FIGMA_TOKEN
+aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
+```
 
-## Problem
+> Run `aiready docs setup` for the full setup guide — CLI, MCP Server, Claude Skills, and all options.
 
-Designers hand off Figma files. Developers open them and immediately start guessing — is this auto-layout or absolute? Are these colors from a token system or hardcoded hex values? Will this layout break on different screen sizes?
-
-These questions slow down implementation, produce inconsistent code, and make AI-assisted code generation unreliable. The gap between "looks right in Figma" and "actually implementable" is real, but invisible until someone tries to write the code.
-
-AIReady makes that gap measurable. It scans a Figma file's structure and produces a concrete score with specific, actionable issues — before any code is written.
+---
 
 ## How It Works
 
-### 39 Rules, 4 Severity Levels
-
-Every node in the Figma tree is checked against 39 rules across 6 categories:
+39 rules across 6 categories check every node in the Figma tree:
 
 | Category | Rules | What it checks |
 |----------|-------|----------------|
@@ -27,87 +25,61 @@ Every node in the Figma tree is checked against 39 rules across 6 categories:
 | AI Readability | 5 | Structure clarity, z-index reliance, empty frames |
 | Handoff Risk | 5 | Hardcoded values, truncation handling, placeholder images |
 
-Each issue is classified by severity:
+Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggestion**.
 
-- **Blocking** — Cannot implement correctly without fixing. Direct impact on screen reproduction.
-- **Risk** — Implementable now, but will break or increase cost later.
-- **Missing Info** — Information is absent, forcing developers to guess.
-- **Suggestion** — Not immediately problematic, but improves systemization.
+Scores use density + diversity weighting per category, combined into an overall grade (A/B/C/D/F).
 
-### Density-Based Scoring
+---
 
-The score is not a simple issue count. It uses a density + diversity algorithm:
+## Getting Started
 
-```
-Final Score = (Density Score × 0.7) + (Diversity Score × 0.3)
+Three ways to use AIReady. Pick one.
 
-Density Score  = 100 - (weighted issue count / node count) × 100
-Diversity Score = (1 - unique violated rules / total rules in category) × 100
-```
-
-Severity weights issues — a single blocking issue counts 3× more than a suggestion. Scores are calculated per category and combined into an overall grade (A/B/C/D/F).
-
-### Scoped Analysis
-
-Pass a Figma URL with a `node-id` parameter to analyze a specific frame or component instead of the entire file. Useful for focusing on a single screen or section.
-
-## Installation
+### CLI (standalone)
 
 ```bash
-git clone https://github.com/let-sunny/aiready.git
-cd aiready
-pnpm install
-pnpm build
-```
-
-Requires Node.js >= 18 and pnpm.
-
-## Usage
-
-```bash
-# Auto-detect: tries MCP first, falls back to REST API
-aiready analyze https://www.figma.com/design/ABC123/MyDesign
-
-# Explicit MCP mode (no FIGMA_TOKEN needed, requires Claude Code with Figma MCP)
-aiready analyze https://www.figma.com/design/ABC123/MyDesign --mcp
-
-# Explicit REST API mode (requires FIGMA_TOKEN)
-aiready analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN
-
-# Scoped to a specific node
+npm install -g aiready
+aiready init --token figd_xxxxxxxxxxxxx    # saved to ~/.config/aiready/
 aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
-
-# From a JSON fixture
-aiready analyze ./fixtures/design.json --output report.html
-
-# With a preset
-aiready analyze https://www.figma.com/design/ABC123/MyDesign --preset strict
-
-# With screenshot comparison (coming soon, requires ANTHROPIC_API_KEY)
-aiready analyze https://www.figma.com/design/ABC123/MyDesign --screenshot
 ```
 
-Reports are saved to `reports/YYYY-MM-DD-HH-mm-<filekey>.html`.
+### MCP Server (Claude Code)
 
-### Data Source
+```bash
+claude mcp add figma -- npx -y @anthropic-ai/claude-code-mcp-figma
+claude mcp add --transport stdio aiready npx aiready-mcp
+```
+Then ask Claude Code: *"Analyze this Figma design: https://www.figma.com/design/..."*
+
+### Claude Skills (lightweight)
+
+```bash
+cp -r path/to/aiready/.claude/skills/aiready .claude/skills/
+```
+Then in Claude Code: `/aiready analyze <url>`
+
+> Full setup details for each method: `aiready docs setup`
+
+---
+
+<details>
+<summary><strong>Data Sources</strong></summary>
 
 | Flag | Source | Token required |
 |------|--------|----------------|
-| (none) | Auto-detect: MCP first, then REST API | FIGMA_TOKEN for fallback |
+| (none) | Auto-detect: MCP first, then REST API | For API fallback |
 | `--mcp` | Figma MCP via Claude Code | None |
-| `--api` | Figma REST API | FIGMA_TOKEN |
+| `--api` | Figma REST API | Yes |
 
-### Save Fixture
+Token priority:
+1. `--token` flag (one-time override)
+2. `FIGMA_TOKEN` env var (CI/CD)
+3. `~/.config/aiready/config.json` (`aiready init`)
 
-Save Figma file data as a JSON fixture for offline analysis:
+</details>
 
-```bash
-aiready save-fixture https://www.figma.com/design/ABC123/MyDesign
-aiready save-fixture https://www.figma.com/design/ABC123/MyDesign --mcp
-aiready save-fixture https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN
-```
-
-### Presets
+<details>
+<summary><strong>Presets</strong></summary>
 
 | Preset | Behavior |
 |--------|----------|
@@ -116,84 +88,128 @@ aiready save-fixture https://www.figma.com/design/ABC123/MyDesign --api --token 
 | `ai-ready` | Boosts structure and naming rule weights by 150% |
 | `strict` | Enables all rules, increases all scores by 150% |
 
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `FIGMA_TOKEN` | For Figma URLs | Figma personal access token |
-| `ANTHROPIC_API_KEY` | For `--screenshot` | Anthropic API key for screenshot comparison |
-
-## Distribution
-
-### CLI
-
 ```bash
-npm install -g aiready
-aiready analyze https://www.figma.com/design/ABC123/MyDesign
+aiready analyze <url> --preset strict
 ```
 
-### MCP Server
+</details>
 
-Add AIReady as an MCP server in Claude Code:
+<details>
+<summary><strong>Custom Rules</strong></summary>
 
-```bash
-claude mcp add --transport stdio aiready npx aiready-mcp
-```
-
-Once added, Claude Code can use the `analyze` and `list-rules` tools to analyze Figma designs.
-
-### Claude Skills
-
-Copy the `.claude/skills/aiready/` directory from this repository into your project's `.claude/skills/` directory:
+Add project-specific checks via a JSON file:
 
 ```bash
-cp -r path/to/aiready/.claude/skills/aiready .claude/skills/
+aiready analyze <url> --custom-rules ./my-rules.json
 ```
 
-## Extensibility
+```json
+[
+  {
+    "id": "icon-missing-component",
+    "category": "component",
+    "severity": "blocking",
+    "score": -10,
+    "prompt": "Check if this node is an icon and is not a component.",
+    "why": "Icons that are not components cannot be reused.",
+    "impact": "Developers will hardcode icons.",
+    "fix": "Convert to a component and publish to the library."
+  }
+]
+```
 
-### Custom Rules
+See [`examples/custom-rules.json`](examples/custom-rules.json) | Run `aiready docs rules`
 
-Add new analysis rules via a JSON file. Each rule defines what to check, why it matters, and how to fix it.
+</details>
+
+<details>
+<summary><strong>Config Overrides</strong></summary>
+
+Override built-in rule scores, severity, and global settings:
 
 ```bash
-aiready analyze ./fixtures/design.json --custom-rules ./my-rules.json
+aiready analyze <url> --config ./my-config.json
 ```
 
-See [`examples/custom-rules.json`](examples/custom-rules.json) for the format.
-
-### Config Overrides
-
-Override built-in rule scores, severity levels, and global settings without modifying source code.
-
-```bash
-aiready analyze ./fixtures/design.json --config ./my-config.json
+```json
+{
+  "gridBase": 4,
+  "colorTolerance": 5,
+  "rules": {
+    "no-auto-layout": { "score": -15, "severity": "blocking" },
+    "default-name": { "enabled": false }
+  }
+}
 ```
 
-See [`examples/config.json`](examples/config.json) for the format.
-
-Config options:
 | Option | Description |
 |--------|-------------|
 | `gridBase` | Spacing grid unit (default: 8) |
 | `colorTolerance` | Color difference tolerance (default: 10) |
-| `excludeNodeTypes` | Node types to skip during analysis |
+| `excludeNodeTypes` | Node types to skip |
 | `excludeNodeNames` | Node name patterns to skip |
 | `rules.<id>.score` | Override rule score |
 | `rules.<id>.severity` | Override rule severity |
 | `rules.<id>.enabled` | Enable/disable a rule |
 
-## Calibration (Internal)
+See [`examples/config.json`](examples/config.json) | Run `aiready docs config`
 
-Rule scores are validated against actual code conversion difficulty via a calibration pipeline. This runs inside Claude Code using the `/calibrate-loop` command — it is not exposed as a CLI command.
+</details>
 
-The pipeline uses 4 subagents:
-1. **Runner** — Analyzes a fixture and extracts issue data
-2. **Converter** — Converts flagged Figma nodes to code via Figma MCP
-3. **Critic** — Reviews proposed score adjustments
-4. **Arbitrator** — Makes final decisions and commits changes
+<details>
+<summary><strong>Scoring Algorithm</strong></summary>
 
-## Tech Stack
+```
+Final Score = (Density Score × 0.7) + (Diversity Score × 0.3)
+
+Density Score  = 100 - (weighted issue count / node count) × 100
+Diversity Score = (1 - unique violated rules / total rules in category) × 100
+```
+
+Severity weights issues — a single blocking issue counts 3x more than a suggestion. Scores are calculated per category and combined into an overall grade (A/B/C/D/F).
+
+</details>
+
+<details>
+<summary><strong>MCP Server Details</strong></summary>
+
+The `aiready-mcp` server exposes two tools: `analyze` and `list-rules`.
+
+**Route A — Figma MCP relay (no token):**
+
+```
+Claude Code → Figma MCP get_metadata → XML node tree
+Claude Code → aiready MCP analyze(designData: XML) → result
+```
+
+**Route B — REST API direct (token):**
+
+```
+Claude Code → aiready MCP analyze(input: URL) → internal fetch → result
+```
+
+Route A requires two MCP servers (figma + aiready). Route B requires one + a saved token.
+
+The `analyze` tool accepts `designData` (XML/JSON from Figma MCP) or `input` (Figma URL / fixture path). When both are provided, `designData` takes priority.
+
+</details>
+
+<details>
+<summary><strong>Save Fixture</strong></summary>
+
+Save Figma file data as JSON for offline analysis:
+
+```bash
+aiready save-fixture https://www.figma.com/design/ABC123/MyDesign
+aiready save-fixture https://www.figma.com/design/ABC123/MyDesign --mcp
+```
+
+</details>
+
+---
+
+<details>
+<summary><strong>Tech Stack</strong></summary>
 
 | Layer | Tool |
 |-------|------|
@@ -205,23 +221,46 @@ The pipeline uses 4 subagents:
 | CLI | cac |
 | Build | tsup |
 
+</details>
+
+<details>
+<summary><strong>Calibration (Internal)</strong></summary>
+
+Rule scores are validated against actual code conversion difficulty via a calibration pipeline. This runs inside Claude Code using `/calibrate-loop` — not exposed as a CLI command.
+
+The pipeline uses 4 subagents:
+1. **Runner** — Analyzes a fixture and extracts issue data
+2. **Converter** — Converts flagged Figma nodes to code via Figma MCP
+3. **Critic** — Reviews proposed score adjustments
+4. **Arbitrator** — Makes final decisions and commits changes
+
+</details>
+
+<details>
+<summary><strong>Development</strong></summary>
+
+```bash
+git clone https://github.com/let-sunny/aiready.git
+cd aiready
+pnpm install
+pnpm build
+```
+
+```bash
+pnpm dev        # watch mode
+pnpm test       # run tests
+pnpm lint       # type check
+```
+
+</details>
+
 ## Roadmap
 
-### Phase 1 — Core Analysis (done)
-
-39 rules, density-based scoring, HTML reports, Figma API integration, presets, scoped analysis.
-
-### Phase 2 — Calibration Pipeline (done)
-
-4-agent calibration system, automated score tuning via Claude Code subagents with Figma MCP, `/calibrate-loop` autonomous debate loop.
-
-### Phase 3 — Screenshot Comparison
-
-`--screenshot` flag: Figma original screenshot next to AI-generated code rendered via Playwright, per node. Visual diff in the HTML report.
-
-### Phase 4 — Ecosystem (in progress)
-
-Plugin system for custom rules. MCP server for Claude Code integration. Claude Skills. Figma plugin for in-editor feedback. Integration with design system documentation tools.
+- [x] **Phase 1** — 39 rules, density-based scoring, HTML reports, presets, scoped analysis
+- [x] **Phase 2** — 4-agent calibration pipeline, `/calibrate-loop` debate loop
+- [x] **Phase 3** — Custom rules, config overrides, MCP server, Claude Skills
+- [ ] **Phase 4** — Screenshot comparison (Figma vs AI-generated code, visual diff)
+- [ ] **Phase 5** — Figma plugin for in-editor feedback
 
 ## License
 

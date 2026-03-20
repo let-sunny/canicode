@@ -6,11 +6,108 @@ export function printDocsIndex(): void {
   console.log(`
 AIREADY DOCUMENTATION
 
+  aiready docs setup    Full setup guide (CLI, MCP, Skills)
   aiready docs rules    Custom rules guide + example
   aiready docs config   Config override guide + example
-  aiready docs install  Installation guide (CLI, MCP, Skills)
 
 Full documentation: github.com/let-sunny/aiready#readme
+`.trimStart());
+}
+
+export function printDocsSetup(): void {
+  console.log(`
+AIREADY SETUP GUIDE
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 1. CLI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Install:
+    npm install -g aiready
+
+  Setup:
+    aiready init --token figd_xxxxxxxxxxxxx
+    (saved to ~/.config/aiready/config.json)
+
+  Use:
+    aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
+
+  Data source flags:
+    --api     REST API (uses saved token)
+    --mcp     Figma MCP bridge (Claude Code only, no token needed)
+    (none)    Auto: try MCP first, fallback to API
+
+  Options:
+    --preset strict|relaxed|dev-friendly|ai-ready
+    --config ./my-config.json
+    --custom-rules ./my-rules.json
+
+  Output:
+    reports/YYYY-MM-DD-HH-mm-<filekey>.html
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 2. MCP SERVER (Claude Code integration)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Route A — Figma MCP relay (no token needed):
+
+    Install (once):
+      claude mcp add figma -- npx -y @anthropic-ai/claude-code-mcp-figma
+      claude mcp add --transport stdio aiready npx aiready-mcp
+
+    Flow:
+      Claude Code
+        -> Figma MCP get_metadata(fileKey, nodeId) -> XML node tree
+        -> aiready MCP analyze(designData: XML) -> analysis result
+
+  Route B — REST API direct (token needed):
+
+    Install (once):
+      claude mcp add --transport stdio aiready npx aiready-mcp
+      aiready init --token figd_xxxxxxxxxxxxx
+
+    Flow:
+      Claude Code
+        -> aiready MCP analyze(input: URL) -> internal REST API fetch -> result
+
+  Use (both routes — just ask Claude Code):
+    "Analyze this Figma design: https://www.figma.com/design/..."
+
+  Route A vs B:
+    A: No token, 2 MCP servers, Claude orchestrates 2 calls
+    B: Token needed, 1 MCP server, aiready fetches directly
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 3. CLAUDE SKILLS (lightweight)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Install:
+    cp -r path/to/aiready/.claude/skills/aiready .claude/skills/
+
+  Setup (for REST API):
+    npx aiready init --token figd_xxxxxxxxxxxxx
+
+  Use (in Claude Code):
+    /aiready analyze "https://www.figma.com/design/..."
+
+  Runs CLI under the hood — all flags work (--mcp, --api, --preset, etc.)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ TOKEN PRIORITY (all methods)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. --token flag (one-time override)
+  2. FIGMA_TOKEN env var (CI/CD)
+  3. ~/.config/aiready/config.json (aiready init)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ WHICH ONE SHOULD I USE?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  CI/CD, automation        -> CLI + FIGMA_TOKEN env var
+  Claude Code, interactive -> MCP Server (Route A)
+  No token, Claude Code    -> MCP Server (Route A)
+  Quick trial              -> Skills
 `.trimStart());
 }
 
@@ -81,47 +178,11 @@ USAGE
 `.trimStart());
 }
 
-export function printDocsInstall(): void {
-  console.log(`
-INSTALLATION GUIDE
-
-SETUP (required first)
-  aiready init --token YOUR_TOKEN   Save Figma token to ~/.config/aiready/
-  aiready init --mcp                Show MCP bridge setup instructions
-  aiready init                      See all options
-
-  Get token: figma.com > Settings > Personal access tokens
-  Token is stored in ~/.config/aiready/config.json (not in project dir)
-
-CLI
-  npm install -g aiready
-  aiready analyze "https://www.figma.com/design/..." --api     # REST API (needs FIGMA_TOKEN)
-  aiready analyze "https://www.figma.com/design/..." --mcp     # MCP bridge (Claude Code only)
-  aiready analyze "https://www.figma.com/design/..."           # Auto: try MCP, fallback to API
-
-MCP SERVER (Claude Code integration)
-  1. Set up token:
-     aiready init --token YOUR_TOKEN
-
-  2. Add MCP server:
-     claude mcp add --transport stdio aiready npx aiready-mcp
-
-  3. Use in Claude Code:
-     "Analyze this Figma design: https://www.figma.com/design/..."
-
-  Note: MCP server uses REST API internally (needs FIGMA_TOKEN in .env)
-
-SKILLS (Claude Code)
-  Copy .claude/skills/aiready/ from github.com/let-sunny/aiready
-  Then: /aiready analyze "https://www.figma.com/design/..."
-  Supports --mcp and --api flags (same as CLI)
-`.trimStart());
-}
-
 const DOCS_TOPICS: Record<string, () => void> = {
+  setup: printDocsSetup,
+  install: printDocsSetup, // alias
   rules: printDocsRules,
   config: printDocsConfig,
-  install: printDocsInstall,
 };
 
 export function handleDocs(topic?: string): void {
@@ -135,7 +196,7 @@ export function handleDocs(topic?: string): void {
     handler();
   } else {
     console.error(`Unknown docs topic: ${topic}`);
-    console.error(`Available topics: ${Object.keys(DOCS_TOPICS).join(", ")}`);
+    console.error(`Available topics: setup, rules, config`);
     process.exit(1);
   }
 }

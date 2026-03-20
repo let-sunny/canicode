@@ -564,7 +564,7 @@ cli
 // ============================================
 
 cli
-  .command("docs [topic]", "Show documentation (topics: rules, config, install)")
+  .command("docs [topic]", "Show documentation (topics: setup, rules, config)")
   .action((topic?: string) => {
     handleDocs(topic);
   });
