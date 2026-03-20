@@ -86,8 +86,8 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "inconsistent-spacing": {
-    severity: "risk",
-    score: -4,
+    severity: "missing-info",
+    score: -2,
     enabled: true,
     options: {
       gridBase: 8,
@@ -133,7 +133,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "detached-instance": {
     severity: "risk",
-    score: -8,
+    score: -5,
     enabled: true,
   },
   "nested-instance-override": {
