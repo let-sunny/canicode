@@ -42,12 +42,6 @@ function gaugeColor(pct: number): string {
   return "#ef4444";
 }
 
-function gaugeTw(pct: number): string {
-  if (pct >= 75) return "text-green-500";
-  if (pct >= 50) return "text-amber-500";
-  return "text-red-500";
-}
-
 function severityBadge(sev: Severity): string {
   const map: Record<Severity, string> = {
     blocking: "bg-red-500/10 text-red-600 border-red-500/20",
@@ -56,6 +50,12 @@ function severityBadge(sev: Severity): string {
     suggestion: "bg-green-500/10 text-green-600 border-green-500/20",
   };
   return map[sev];
+}
+
+function scoreBadgeStyle(pct: number): string {
+  if (pct >= 75) return "bg-green-500/10 text-green-700 border-green-500/20";
+  if (pct >= 50) return "bg-amber-500/10 text-amber-700 border-amber-500/20";
+  return "bg-red-500/10 text-red-700 border-red-500/20";
 }
 
 function severityDot(sev: Severity): string {
@@ -136,7 +136,7 @@ export function generateHtmlReport(
 
     <!-- Overall Score -->
     <section class="flex flex-col items-center pt-12 pb-6">
-      ${renderGaugeSvg(scores.overall.percentage, 140, 8)}
+      ${renderGaugeSvg(scores.overall.percentage, 200, 10)}
       <div class="mt-3 text-center">
         <span class="text-lg font-semibold">${scores.overall.percentage}</span>
         <span class="text-muted-foreground text-sm ml-1">/ 100</span>
@@ -152,8 +152,8 @@ ${CATEGORIES.map(cat => {
     const cs = scores.byCategory[cat];
     const desc = CATEGORY_DESCRIPTIONS[cat];
     return `        <div class="flex flex-col items-center group relative">
-          ${renderGaugeSvg(cs.percentage, 72, 6)}
-          <span class="text-xs font-medium mt-2 text-center leading-tight">${CATEGORY_LABELS[cat]}</span>
+          ${renderGaugeSvg(cs.percentage, 100, 7)}
+          <span class="text-xs font-medium mt-2.5 text-center leading-tight">${CATEGORY_LABELS[cat]}</span>
           <span class="text-[11px] text-muted-foreground">${cs.issueCount} issues</span>
           <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-zinc-900 text-white text-xs px-3 py-2 rounded-md whitespace-nowrap z-10 shadow-lg pointer-events-none">
             ${esc(desc)}
@@ -269,7 +269,6 @@ function renderCategory(
   screenshotMap: Map<string, NodeScreenshot>
 ): string {
   const cs = scores.byCategory[cat];
-  const tw = gaugeTw(cs.percentage);
   const hasProblems = issues.some(i => i.config.severity === "blocking" || i.config.severity === "risk");
 
   const bySeverity = new Map<Severity, AnalysisIssue[]>();
@@ -279,14 +278,11 @@ function renderCategory(
   return `
       <details class="bg-card border border-border rounded-lg shadow-sm overflow-hidden group"${hasProblems ? " open" : ""}>
         <summary class="px-5 py-3.5 flex items-center gap-3 cursor-pointer hover:bg-muted/50 transition-colors select-none">
-          <div class="w-9 h-9 shrink-0">
-            ${renderGaugeSvg(cs.percentage, 36, 4)}
-          </div>
+          <span class="inline-flex items-center justify-center w-10 h-6 rounded-md text-xs font-bold border ${scoreBadgeStyle(cs.percentage)}">${cs.percentage}</span>
           <div class="flex-1 min-w-0">
             <div class="text-sm font-semibold">${CATEGORY_LABELS[cat]}</div>
             <div class="text-xs text-muted-foreground">${esc(CATEGORY_DESCRIPTIONS[cat])}</div>
           </div>
-          <span class="text-sm font-semibold ${tw}">${cs.percentage}</span>
           <span class="text-xs text-muted-foreground">${cs.issueCount} issues</span>
           <svg class="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180 shrink-0 no-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
         </summary>
