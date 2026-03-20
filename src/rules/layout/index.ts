@@ -103,7 +103,7 @@ const absolutePositionInAutoLayoutCheck: RuleCheckFn = (node, context) => {
     ruleId: absolutePositionInAutoLayoutDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" uses absolute positioning inside Auto Layout parent "${context.parent.name}"`,
+    message: `"${node.name}" uses absolute positioning inside Auto Layout parent "${context.parent.name}". If intentional (badge, overlay, close button), rename to badge-*, overlay-*, close-* to suppress this warning.`,
   };
 };
 
