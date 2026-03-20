@@ -51,12 +51,18 @@ src/
 Calibration commands are NOT exposed as CLI commands. They run exclusively inside Claude Code via subagents.
 
 **`/calibrate-loop` (Claude Code command)**
-- Role: Autonomous rule-config.ts improvement via 4-agent pipeline
-- Flow: Runner (analysis) → Converter (Figma MCP code generation) → CLI evaluation → Critic → Arbitrator
-- The Converter subagent uses Figma MCP `get_design_context` to convert nodes to code — no external API key needed
+- Role: Autonomous rule-config.ts improvement via fixture-based calibration
+- Input: fixture JSON path (e.g. `fixtures/material3-kit.json`)
+- Flow: CLI analysis → Converter (reads fixture JSON directly) → CLI evaluation → Critic → Arbitrator
+- No Figma MCP or API keys needed — works fully offline
 - Auto-commits agreed score changes
-- Full debate transcript logged to `logs/activity/`
-- Orchestrator functions (`runCalibrationAnalyze`, `runCalibrationEvaluate`) are in `src/agents/orchestrator.ts` — used programmatically by subagents, not via CLI
+- Used by `calibrate-night.sh` for automated nightly runs
+
+**`/calibrate-loop-deep` (Claude Code command)**
+- Role: Deep calibration using Figma MCP for precise design context
+- Input: Figma URL (e.g. `https://www.figma.com/design/ABC123/MyDesign?node-id=1-234`)
+- Flow: CLI analysis → Converter (Figma MCP `get_design_context`) → CLI evaluation → Critic → Arbitrator
+- Used for high-fidelity validation against live Figma data
 
 ### File Output Structure
 

@@ -1,22 +1,22 @@
-Run a calibration debate loop using local fixture JSON files. No Figma MCP needed.
+Run a deep calibration debate loop using Figma MCP for precise design context.
 
-Input: $ARGUMENTS (fixture path, e.g. `fixtures/material3-kit.json`)
+Input: $ARGUMENTS (Figma URL with node-id, e.g. `https://www.figma.com/design/ABC123/MyDesign?node-id=1-234`)
 
 ## Instructions
 
 You are the orchestrator. Do NOT make calibration decisions yourself. Only pass data between agents and run deterministic CLI steps.
 
-### Step 1 — Runner (Analysis)
+### Step 1 — Runner (Analysis via MCP)
 
 Run this command directly:
 
 ```
-pnpm exec drc calibrate-analyze $ARGUMENTS --output logs/calibration/calibration-analysis.json
+pnpm exec drc calibrate-analyze "$ARGUMENTS" --output logs/calibration/calibration-analysis.json
 ```
 
 Read `logs/calibration/calibration-analysis.json`. If `issueCount` is 0, stop here: "No issues found."
 
-### Step 2 — Converter (Code Conversion from fixture JSON)
+### Step 2 — Converter (Code Conversion via Figma MCP)
 
 Spawn the `calibration-converter` subagent with this prompt:
 
@@ -25,7 +25,7 @@ Spawn the `calibration-converter` subagent with this prompt:
 > - Original input: $ARGUMENTS
 > - Output to: logs/calibration/calibration-conversion.json
 >
-> This is a fixture file. Read the fixture JSON directly to get node data. Do NOT call Figma MCP.
+> This is a Figma URL. Use `get_design_context` MCP tool with fileKey and nodeId for each node.
 
 Wait for the Converter to complete.
 

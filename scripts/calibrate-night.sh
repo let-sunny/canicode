@@ -5,10 +5,23 @@ set -euo pipefail
 # Runs /calibrate-loop against local JSON fixtures, repeats if changes detected.
 # Stops on: no changes, max cycles reached, or error.
 # Usage:
-#   ./scripts/calibrate-night.sh
+#   ./scripts/calibrate-night.sh          # fixture-only (fast)
+#   ./scripts/calibrate-night.sh --deep   # Figma MCP deep validation
 
 MAX_CYCLES=5
 WAIT_SECONDS=1800  # 30 minutes
+COMMAND="/calibrate-loop"
+
+# ── Parse flags ────────────────────────────────────────────────────
+
+for arg in "$@"; do
+  case "$arg" in
+    --deep)
+      COMMAND="/calibrate-loop-deep"
+      shift
+      ;;
+  esac
+done
 
 # ── Load .env ───────────────────────────────────────────────────────
 
@@ -80,8 +93,8 @@ fi
 TOTAL_START=$SECONDS
 STOP_REASON=""
 
-log "Nightly Calibration Started" "Max cycles: $MAX_CYCLES | Wait between cycles: ${WAIT_SECONDS}s | Fixtures: ${#FIXTURES[@]}"
-echo "Starting nightly calibration (max $MAX_CYCLES cycles, ${#FIXTURES[@]} fixtures per cycle)"
+log "Nightly Calibration Started" "Command: $COMMAND | Max cycles: $MAX_CYCLES | Wait between cycles: ${WAIT_SECONDS}s | Fixtures: ${#FIXTURES[@]}"
+echo "Starting nightly calibration (max $MAX_CYCLES cycles, ${#FIXTURES[@]} fixtures per cycle, command: $COMMAND)"
 echo ""
 
 for cycle in $(seq 1 "$MAX_CYCLES"); do
@@ -104,7 +117,7 @@ for cycle in $(seq 1 "$MAX_CYCLES"); do
 
     RUN_START=$SECONDS
 
-    if claude --dangerously-skip-permissions /calibrate-loop "$fixture"; then
+    if claude --dangerously-skip-permissions "$COMMAND" "$fixture"; then
       DURATION=$(( SECONDS - RUN_START ))
       log "Cycle $cycle — Fixture $idx Complete" "Duration: ${DURATION}s"
       echo "    Complete (${DURATION}s)"
@@ -129,7 +142,7 @@ for cycle in $(seq 1 "$MAX_CYCLES"); do
   # Commit & push if changed
   if [ "$HAS_CHANGES" = true ]; then
     git add src/rules/rule-config.ts logs/
-    git commit -m "chore: calibrate rule scores — cycle $cycle ($DATE)
+    git commit -m "chore: calibrate rule scores — cycle $cycle ($DATETIME)
 
 Passed: $PASS / ${#FIXTURES[@]}, Failed: $FAIL
 Cycle duration: ${CYCLE_DURATION}s"
