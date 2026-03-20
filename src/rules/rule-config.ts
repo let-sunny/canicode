@@ -22,7 +22,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "fixed-width-in-responsive-context": {
     severity: "risk",
-    score: -5,
+    score: -4,
     depthWeight: 1.3,
     enabled: true,
   },
@@ -55,7 +55,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "deep-nesting": {
     severity: "risk",
-    score: -4,
+    score: -5,
     enabled: true,
     options: {
       maxDepth: 5,
@@ -162,7 +162,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ============================================
   "default-name": {
     severity: "risk",
-    score: -5,
+    score: -4,
     enabled: true,
   },
   "non-semantic-name": {
