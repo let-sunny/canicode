@@ -54,8 +54,8 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "deep-nesting": {
-    severity: "missing-info",
-    score: -3,
+    severity: "risk",
+    score: -4,
     enabled: true,
     options: {
       maxDepth: 5,
