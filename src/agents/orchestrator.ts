@@ -2,7 +2,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import type { AnalysisFile } from "@/contracts/figma-node.js";
+import type { AnalysisFile, AnalysisNode, AnalysisNodeType } from "@/contracts/figma-node.js";
 import { analyzeFile } from "@/core/rule-engine.js";
 import { FigmaClient } from "@/adapters/figma-client.js";
 import { loadFigmaFileFromJson } from "@/adapters/figma-file-loader.js";
@@ -83,6 +83,79 @@ function selectNodes(
       // Already sorted by totalScore (most negative first)
       return summaries.slice(0, maxNodes);
   }
+}
+
+/**
+ * Node types that are pure graphics — not useful for code conversion
+ */
+const EXCLUDED_NODE_TYPES: Set<AnalysisNodeType> = new Set([
+  "VECTOR",
+  "BOOLEAN_OPERATION",
+  "STAR",
+  "REGULAR_POLYGON",
+  "ELLIPSE",
+  "LINE",
+]);
+
+/**
+ * Find a node by ID in the tree
+ */
+function findNode(root: AnalysisNode, nodeId: string): AnalysisNode | null {
+  if (root.id === nodeId) return root;
+  if (root.children) {
+    for (const child of root.children) {
+      const found = findNode(child, nodeId);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+/**
+ * Check if a subtree contains at least one TEXT node
+ */
+function hasTextDescendant(node: AnalysisNode): boolean {
+  if (node.type === "TEXT") return true;
+  if (node.children) {
+    for (const child of node.children) {
+      if (hasTextDescendant(child)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Check if a node is an icon instance (has componentId but no children)
+ */
+function isIconInstance(node: AnalysisNode): boolean {
+  return node.type === "INSTANCE"
+    && node.componentId !== undefined
+    && (!node.children || node.children.length === 0);
+}
+
+/**
+ * Filter node summaries to exclude pure graphics, icon instances,
+ * and nodes without text content.
+ */
+function filterConversionCandidates(
+  summaries: NodeIssueSummary[],
+  documentRoot: AnalysisNode
+): NodeIssueSummary[] {
+  return summaries.filter((summary) => {
+    const node = findNode(documentRoot, summary.nodeId);
+    if (!node) return true; // Keep if we can't find it (shouldn't happen)
+
+    // Exclude pure graphic node types
+    if (EXCLUDED_NODE_TYPES.has(node.type)) return false;
+
+    // Exclude icon instances (componentId + no children)
+    if (isIconInstance(node)) return false;
+
+    // Require at least one TEXT descendant
+    if (!hasTextDescendant(node)) return false;
+
+    return true;
+  });
 }
 
 function isFigmaUrl(input: string): boolean {
@@ -268,10 +341,14 @@ export async function runCalibration(
       durationMs: Date.now() - stepStart,
     });
 
-    // Step 2: Select nodes and convert
+    // Step 2: Filter and select nodes for conversion
     stepStart = Date.now();
-    const selectedNodes = selectNodes(
+    const candidates = filterConversionCandidates(
       analysisOutput.nodeIssueSummaries,
+      analysisResult.file.document
+    );
+    const selectedNodes = selectNodes(
+      candidates,
       parsed.samplingStrategy,
       parsed.maxConversionNodes
     );
