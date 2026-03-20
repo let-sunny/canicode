@@ -10,7 +10,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ============================================
   "no-auto-layout": {
     severity: "blocking",
-    score: -8,
+    score: -7,
     depthWeight: 1.5,
     enabled: true,
   },
@@ -28,7 +28,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "missing-responsive-behavior": {
     severity: "risk",
-    score: -3,
+    score: -4,
     depthWeight: 1.5,
     enabled: true,
   },
@@ -54,7 +54,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "deep-nesting": {
-    severity: "missing-info",
+    severity: "risk",
     score: -4,
     enabled: true,
     options: {
@@ -215,8 +215,8 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "empty-frame": {
-    severity: "risk",
-    score: -4,
+    severity: "missing-info",
+    score: -2,
     enabled: true,
   },
 
