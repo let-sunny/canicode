@@ -27,7 +27,7 @@ You receive the Runner's proposals and the Critic's reviews, and make final deci
 
 ## Output
 
-Append final summary to `logs/activity/YYYY-MM-DD-HH-mm-<fixture-name>.md`:
+Append final summary to the activity log file specified by the orchestrator.
 
 ```
 ## HH:mm — Arbitrator

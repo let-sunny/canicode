@@ -6,26 +6,44 @@ Input: $ARGUMENTS (Figma URL with node-id, e.g. `https://www.figma.com/design/AB
 
 You are the orchestrator. Do NOT make calibration decisions yourself. Only pass data between agents and run deterministic CLI steps.
 
-### Step 1 — Runner (Analysis via MCP)
+### Step 0 — Setup
+
+Generate the activity log filename for this run. Extract a short name from the URL (e.g. fileKey or design name). Create the log file:
+
+```
+logs/activity/YYYY-MM-DD-HH-mm-<name>.md
+```
+
+Write the header to the log file:
+```
+# Calibration Activity Log — YYYY-MM-DD-HH-mm-<name>
+```
+
+Use this exact log file path in ALL subsequent subagent prompts.
+
+### Step 1 — Analysis (CLI)
 
 Run this command directly:
 
 ```
-pnpm exec drc calibrate-analyze "$ARGUMENTS" --output logs/calibration/calibration-analysis.json
+npx drc calibrate-analyze "$ARGUMENTS" --output logs/calibration/calibration-analysis.json
 ```
 
 Read `logs/calibration/calibration-analysis.json`. If `issueCount` is 0, stop here: "No issues found."
 
 ### Step 2 — Converter (Code Conversion via Figma MCP)
 
-Spawn the `calibration-converter` subagent with this prompt:
+Spawn the `calibration-converter` subagent (use `general-purpose` type) with this prompt:
 
 > Convert the top 5 nodes from this analysis to code:
 > - Analysis JSON: logs/calibration/calibration-analysis.json
 > - Original input: $ARGUMENTS
 > - Output to: logs/calibration/calibration-conversion.json
+> - Activity log: <LOG_FILE_PATH>
 >
 > This is a Figma URL. Use `get_design_context` MCP tool with fileKey and nodeId for each node.
+>
+> (include full converter instructions from .claude/agents/calibration-converter.md)
 
 Wait for the Converter to complete.
 
@@ -34,7 +52,7 @@ Wait for the Converter to complete.
 Run this command directly:
 
 ```
-pnpm exec drc calibrate-evaluate logs/calibration/calibration-analysis.json logs/calibration/calibration-conversion.json
+npx drc calibrate-evaluate logs/calibration/calibration-analysis.json logs/calibration/calibration-conversion.json
 ```
 
 Read the generated report from `logs/calibration/` (the most recent `.md` file).
@@ -48,6 +66,8 @@ Spawn the `calibration-critic` subagent with this prompt:
 
 > Review these calibration proposals:
 > (paste the proposals section only — NOT any reasoning chain)
+>
+> Append your critique to: <LOG_FILE_PATH>
 
 Wait for the Critic to complete. Capture its full critique (APPROVE/REJECT/REVISE per rule).
 
@@ -64,6 +84,7 @@ Spawn the `calibration-arbitrator` subagent with this prompt:
 > (paste the Critic's reviews from Step 4)
 >
 > Fixture: $ARGUMENTS
+> Activity log: <LOG_FILE_PATH>
 
 Wait for the Arbitrator to complete.
 
@@ -78,3 +99,4 @@ Report the final summary from the Arbitrator.
 - The Critic must NOT see the Runner's or Converter's reasoning, only the proposal list.
 - Only the Arbitrator may edit `rule-config.ts`.
 - Steps 1 and 3 are CLI commands — run them directly with Bash, NOT as subagents.
+- ALL agents must write to the SAME log file generated in Step 0.

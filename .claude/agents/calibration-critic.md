@@ -25,7 +25,7 @@ For each proposal, output ONE of:
 
 ## Output
 
-Append your critique to `logs/activity/YYYY-MM-DD-HH-mm-<fixture-name>.md`:
+Append your critique to the activity log file specified by the orchestrator.
 
 ```
 ## HH:mm — Critic

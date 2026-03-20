@@ -15,7 +15,8 @@ You are the Runner agent in a calibration pipeline. You perform analysis only â€
 
 ## Output
 
-Append your report to `logs/activity/YYYY-MM-DD-HH-mm-<fixture-name>.md`:
+Append your report to the activity log file specified by the orchestrator.
+If no log file is specified, use `logs/activity/YYYY-MM-DD-HH-mm-<fixture-name>.md`.
 
 ```
 ## HH:mm â€” Runner (Analysis)
