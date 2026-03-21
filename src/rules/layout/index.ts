@@ -90,6 +90,9 @@ const absolutePositionInAutoLayoutCheck: RuleCheckFn = (node, context) => {
   if (!hasAutoLayout(context.parent)) return null;
   if (node.layoutPositioning !== "ABSOLUTE") return null;
 
+  // Exception: vector/graphic nodes (icons, illustrations — absolute positioning is expected)
+  if (node.type === "VECTOR" || node.type === "BOOLEAN_OPERATION" || node.type === "LINE" || node.type === "ELLIPSE" || node.type === "STAR" || node.type === "REGULAR_POLYGON") return null;
+
   // Exception: intentional name patterns (badge, close, overlay, etc.)
   if (INTENTIONAL_ABSOLUTE_PATTERNS.test(node.name)) return null;
 
