@@ -103,7 +103,16 @@ canicode init --token figd_xxxxxxxxxxxxx
 
 ### MCP Server (Claude Code / Cursor / Claude Desktop)
 
-**Claude Code:**
+**Claude Code (recommended — with official Figma MCP, no token needed):**
+```bash
+# 1. Install canicode MCP server
+claude mcp add canicode -- npx -y -p canicode canicode-mcp
+
+# 2. Install official Figma MCP (enables token-free analysis)
+claude mcp add -s project -t http figma https://mcp.figma.com/mcp
+```
+
+**Claude Code (with Figma API token):**
 ```bash
 claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode canicode-mcp
 ```
@@ -114,7 +123,7 @@ claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode 
   "mcpServers": {
     "canicode": {
       "command": "npx",
-      "args": ["-y", "canicode", "canicode-mcp"],
+      "args": ["-y", "-p", "canicode", "canicode-mcp"],
       "env": {
         "FIGMA_TOKEN": "figd_xxxxxxxxxxxxx"
       }
@@ -129,7 +138,7 @@ claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode 
   "mcpServers": {
     "canicode": {
       "command": "npx",
-      "args": ["-y", "canicode", "canicode-mcp"],
+      "args": ["-y", "-p", "canicode", "canicode-mcp"],
       "env": {
         "FIGMA_TOKEN": "figd_xxxxxxxxxxxxx"
       }
