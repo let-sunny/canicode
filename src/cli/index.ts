@@ -12,7 +12,7 @@ import { parseFigmaUrl } from "../adapters/figma-url-parser.js";
 import type { AnalysisFile } from "../contracts/figma-node.js";
 import type { RuleConfig, RuleId } from "../contracts/rule.js";
 import { analyzeFile } from "../core/rule-engine.js";
-import { loadFile, isFigmaUrl, isJsonFile, type LoadMode } from "../core/loader.js";
+import { loadFile, isFigmaUrl, isJsonFile } from "../core/loader.js";
 import {
   getFigmaToken, initAiready, getConfigPath, getReportsDir, ensureReportsDir,
   readConfig, getTelemetryEnabled, setTelemetryEnabled, getPosthogApiKey, getSentryDsn,
@@ -104,7 +104,6 @@ interface AnalyzeOptions {
   preset?: Preset;
   output?: string;
   token?: string;
-  mcp?: boolean;
   api?: boolean;
   screenshot?: boolean;
   customRules?: string;
@@ -117,14 +116,12 @@ cli
   .option("--preset <preset>", "Analysis preset (relaxed | dev-friendly | ai-ready | strict)")
   .option("--output <path>", "HTML report output path")
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
-  .option("--mcp", "Load via Figma MCP (no FIGMA_TOKEN needed)")
   .option("--api", "Load via Figma REST API (requires FIGMA_TOKEN)")
   .option("--screenshot", "Include screenshot comparison in report (requires ANTHROPIC_API_KEY)")
   .option("--custom-rules <path>", "Path to custom rules JSON file")
   .option("--config <path>", "Path to config JSON file (override rule scores/settings)")
   .option("--no-open", "Don't open report in browser after analysis")
   .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign")
-  .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign --mcp")
   .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
   .example("  canicode analyze ./fixtures/design.json --output report.html")
   .example("  canicode analyze ./fixtures/design.json --custom-rules ./my-rules.json")
@@ -133,16 +130,10 @@ cli
     const analysisStart = Date.now();
     trackEvent(EVENTS.ANALYSIS_STARTED, { source: isJsonFile(input) ? "fixture" : "figma" });
     try {
-      // Validate mutually exclusive flags
-      if (options.mcp && options.api) {
-        throw new Error("Cannot use --mcp and --api together. Choose one.");
-      }
-
-      // Check init for non-MCP mode
-      if (!options.mcp && !options.token && !getFigmaToken() && !isJsonFile(input)) {
+      // Check init
+      if (!options.token && !getFigmaToken() && !isJsonFile(input)) {
         throw new Error(
-          "canicode is not configured. Run 'canicode init --token YOUR_TOKEN' first.\n" +
-          "Or use --mcp flag for Figma MCP mode (no token needed)."
+          "canicode is not configured. Run 'canicode init --token YOUR_TOKEN' first."
         );
       }
 
@@ -157,11 +148,8 @@ cli
         console.log("Screenshot comparison mode enabled (coming soon).\n");
       }
 
-      // Determine load mode
-      const mode: LoadMode = options.mcp ? "mcp" : options.api ? "api" : "auto";
-
       // Load file
-      const { file, nodeId } = await loadFile(input, options.token, mode);
+      const { file, nodeId } = await loadFile(input, options.token);
 
       // Scope enforcement for large files
       const totalNodes = countNodes(file.document);
@@ -532,7 +520,6 @@ cli
 
 interface SaveFixtureOptions {
   output?: string;
-  mcp?: boolean;
   api?: boolean;
   token?: string;
 }
@@ -543,24 +530,17 @@ cli
     "Save Figma file data as a JSON fixture for offline analysis"
   )
   .option("--output <path>", "Output JSON path (default: fixtures/<filekey>.json)")
-  .option("--mcp", "Load via Figma MCP (no FIGMA_TOKEN needed)")
-  .option("--api", "Load via Figma REST API (requires FIGMA_TOKEN)")
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
-  .example("  canicode save-fixture https://www.figma.com/design/ABC123/MyDesign --mcp")
-  .example("  canicode save-fixture https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
+  .example("  canicode save-fixture https://www.figma.com/design/ABC123/MyDesign")
+  .example("  canicode save-fixture https://www.figma.com/design/ABC123/MyDesign --token YOUR_TOKEN")
   .action(async (input: string, options: SaveFixtureOptions) => {
     try {
-      if (options.mcp && options.api) {
-        throw new Error("Cannot use --mcp and --api together. Choose one.");
-      }
-
       if (isFigmaUrl(input) && !parseFigmaUrl(input).nodeId) {
         console.warn("\nWarning: No node-id specified. Saving entire file as fixture.");
         console.warn("Tip: Add ?node-id=XXX to save a specific section.\n");
       }
 
-      const mode: LoadMode = options.mcp ? "mcp" : options.api ? "api" : "auto";
-      const { file } = await loadFile(input, options.token, mode);
+      const { file } = await loadFile(input, options.token);
 
       const outputPath = resolve(
         options.output ?? `fixtures/${file.fileKey}.json`
@@ -609,15 +589,13 @@ cli
       }
 
       if (options.mcp) {
-        console.log(`MCP SETUP\n`);
-        console.log(`1. Install Figma MCP in Claude Code:`);
-        console.log(`   claude mcp add figma -- npx -y @anthropic-ai/claude-code-mcp-figma\n`);
-        console.log(`2. Add canicode MCP server:`);
-        console.log(`   claude mcp add --transport stdio canicode npx canicode-mcp\n`);
-        console.log(`3. Set Figma token (for MCP server's REST API fallback):`);
-        console.log(`   canicode init --token YOUR_TOKEN\n`);
-        console.log(`4. Use in Claude Code:`);
-        console.log(`   "Analyze this Figma design: https://www.figma.com/design/..."`);
+        console.log(`FIGMA MCP SETUP (for Claude Code)\n`);
+        console.log(`1. Register the official Figma MCP server at project level:`);
+        console.log(`   claude mcp add -s project -t http figma https://mcp.figma.com/mcp\n`);
+        console.log(`   This creates .mcp.json in your project root.\n`);
+        console.log(`2. Use the /canicode skill in Claude Code:`);
+        console.log(`   /canicode https://www.figma.com/design/.../MyDesign?node-id=1-234\n`);
+        console.log(`   The skill calls Figma MCP directly — no FIGMA_TOKEN needed.`);
         return;
       }
 
@@ -629,7 +607,7 @@ cli
       console.log(`  Get token: figma.com > Settings > Personal access tokens\n`);
       console.log(`Option 2: Figma MCP (recommended for Claude Code)`);
       console.log(`  canicode init --mcp`);
-      console.log(`  No token needed for CLI — uses Claude Code's Figma MCP bridge\n`);
+      console.log(`  Uses the /canicode skill in Claude Code with official Figma MCP\n`);
       console.log(`After setup:`);
       console.log(`  canicode analyze "https://www.figma.com/design/..."`);
     } catch (error) {
@@ -783,9 +761,8 @@ cli.help((sections) => {
     {
       title: "\nData source",
       body: [
-        `  --mcp                   Load via Figma MCP (no token needed)`,
         `  --api                   Load via Figma REST API (needs FIGMA_TOKEN)`,
-        `  (default)               Auto-detect: try MCP first, then API`,
+        `  --token <token>         Figma API token (or use FIGMA_TOKEN env var)`,
       ].join("\n"),
     },
     {
@@ -798,7 +775,6 @@ cli.help((sections) => {
     {
       title: "\nExamples",
       body: [
-        `  $ canicode analyze "https://www.figma.com/design/..." --mcp`,
         `  $ canicode analyze "https://www.figma.com/design/..." --api`,
         `  $ canicode analyze "https://www.figma.com/design/..." --preset strict`,
         `  $ canicode analyze "https://www.figma.com/design/..." --config ./my-config.json`,

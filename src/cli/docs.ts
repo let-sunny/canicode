@@ -19,7 +19,7 @@ export function printDocsSetup(): void {
 CANICODE SETUP GUIDE
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 1. CLI
+ 1. CLI (REST API)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Install:
@@ -33,11 +33,6 @@ CANICODE SETUP GUIDE
     canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
     (opens report in browser automatically, use --no-open to disable)
 
-  Data source flags:
-    --api     REST API (uses saved token)
-    --mcp     Figma MCP bridge (Claude Code only, no token needed)
-    (none)    Auto: try MCP first, fallback to API
-
   Options:
     --preset strict|relaxed|dev-friendly|ai-ready
     --config ./my-config.json
@@ -48,54 +43,25 @@ CANICODE SETUP GUIDE
     ~/.canicode/reports/report-YYYY-MM-DD-HH-mm-<filekey>.html
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 2. MCP SERVER (Claude Code integration)
+ 2. CLAUDE CODE SKILL (Figma MCP, no token needed)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Route A — Figma MCP relay (no token needed):
+  Requires the official Figma MCP server at project level.
 
-    Install (once):
-      claude mcp add figma -- npx -y @anthropic-ai/claude-code-mcp-figma
-      claude mcp add --transport stdio canicode npx canicode-mcp
-
-    Flow:
-      Claude Code
-        -> Figma MCP get_metadata(fileKey, nodeId) -> XML node tree
-        -> canicode MCP analyze(designData: XML) -> analysis result
-
-  Route B — REST API direct (token needed):
-
-    Install (once):
-      claude mcp add --transport stdio canicode npx canicode-mcp
-      canicode init --token figd_xxxxxxxxxxxxx
-
-    Flow:
-      Claude Code
-        -> canicode MCP analyze(input: URL) -> internal REST API fetch -> result
-
-  Use (both routes — just ask Claude Code):
-    "Analyze this Figma design: https://www.figma.com/design/..."
-
-  Route A vs B:
-    A: No token, 2 MCP servers, Claude orchestrates 2 calls
-    B: Token needed, 1 MCP server, canicode fetches directly
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 3. CLAUDE SKILLS (lightweight)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  Install:
-    cp -r path/to/canicode/.claude/skills/canicode .claude/skills/
-
-  Setup (for REST API):
-    npx canicode init --token figd_xxxxxxxxxxxxx
+  Setup (once):
+    claude mcp add -s project -t http figma https://mcp.figma.com/mcp
 
   Use (in Claude Code):
-    /canicode analyze "https://www.figma.com/design/..."
+    /canicode https://www.figma.com/design/ABC123/MyDesign?node-id=1-234
 
-  Runs CLI under the hood — all flags work (--mcp, --api, --preset, etc.)
+  Flow:
+    Claude Code
+      -> Figma MCP get_metadata(fileKey, nodeId) -> XML node tree
+      -> Convert to fixture JSON
+      -> canicode analyze fixture.json -> report
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- TOKEN PRIORITY (all methods)
+ TOKEN PRIORITY (CLI mode)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   1. --token flag (one-time override)
@@ -107,9 +73,11 @@ CANICODE SETUP GUIDE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   CI/CD, automation        -> CLI + FIGMA_TOKEN env var
-  Claude Code, interactive -> MCP Server (Route A)
-  No token, Claude Code    -> MCP Server (Route A)
-  Quick trial              -> Skills
+  Claude Code (full)       -> canicode MCP + Figma MCP (no token needed)
+  Claude Code (light)      -> /canicode skill + Figma MCP (no token needed)
+  In Figma                 -> Figma Plugin
+  Browser                  -> Web App (GitHub Pages)
+  Quick trial, offline     -> CLI + JSON fixtures
 `.trimStart());
 }
 
@@ -152,7 +120,7 @@ EXAMPLE
         "maxHeight": 48,
         "nameContains": "icon"
       },
-      "message": "\"{name}\" is an icon but not a component",
+      "message": "\\"{name}\\" is an icon but not a component",
       "why": "Icons should be reusable components.",
       "impact": "Developers hardcode icons.",
       "fix": "Convert to component and publish to library."

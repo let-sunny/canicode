@@ -149,9 +149,10 @@ Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
 
 | Flag | Source | Token required |
 |------|--------|----------------|
-| (none) | Auto-detect: MCP first, then REST API | For API fallback |
-| `--mcp` | Figma MCP via Claude Code | None |
-| `--api` | Figma REST API | Yes |
+| (none) | Figma REST API | Yes |
+| `--api` | Figma REST API (explicit) | Yes |
+
+For token-free analysis, use the **canicode MCP server** with the official Figma MCP, or the **`/canicode` skill** in Claude Code.
 
 Token priority:
 1. `--token` flag (one-time override)
@@ -302,7 +303,6 @@ Save Figma file data as JSON for offline analysis:
 
 ```bash
 canicode save-fixture https://www.figma.com/design/ABC123/MyDesign
-canicode save-fixture https://www.figma.com/design/ABC123/MyDesign --mcp
 ```
 
 </details>

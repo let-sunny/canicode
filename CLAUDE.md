@@ -29,33 +29,35 @@ src/
 
 ## Architecture
 
-### External (User-Facing)
+### External (5 User-Facing Channels)
 
-**`canicode analyze`**
-- Role: Analyze Figma file structure + generate HTML report
-- Input: Figma URL or JSON fixture
-- Output: HTML report in `reports/`
-- Options:
-  - `--preset`: relaxed | dev-friendly | ai-ready | strict
-  - `--mcp`: load via Figma MCP (no FIGMA_TOKEN needed)
-  - `--api`: load via Figma REST API (requires FIGMA_TOKEN)
-  - `--token`: Figma API token
-  - `--output`: custom report path
-  - `--custom-rules`: path to custom rules JSON file
-  - `--config`: path to config JSON override file
-- Each issue includes a Figma deep link (click → navigate to node in Figma)
-- With FIGMA_TOKEN: each issue has a "Comment on Figma" button that posts analysis findings to the Figma node
+**1. CLI (`canicode analyze`)**
+- Data source: Figma REST API (requires FIGMA_TOKEN) or JSON fixture
+- Output: HTML report (opens in browser)
+- Options: `--preset`, `--token`, `--output`, `--custom-rules`, `--config`
+- Also: `canicode save-fixture` to save Figma data as JSON for offline analysis
 
-**`canicode-mcp`**
-- Role: MCP server exposing analyze as a tool for Claude Code / Cursor / Claude Desktop
-- Install: `claude mcp add canicode -e FIGMA_TOKEN=figd_xxx -- npx -y canicode canicode-mcp`
-- Tools: `analyze` (returns JSON summary + generates HTML report), `list-rules`
-- With FIGMA_TOKEN: HTML report includes "Comment on Figma" buttons
+**2. MCP Server (`canicode-mcp`)**
+- Install: `claude mcp add canicode -- npx -y canicode canicode-mcp`
+- Tools: `analyze`, `list-rules`, `docs`
+- Works with Figma MCP: user installs official Figma MCP → Claude Code orchestrates both
+  - Figma MCP `get_metadata` → XML → canicode MCP `analyze(designData: XML)`
+  - No FIGMA_TOKEN needed when using Figma MCP
+- Also works standalone with FIGMA_TOKEN (REST API fallback via `input` param)
 
-**`canicode save-fixture`**
-- Role: Save Figma file data as JSON fixture for offline analysis
-- Input: Figma URL
-- Output: JSON file in `fixtures/`
+**3. Claude Code Skill (`/canicode`)**
+- Location: `.claude/skills/canicode/SKILL.md` (copy to any project)
+- Requires: Official Figma MCP (`https://mcp.figma.com/mcp`) at project level
+- Flow: Figma MCP `get_metadata` → fixture JSON → `canicode analyze`
+- Lightweight alternative to MCP server — no canicode MCP installation needed
+
+**4. Web App (GitHub Pages)**
+- URL: hosted via GitHub Pages (`docs/index.html`)
+- Browser-based analysis — paste Figma URL or upload JSON fixture
+
+**5. Figma Plugin**
+- Location: `plugin/`
+- Run analysis directly inside Figma on the selected node
 
 ### Internal (Claude Code Only)
 

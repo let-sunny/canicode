@@ -43,9 +43,16 @@ Two ways to provide design data:
 1. designData — Pass Figma node data directly (from Figma MCP get_metadata). Recommended when using Figma MCP.
 2. input — Figma URL (fetches via REST API, requires FIGMA_TOKEN).
 
-Typical flow with Figma MCP:
-  Step 1: Call Figma MCP get_metadata to get the node tree
-  Step 2: Pass the result as designData to this tool`,
+Typical flow with Figma MCP (recommended, no token needed):
+  Step 1: Call the official Figma MCP's get_metadata tool to get the node tree
+  Step 2: Pass the result as designData to this tool
+
+IMPORTANT — Before calling this tool, check which data source is available:
+- If the official Figma MCP (https://mcp.figma.com/mcp) is connected: use get_metadata → designData flow. No token needed.
+- If Figma MCP is NOT connected: use the input parameter with a Figma URL. This requires a FIGMA_TOKEN.
+  Tell the user: "The official Figma MCP server is not connected. To use without a token, set it up:
+  claude mcp add -s project -t http figma https://mcp.figma.com/mcp
+  Otherwise, provide a Figma API token via FIGMA_TOKEN env var or the token parameter."`,
   {
     designData: z.string().optional().describe("Figma node data from Figma MCP get_metadata (XML or JSON). Pass this instead of input when using Figma MCP."),
     input: z.string().optional().describe("Figma URL. Used when designData is not provided. Requires FIGMA_TOKEN."),
@@ -74,7 +81,7 @@ Typical flow with Figma MCP:
         file = parseDesignData(designData, fileKey ?? "unknown", fileName);
       } else if (input) {
         // Fetch via REST API or load from fixture
-        const loaded = await loadFile(input, token, "api");
+        const loaded = await loadFile(input, token);
         file = loaded.file;
         nodeId = loaded.nodeId;
       } else {
