@@ -10,6 +10,13 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PLUGIN_DIR="$ROOT/plugin"
 DOCS_DIR="$ROOT/docs"
 
+# Load .env if present
+if [ -f "$ROOT/.env" ]; then
+  set -a
+  source "$ROOT/.env"
+  set +a
+fi
+
 echo "=== Building CanICode Figma Plugin ==="
 
 # Step 1: Build the browser bundle
