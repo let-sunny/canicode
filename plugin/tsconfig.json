@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES5",
+    "lib": ["ES2015"],
     "module": "commonjs",
     "strict": true,
     "outDir": "./build",
@@ -8,6 +9,7 @@
     "baseUrl": "..",
     "paths": {},
     "skipLibCheck": true,
+    "downlevelIteration": true,
     "types": ["@figma/plugin-typings"]
   },
   "include": ["main.ts"]
