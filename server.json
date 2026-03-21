@@ -1,0 +1,29 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.let-sunny/canicode",
+  "description": "Analyze Figma designs for development-friendliness and AI-friendliness. 39 rules, density-based scoring, HTML reports with Figma comment integration.",
+  "repository": {
+    "url": "https://github.com/let-sunny/canicode",
+    "source": "github"
+  },
+  "version": "0.5.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "canicode",
+      "version": "0.5.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "Figma personal access token for REST API access and comment posting",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true,
+          "name": "FIGMA_TOKEN"
+        }
+      ]
+    }
+  ]
+}
