@@ -1,8 +1,19 @@
-# CanICode
+<p align="center">
+  <img src="docs/logo.png" alt="CanICode" width="80">
+</p>
 
-Analyze Figma designs. Score how dev-friendly and AI-friendly they are. Get actionable issues before writing code.
+<h1 align="center">CanICode</h1>
 
-**[Try it in your browser](https://let-sunny.github.io/canicode/)** — no install needed.
+<p align="center">
+  <a href="https://www.npmjs.com/package/canicode"><img src="https://img.shields.io/npm/v/canicode.svg" alt="npm version"></a>
+  <a href="https://github.com/let-sunny/canicode/actions/workflows/ci.yml"><img src="https://github.com/let-sunny/canicode/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/let-sunny/canicode/actions/workflows/release.yml"><img src="https://github.com/let-sunny/canicode/actions/workflows/release.yml/badge.svg" alt="Release"></a>
+  <a href="https://let-sunny.github.io/canicode/"><img src="https://img.shields.io/badge/Try_it-GitHub_Pages-blue" alt="GitHub Pages"></a>
+</p>
+
+<p align="center">Analyze Figma designs. Score how dev-friendly and AI-friendly they are. Get actionable issues before writing code.</p>
+
+<p align="center"><strong><a href="https://let-sunny.github.io/canicode/">Try it in your browser</a></strong> — no install needed.</p>
 
 ```bash
 npm install -g canicode
