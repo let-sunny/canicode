@@ -56,6 +56,8 @@ To enable "Comment on Figma" buttons in reports, set your Figma token:
 canicode init --token figd_xxxxxxxxxxxxx
 ```
 
+> **Get your token:** Figma → Settings → Security → Personal access tokens → Generate new token
+
 ### MCP Server (Claude Code / Cursor / Claude Desktop)
 
 **Claude Code:**
