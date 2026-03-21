@@ -290,7 +290,7 @@ pnpm lint       # type check
 - [x] **Phase 1** — 39 rules, density-based scoring, HTML reports, presets, scoped analysis
 - [x] **Phase 2** — 4-agent calibration pipeline, `/calibrate-loop` debate loop
 - [x] **Phase 3** — Custom rules, config overrides, MCP server, Claude Skills
-- [ ] **Phase 4** — Figma comment from report (per-issue "Comment" button in HTML report, posts to Figma node via API)
+- [x] **Phase 4** — Figma comment from report (per-issue "Comment" button in HTML report, posts to Figma node via API)
 - [ ] **Phase 5** — Screenshot comparison (Figma vs AI-generated code, visual diff)
 
 ## License

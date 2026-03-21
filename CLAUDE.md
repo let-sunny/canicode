@@ -37,18 +37,20 @@ src/
 - Output: HTML report in `reports/`
 - Options:
   - `--preset`: relaxed | dev-friendly | ai-ready | strict
-  - `--mcp`: load via MCP Desktop bridge (no REST API needed)
-  - `--screenshot`: include screenshot comparison (requires ANTHROPIC_API_KEY, coming soon)
+  - `--mcp`: load via Figma MCP (no FIGMA_TOKEN needed)
+  - `--api`: load via Figma REST API (requires FIGMA_TOKEN)
   - `--token`: Figma API token
   - `--output`: custom report path
   - `--custom-rules`: path to custom rules JSON file
   - `--config`: path to config JSON override file
-- Each issue includes a Figma deep link (click -> navigate to node in Figma)
+- Each issue includes a Figma deep link (click → navigate to node in Figma)
+- With FIGMA_TOKEN: each issue has a "Comment on Figma" button that posts analysis findings to the Figma node
 
 **`aiready-mcp`**
-- Role: MCP server exposing analyze as a tool
-- Install: `claude mcp add --transport stdio aiready npx aiready-mcp`
-- Tools: `analyze`, `list-rules`
+- Role: MCP server exposing analyze as a tool for Claude Code / Cursor / Claude Desktop
+- Install: `claude mcp add aiready -e FIGMA_TOKEN=figd_xxx -- npx -y fig-aiready aiready-mcp`
+- Tools: `analyze` (returns JSON summary + generates HTML report), `list-rules`
+- With FIGMA_TOKEN: HTML report includes "Comment on Figma" buttons
 
 **`aiready save-fixture`**
 - Role: Save Figma file data as JSON fixture for offline analysis
