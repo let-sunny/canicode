@@ -45,12 +45,18 @@ npm install -g fig-aiready
 aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 ```
 
+To enable "Comment on Figma" buttons in reports, set your Figma token:
+```bash
+aiready init --token figd_xxxxxxxxxxxxx
+```
+
 ### MCP Server (Claude Code / Cursor / Claude Desktop)
 
 **Claude Code:**
 ```bash
 claude mcp add aiready -- npx -y fig-aiready aiready-mcp
 ```
+Set `FIGMA_TOKEN` in your environment for Figma API access and comment buttons.
 
 **Cursor** (`~/.cursor/mcp.json`):
 ```json
@@ -58,7 +64,10 @@ claude mcp add aiready -- npx -y fig-aiready aiready-mcp
   "mcpServers": {
     "aiready": {
       "command": "npx",
-      "args": ["-y", "fig-aiready", "aiready-mcp"]
+      "args": ["-y", "fig-aiready", "aiready-mcp"],
+      "env": {
+        "FIGMA_TOKEN": "figd_xxxxxxxxxxxxx"
+      }
     }
   }
 }
@@ -70,13 +79,18 @@ claude mcp add aiready -- npx -y fig-aiready aiready-mcp
   "mcpServers": {
     "aiready": {
       "command": "npx",
-      "args": ["-y", "fig-aiready", "aiready-mcp"]
+      "args": ["-y", "fig-aiready", "aiready-mcp"],
+      "env": {
+        "FIGMA_TOKEN": "figd_xxxxxxxxxxxxx"
+      }
     }
   }
 }
 ```
 
 Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
+
+> With `FIGMA_TOKEN` set, the HTML report includes "Comment on Figma" buttons that post analysis findings directly to Figma nodes.
 
 ---
 
