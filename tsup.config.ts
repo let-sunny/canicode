@@ -9,5 +9,5 @@ export default defineConfig({
   splitting: false,
   treeshake: true,
   target: "node18",
-  external: ["playwright"],
+  external: ["playwright", "posthog-node", "@sentry/node"],
 });
