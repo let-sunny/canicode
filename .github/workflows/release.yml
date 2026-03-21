@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
@@ -25,8 +26,8 @@ jobs:
       - run: pnpm build
       - run: pnpm test:run
 
-      - name: Publish to npm
-        run: npm publish --access public
+      - name: Publish to npm with provenance
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
