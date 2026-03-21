@@ -116,3 +116,83 @@ For live Figma data with MCP:
 ```
 
 Calibration is an internal development tool — it is not exposed to end users.
+
+---
+
+## Appendix: Debate Highlights
+
+Real excerpts from calibration debates across 5 fixtures and 7+ rounds.
+
+### deep-nesting: -10 → -4 (over 4 rounds)
+
+**Round 1 — Runner proposed -10 → -2:**
+> Converter: "deep-nesting flagged on all 5 nodes but actual impact was easy — depth alone is not the primary conversion barrier."
+
+**Critic rejected (-80% change):**
+> "Rule 2: proposed change exceeds 50% cap. Midpoint -6 applied."
+
+**Round 2 — Runner proposed -6 → -2 again:**
+> Critic: "Same excessive reduction. Conversion log shows mixed difficulty — easy for well-structured auto-layout, moderate for layout containers. Revised to -4."
+
+**Round 4 — Stabilized at -4 (risk):**
+> Arbitrator: "Confirmed at -4. Cross-fixture evidence consistently shows depth adds verbosity but rarely blocks conversion."
+
+### raw-color: -10 → -2 (over 3 rounds)
+
+**Round 1 — Runner proposed -10 → -2:**
+> Converter: "raw-color flagged on 4 nodes with `visible: false` fills — these are Figma ghost layers. Actual impact: easy."
+
+**Critic approved direction, capped magnitude:**
+> "High confidence, 4 cases. But -10 → -2 is 80% change. Revised to -6."
+
+**Round 2 — -6 → -4:**
+> "4 easy-difficulty cases again. High confidence. Midpoint -4 approved."
+
+**Round 3 — -4 → -2:**
+> Runner: "4 cases, all easy. raw-color on invisible fills is noise, not a real conversion difficulty."
+> Critic: "Approved. 50% change within limit. Severity to missing-info approved at high confidence."
+
+### no-auto-layout: oscillation between -5 and -8
+
+**The problem:** Icon nodes scored "easy" (overscored), but layout containers scored "hard" (underscored). Same rule, opposite signals.
+
+**Round 3 — Critic caught the conflict:**
+> "Runner proposes -2 (overscored) and -10 (underscored) for the same rule simultaneously. Both rejected — contradictory evidence."
+
+**Resolution:** After applying the node filter to exclude icons from conversion candidates, the rule stabilized at -5 → -7. Only layout containers were evaluated, giving consistent "hard" signals.
+
+### group-usage: -6 → -8 → -5
+
+**Round 1 — Raised to -8 (blocking):**
+> Converter: "GROUP nodes prevent auto-layout. All 4 icon nodes rated hard because GROUP forces absolute positioning."
+> Critic: "High confidence, 4 cases. Approved. Severity risk → blocking."
+
+**Round 2 — Reduced to -5 (risk):**
+> Converter (with filtered nodes): "GROUP inside a real UI component causes moderate difficulty, not hard. The hard ratings were from icon nodes."
+> Critic: "High confidence, 3 cases. 37.5% change within limit. Severity back to risk."
+
+### ambiguous-structure: validated at -10
+
+**Consistently confirmed across all fixtures:**
+> Converter: "Children named 'Path', 'Path', 'Path' with no semantic distinction — programmatic conversion is impossible without visual rendering."
+> Critic: "4 cases, all hard. Score -10 at blocking confirmed. No change needed."
+
+### New rule proposals: VECTOR no path data
+
+**Proposed 5 times across 4 fixtures, approved 4 times:**
+> Converter (Round 1): "VECTOR nodes contain no SVG path data in the REST API response. Accurate icon reproduction is impossible."
+> Critic (Round 1): "Approved. 5 cases, all hard, blocking severity justified."
+> Critic (Round 2): "Second-fixture corroboration. Cross-fixture threshold satisfied."
+> Arbitrator: "Saved to proposals log. Awaiting rule logic implementation before adding to rule-config.ts."
+
+### Critic rejection patterns
+
+Most rejections fell into two categories:
+
+**1. Insufficient evidence (Rule 1) — 70% of rejections:**
+> "Low confidence + 1 case. Minimum threshold is 2 cases at medium confidence."
+
+**2. Excessive change (Rule 2) — 25% of rejections:**
+> "Proposed change of 67% exceeds the 50% per-round cap. Midpoint applied."
+
+The Critic's conservatism prevented score whiplash — without it, `no-auto-layout` would have oscillated between -2 and -10 indefinitely.
