@@ -54,9 +54,8 @@ aiready init --token figd_xxxxxxxxxxxxx
 
 **Claude Code:**
 ```bash
-claude mcp add aiready -- npx -y fig-aiready aiready-mcp
+claude mcp add aiready -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y fig-aiready aiready-mcp
 ```
-Set `FIGMA_TOKEN` in your environment for Figma API access and comment buttons.
 
 **Cursor** (`~/.cursor/mcp.json`):
 ```json
