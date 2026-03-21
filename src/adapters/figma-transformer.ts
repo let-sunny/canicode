@@ -38,6 +38,14 @@ function transformNode(node: Node): AnalysisNode {
     base.layoutPositioning =
       node.layoutPositioning as AnalysisNode["layoutPositioning"];
   }
+  if ("layoutSizingHorizontal" in node && node.layoutSizingHorizontal) {
+    base.layoutSizingHorizontal =
+      node.layoutSizingHorizontal as AnalysisNode["layoutSizingHorizontal"];
+  }
+  if ("layoutSizingVertical" in node && node.layoutSizingVertical) {
+    base.layoutSizingVertical =
+      node.layoutSizingVertical as AnalysisNode["layoutSizingVertical"];
+  }
   if ("primaryAxisAlignItems" in node) {
     base.primaryAxisAlignItems = node.primaryAxisAlignItems as string;
   }

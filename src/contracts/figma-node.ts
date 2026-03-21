@@ -59,6 +59,8 @@ const BaseAnalysisNodeSchema = z.object({
   layoutMode: LayoutModeSchema.optional(),
   layoutAlign: LayoutAlignSchema.optional(),
   layoutPositioning: LayoutPositioningSchema.optional(),
+  layoutSizingHorizontal: z.enum(["FIXED", "HUG", "FILL"]).optional(),
+  layoutSizingVertical: z.enum(["FIXED", "HUG", "FILL"]).optional(),
   primaryAxisAlignItems: z.string().optional(),
   counterAxisAlignItems: z.string().optional(),
   itemSpacing: z.number().optional(),

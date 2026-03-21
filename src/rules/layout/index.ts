@@ -128,13 +128,19 @@ const fixedWidthInResponsiveContextCheck: RuleCheckFn = (node, context) => {
   if (!context.parent) return null;
   if (!hasAutoLayout(context.parent)) return null;
   if (!isContainerNode(node)) return null;
-  // Check if using fixed sizing (not Fill/Hug)
-  if (node.layoutAlign === "STRETCH") return null;
 
-  const bbox = node.absoluteBoundingBox;
-  if (!bbox) return null;
-  // Heuristic: if width is set and not stretching, it's likely fixed
-  if (node.layoutAlign !== "INHERIT") return null;
+  // Use layoutSizingHorizontal if available (accurate)
+  if (node.layoutSizingHorizontal) {
+    if (node.layoutSizingHorizontal !== "FIXED") return null;
+  } else {
+    // Fallback: STRETCH means fill, skip
+    if (node.layoutAlign === "STRETCH") return null;
+    if (!node.absoluteBoundingBox) return null;
+    if (node.layoutAlign !== "INHERIT") return null;
+  }
+
+  // Excluded names (nav, header, etc.)
+  if (isExcludedName(node.name)) return null;
 
   return {
     ruleId: fixedWidthInResponsiveContextDef.id,
