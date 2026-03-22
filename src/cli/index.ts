@@ -574,6 +574,77 @@ cli
   });
 
 // ============================================
+// Visual compare command
+// ============================================
+
+interface VisualCompareOptions {
+  figmaUrl: string;
+  token?: string;
+  output?: string;
+  width?: number;
+  height?: number;
+}
+
+cli
+  .command(
+    "visual-compare <codePath>",
+    "Compare rendered code against Figma screenshot (pixel-level similarity)"
+  )
+  .option("--figma-url <url>", "Figma URL with node-id (required)")
+  .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
+  .option("--output <dir>", "Output directory for screenshots and diff (default: /tmp/canicode-visual-compare)")
+  .option("--width <px>", "Viewport width (default: 1440)")
+  .option("--height <px>", "Viewport height (default: 900)")
+  .example("  canicode visual-compare ./generated/index.html --figma-url 'https://www.figma.com/design/ABC/File?node-id=1-234'")
+  .action(async (codePath: string, options: VisualCompareOptions) => {
+    try {
+      if (!options.figmaUrl) {
+        console.error("Error: --figma-url is required");
+        process.exit(1);
+      }
+
+      const token = options.token ?? getFigmaToken();
+      if (!token) {
+        console.error("Error: Figma token required. Use --token or set FIGMA_TOKEN env var.");
+        process.exit(1);
+      }
+
+      const { visualCompare } = await import("../core/engine/visual-compare.js");
+
+      console.log("Comparing...");
+      const result = await visualCompare({
+        figmaUrl: options.figmaUrl,
+        figmaToken: token,
+        codePath: resolve(codePath),
+        outputDir: options.output,
+        viewport: {
+          width: options.width ?? 1440,
+          height: options.height ?? 900,
+        },
+      });
+
+      // JSON output for programmatic use
+      console.log(JSON.stringify({
+        similarity: result.similarity,
+        diffPixels: result.diffPixels,
+        totalPixels: result.totalPixels,
+        width: result.width,
+        height: result.height,
+        figmaScreenshot: result.figmaScreenshotPath,
+        codeScreenshot: result.codeScreenshotPath,
+        diff: result.diffPath,
+      }, null, 2));
+
+    } catch (error) {
+      console.error(
+        "\nError:",
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
+// ============================================
 // Setup command
 // ============================================
 
