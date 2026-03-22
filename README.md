@@ -50,7 +50,7 @@ Scores use density + diversity weighting per category, combined into an overall 
 | If you want to... | Use |
 |---|---|
 | Just try it | **[Web App](https://let-sunny.github.io/canicode/)** — paste a URL, no install |
-| Analyze inside Figma | **[Figma Plugin](https://www.figma.com/community/plugin/1617144221046795292/canicode)** |
+| Analyze inside Figma | **[Figma Plugin](https://www.figma.com/community/plugin/1617144221046795292/canicode)** (under review) |
 | Use with Claude Code / Cursor | **MCP Server** or **Skill** — see below |
 | Add to CI/CD | **[GitHub Action](https://github.com/marketplace/actions/canicode-action)** |
 | Full control | **CLI** |
