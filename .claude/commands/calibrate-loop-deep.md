@@ -26,13 +26,20 @@ Read `logs/calibration/calibration-analysis.json`. If `issueCount` is 0, stop he
 
 ### Step 2 — Converter
 
+Read the analysis JSON to extract `fileKey`. Parse the root nodeId from the Figma URL.
+
 Spawn a `general-purpose` subagent. In the prompt, include the full converter instructions from `.claude/agents/calibration/converter.md` and add:
 
 ```
-This is a Figma URL. Use `get_design_context` MCP tool with fileKey and nodeId for each node.
+This is a Figma URL. Use `get_design_context` MCP tool with fileKey and root nodeId.
+Figma URL: <paste input URL here>
+fileKey: <extracted fileKey>
+Root nodeId: <extracted nodeId>
 Activity log: <paste LOG_FILE here>
 Append a brief summary to this EXACT file. Do NOT write to any other log file.
 ```
+
+The Converter will implement the ENTIRE design as one HTML page and run visual-compare.
 
 ### Step 3 — Evaluation (CLI)
 

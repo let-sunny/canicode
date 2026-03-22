@@ -26,12 +26,19 @@ Read `logs/calibration/calibration-analysis.json`. If `issueCount` is 0, stop he
 
 ### Step 2 — Converter
 
+Read the analysis JSON to extract `fileKey`. Also determine the root nodeId — if the input was a Figma URL, parse the node-id from it. If it was a fixture, use the document root id.
+
 Spawn a `general-purpose` subagent. In the prompt, include the full converter instructions from `.claude/agents/calibration/converter.md` and add:
 
 ```
+Fixture path: <paste input path here>
+fileKey: <extracted fileKey>
+Root nodeId: <extracted nodeId>
 Activity log: <paste LOG_FILE here>
 Append a brief summary to this EXACT file. Do NOT write to any other log file.
 ```
+
+The Converter will implement the ENTIRE design as one HTML page and run visual-compare.
 
 ### Step 3 — Evaluation (CLI)
 

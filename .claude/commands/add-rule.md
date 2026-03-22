@@ -54,30 +54,26 @@ After implementation, rebuild: `pnpm build`
 
 ### Step 4 — A/B Visual Validation
 
-For 2-3 visible nodes flagged by the new rule, run an A/B comparison to measure the rule's actual impact on implementation quality:
+Run an A/B comparison on the entire design to measure the rule's actual impact on pixel-perfect accuracy:
 
-1. Run analysis to find flagged nodes (exclude `visible: false`):
-   ```
-   npx canicode analyze <fixture> --json
-   ```
+1. Extract `fileKey` and root `nodeId` from the fixture or Figma URL.
 
-2. For each flagged node, spawn a general-purpose subagent to:
-
-   **Test A (without the rule's data):**
-   - Convert the node to standalone HTML using only the fixture data, WITHOUT the information the rule checks for (e.g., strip descriptions if testing missing-component-description)
-   - Save to `/tmp/visual-a-<nodeId>.html`
-   - Run: `npx canicode visual-compare /tmp/visual-a-<nodeId>.html --figma-url "<url>"`
+2. Spawn a general-purpose subagent for **Test A (without the rule's data)**:
+   - Read the full fixture and convert the ENTIRE design to a single HTML page
+   - Strip or withhold the information the rule checks for (e.g., remove descriptions if testing missing-component-description)
+   - Save to `/tmp/visual-a.html`
+   - Run: `npx canicode visual-compare /tmp/visual-a.html --figma-url "<figma-url-with-root-node-id>"`
    - Record similarity_a
 
-   **Test B (with the rule's data):**
-   - Convert the same node, but this time INCLUDE the information (e.g., generate and provide component descriptions via AI)
-   - Save to `/tmp/visual-b-<nodeId>.html`
-   - Run: `npx canicode visual-compare /tmp/visual-b-<nodeId>.html --figma-url "<url>"`
+3. Spawn a general-purpose subagent for **Test B (with the rule's data)**:
+   - Same fixture, same ENTIRE design, but this time INCLUDE the information (e.g., generate component descriptions via AI and provide them as context)
+   - Save to `/tmp/visual-b.html`
+   - Run: `npx canicode visual-compare /tmp/visual-b.html --figma-url "<figma-url-with-root-node-id>"`
    - Record similarity_b
 
-3. Compare: if similarity_b > similarity_a consistently → the rule catches something that genuinely helps implementation quality.
+4. Compare: if similarity_b > similarity_a → the rule catches something that genuinely improves implementation quality.
 
-4. Record all scores for the Evaluator.
+5. Record both scores for the Evaluator.
 
 ### Step 5 — Evaluator
 
