@@ -16,7 +16,7 @@
 
 <p align="center">The design linter that scores how easily your Figma design can be implemented by AI or developers — before a single line of code is written.</p>
 
-<p align="center">AI-powered insights. Zero tokens per analysis — rules run deterministically, not through AI calls.</p>
+<p align="center">No AI tokens consumed per analysis. Rules run deterministically — AI only validated the scores during development.</p>
 
 <p align="center"><strong><a href="https://github.com/let-sunny/canicode/discussions/new?category=share-your-figma">Share your Figma design</a></strong> to help improve scoring accuracy.</p>
 
@@ -55,7 +55,7 @@ Rule scores aren't guesswork. They're validated through a 4-agent debate pipelin
 - A node that's hard to implement → rule score goes up
 - A node that's easy to implement despite the flag → rule score goes down
 
-The rules themselves run deterministically on every analysis. No tokens consumed per run. The AI debate only validated whether each rule's score reflects real difficulty — once, not on every run. See [`docs/CALIBRATION.md`](docs/CALIBRATION.md).
+The rules themselves run deterministically on every analysis — no tokens consumed. The AI debate validates scores when new fixtures are added, not on every run. See [`docs/CALIBRATION.md`](docs/CALIBRATION.md).
 
 ---
 
@@ -88,7 +88,7 @@ claude mcp add -s project -t http figma https://mcp.figma.com/mcp
 
 Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
 
-canicode's rule engine analyzes the design data — Claude Code orchestrates the calls.
+canicode's rule engine analyzes the design data — the AI assistant just orchestrates the calls.
 
 Or with a Figma API token (no Figma MCP needed):
 ```bash
@@ -115,9 +115,7 @@ Requires the official Figma MCP. Then use `/canicode` with a Figma URL.
     min_score: 70
 ```
 
-Posts analysis as a PR comment. Fails if score is below threshold. See [Marketplace](https://github.com/marketplace/actions/canicode-action).
-
-See [**canicode-action**](https://github.com/marketplace/actions/canicode-action) on GitHub Marketplace.
+Posts analysis as a PR comment. Fails if score is below threshold. See [**canicode-action**](https://github.com/marketplace/actions/canicode-action) on Marketplace.
 
 ---
 
