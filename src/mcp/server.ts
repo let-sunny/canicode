@@ -10,7 +10,7 @@ import { analyzeFile } from "../core/engine/rule-engine.js";
 import { loadFile } from "../core/engine/loader.js";
 import { parseDesignData } from "../core/engine/design-data-parser.js";
 import { enrichWithDesignContext } from "../core/adapters/figma-mcp-adapter.js";
-import { calculateScores, formatScoreSummary } from "../core/engine/scoring.js";
+import { calculateScores, buildResultJson } from "../core/engine/scoring.js";
 import { generateHtmlReport } from "../core/report-html/index.js";
 import { getReportsDir, ensureReportsDir } from "../core/engine/config-store.js";
 import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../core/rules/rule-config.js";
@@ -124,7 +124,6 @@ IMPORTANT — Before calling this tool, check which data source is available:
       });
 
       const scores = calculateScores(result);
-      const summary = formatScoreSummary(scores);
 
       // Generate HTML report (with Figma token for comment buttons)
       const figmaToken = token ?? process.env["FIGMA_TOKEN"];
@@ -154,33 +153,11 @@ IMPORTANT — Before calling this tool, check which data source is available:
         source: designData ? "mcp-data" : "url",
       });
 
-      const issuesByRule: Record<string, number> = {};
-      for (const issue of result.issues) {
-        const id = issue.violation.ruleId;
-        issuesByRule[id] = (issuesByRule[id] ?? 0) + 1;
-      }
-
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(
-              {
-                version: pkg.version,
-                fileName: file.name,
-                nodeCount: result.nodeCount,
-                maxDepth: result.maxDepth,
-                issueCount: result.issues.length,
-                scores: {
-                  overall: scores.overall,
-                  categories: scores.byCategory,
-                },
-                issuesByRule,
-                summary,
-              },
-              null,
-              2,
-            ),
+            text: JSON.stringify(buildResultJson(file.name, result, scores), null, 2),
           },
         ],
       };
@@ -239,6 +216,21 @@ server.tool(
       ],
     };
   },
+);
+
+server.tool(
+  "version",
+  "Get the current canicode version. Use this when the user asks what version is installed.",
+  {},
+  {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false,
+    title: "Get Version",
+  },
+  async () => ({
+    content: [{ type: "text" as const, text: `canicode v${pkg.version}` }],
+  }),
 );
 
 server.tool(

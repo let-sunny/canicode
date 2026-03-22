@@ -18,7 +18,7 @@ import {
   getFigmaToken, initAiready, getConfigPath, getReportsDir, ensureReportsDir,
   readConfig, getTelemetryEnabled, setTelemetryEnabled, getPosthogApiKey, getSentryDsn, getDeviceId,
 } from "../core/engine/config-store.js";
-import { calculateScores, formatScoreSummary } from "../core/engine/scoring.js";
+import { calculateScores, formatScoreSummary, buildResultJson } from "../core/engine/scoring.js";
 import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../core/rules/rule-config.js";
 import { ruleRegistry } from "../core/rules/rule-registry.js";
 import { loadCustomRules } from "../core/rules/custom/custom-rule-loader.js";
@@ -110,6 +110,7 @@ interface AnalyzeOptions {
   customRules?: string;
   config?: string;
   noOpen?: boolean;
+  json?: boolean;
 }
 
 cli
@@ -122,6 +123,7 @@ cli
   .option("--custom-rules <path>", "Path to custom rules JSON file")
   .option("--config <path>", "Path to config JSON file (override rule scores/settings)")
   .option("--no-open", "Don't open report in browser after analysis")
+  .option("--json", "Output JSON results to stdout (same format as MCP)")
   .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign")
   .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
   .example("  canicode analyze ./fixtures/design.json --output report.html")
@@ -225,6 +227,12 @@ cli
 
       // Calculate scores
       const scores = calculateScores(result);
+
+      // JSON output mode
+      if (options.json) {
+        console.log(JSON.stringify(buildResultJson(file.name, result, scores), null, 2));
+        return;
+      }
 
       // Print summary to terminal
       console.log("\n" + "=".repeat(50));

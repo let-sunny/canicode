@@ -2,6 +2,7 @@ import type { Category } from "../contracts/category.js";
 import { CATEGORIES } from "../contracts/category.js";
 import type { Severity } from "../contracts/severity.js";
 import type { AnalysisResult } from "./rule-engine.js";
+import { VERSION } from "../../index.js";
 
 /**
  * Score breakdown for a single category
@@ -318,4 +319,34 @@ export function getSeverityLabel(severity: Severity): string {
     suggestion: "Suggestion",
   };
   return labels[severity];
+}
+
+/**
+ * Build a JSON-serializable analysis result summary.
+ * Shared by CLI (--json) and MCP server (analyze tool response).
+ */
+export function buildResultJson(
+  fileName: string,
+  result: AnalysisResult,
+  scores: ScoreReport,
+): Record<string, unknown> {
+  const issuesByRule: Record<string, number> = {};
+  for (const issue of result.issues) {
+    const id = issue.violation.ruleId;
+    issuesByRule[id] = (issuesByRule[id] ?? 0) + 1;
+  }
+
+  return {
+    version: VERSION,
+    fileName,
+    nodeCount: result.nodeCount,
+    maxDepth: result.maxDepth,
+    issueCount: result.issues.length,
+    scores: {
+      overall: scores.overall,
+      categories: scores.byCategory,
+    },
+    issuesByRule,
+    summary: formatScoreSummary(scores),
+  };
 }
