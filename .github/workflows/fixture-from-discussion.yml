@@ -7,7 +7,7 @@ on:
 jobs:
   decline:
     if: >-
-      github.event.label.name == 'not-available' &&
+      github.event.label.name == 'reviewed' &&
       github.event.discussion.category.slug == 'share-your-figma'
     runs-on: ubuntu-latest
     permissions:
@@ -24,7 +24,7 @@ jobs:
             }`;
             await github.graphql(mutation, {
               id: context.payload.discussion.node_id,
-              body: 'Thanks for sharing! Unfortunately we couldn\'t access this design — it may be private or the link may have expired.\n\nPlease make sure the file is set to **"Anyone with the link" → "can view"** in Figma\'s Share settings, then feel free to submit again. 🙏',
+              body: 'Thanks for sharing! After review, we\'ve decided not to include this design as a fixture. This could be due to access restrictions, scope, or other reasons.\n\nFeel free to submit another design anytime. 🙏',
             });
 
   process:
