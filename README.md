@@ -14,7 +14,7 @@
   <a href="https://github.com/marketplace/actions/canicode-action"><img src="https://img.shields.io/badge/GitHub_Action-Marketplace-2088FF" alt="GitHub Action"></a>
 </p>
 
-<p align="center">Analyze Figma designs. Score how dev-friendly and AI-friendly they are. Get actionable issues before writing code.</p>
+<p align="center">The design linter that scores how well AI can implement your Figma file — before a single line of code is written.</p>
 
 <p align="center"><strong><a href="https://github.com/let-sunny/canicode/discussions/new?category=share-your-figma">Share your Figma design</a></strong> to help improve scoring accuracy.</p>
 
