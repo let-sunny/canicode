@@ -52,20 +52,32 @@ Append your summary to: <paste LOG_FILE here>
 
 After implementation, rebuild: `pnpm build`
 
-### Step 4 — Visual Validation
+### Step 4 — A/B Visual Validation
 
-For 2-3 nodes flagged by the new rule, run visual comparison:
+For 2-3 visible nodes flagged by the new rule, run an A/B comparison to measure the rule's actual impact on implementation quality:
 
-1. Run analysis to find flagged nodes:
+1. Run analysis to find flagged nodes (exclude `visible: false`):
    ```
    npx canicode analyze <fixture> --json
    ```
-2. For each flagged node, generate code (spawn a general-purpose subagent to convert the node to HTML)
-3. Run visual compare:
-   ```
-   npx canicode visual-compare <generated.html> --figma-url "<url-with-node-id>"
-   ```
-4. Record similarity scores
+
+2. For each flagged node, spawn a general-purpose subagent to:
+
+   **Test A (without the rule's data):**
+   - Convert the node to standalone HTML using only the fixture data, WITHOUT the information the rule checks for (e.g., strip descriptions if testing missing-component-description)
+   - Save to `/tmp/visual-a-<nodeId>.html`
+   - Run: `npx canicode visual-compare /tmp/visual-a-<nodeId>.html --figma-url "<url>"`
+   - Record similarity_a
+
+   **Test B (with the rule's data):**
+   - Convert the same node, but this time INCLUDE the information (e.g., generate and provide component descriptions via AI)
+   - Save to `/tmp/visual-b-<nodeId>.html`
+   - Run: `npx canicode visual-compare /tmp/visual-b-<nodeId>.html --figma-url "<url>"`
+   - Record similarity_b
+
+3. Compare: if similarity_b > similarity_a consistently → the rule catches something that genuinely helps implementation quality.
+
+4. Record all scores for the Evaluator.
 
 ### Step 5 — Evaluator
 

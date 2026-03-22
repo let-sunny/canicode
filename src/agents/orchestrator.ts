@@ -153,11 +153,17 @@ export function filterConversionCandidates(
   summaries: NodeIssueSummary[],
   documentRoot: AnalysisNode
 ): NodeIssueSummary[] {
-  // Small trees: skip filtering, all nodes are conversion candidates
-  if (summaries.length <= FILTER_THRESHOLD) return summaries;
+  // Always exclude invisible nodes — can't screenshot for visual comparison
+  const visibleSummaries = summaries.filter((summary) => {
+    const node = findNode(documentRoot, summary.nodeId);
+    return node ? node.visible !== false : false;
+  });
+
+  // Small trees: skip further filtering
+  if (visibleSummaries.length <= FILTER_THRESHOLD) return visibleSummaries;
 
   // Large trees: filter to meaningful conversion candidates
-  return summaries.filter((summary) => {
+  return visibleSummaries.filter((summary) => {
     const node = findNode(documentRoot, summary.nodeId);
     if (!node) return false;
 
