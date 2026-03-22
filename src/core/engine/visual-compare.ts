@@ -151,13 +151,15 @@ export async function visualCompare(options: VisualCompareOptions): Promise<Visu
   const nodeId = nodeIdMatch?.[1]?.replace(/-/g, ":");
   if (!nodeId) throw new Error("Invalid Figma URL — missing node-id");
 
-  const viewport = options.viewport ?? { width: 1440, height: 900 };
+  // Step 1: Fetch Figma screenshot first to get its dimensions
+  await fetchFigmaScreenshot(fileKey, nodeId, options.figmaToken, figmaScreenshotPath);
 
-  // Run in parallel
-  await Promise.all([
-    fetchFigmaScreenshot(fileKey, nodeId, options.figmaToken, figmaScreenshotPath),
-    renderCodeScreenshot(options.codePath, codeScreenshotPath, viewport),
-  ]);
+  // Step 2: Read Figma screenshot dimensions, use as viewport for code rendering
+  const figmaPng = PNG.sync.read(readFileSync(figmaScreenshotPath));
+  const viewport = options.viewport ?? { width: figmaPng.width, height: figmaPng.height };
+
+  // Step 3: Render code screenshot at the same size
+  await renderCodeScreenshot(options.codePath, codeScreenshotPath, viewport);
 
   // Compare
   const result = compareScreenshots(figmaScreenshotPath, codeScreenshotPath, diffPath);
