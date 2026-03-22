@@ -1,6 +1,17 @@
-import type { GetFileResponse } from "@figma/rest-api-spec";
+import type { GetFileResponse, Node } from "@figma/rest-api-spec";
 
 const FIGMA_API_BASE = "https://api.figma.com/v1";
+
+export interface GetFileNodesResponse {
+  name: string;
+  lastModified: string;
+  version: string;
+  nodes: Record<string, {
+    document: Node;
+    components: GetFileResponse["components"];
+    styles: GetFileResponse["styles"];
+  }>;
+}
 
 export interface FigmaClientOptions {
   token: string;
@@ -105,7 +116,7 @@ export class FigmaClient {
   async getFileNodes(
     fileKey: string,
     nodeIds: string[]
-  ): Promise<GetFileResponse> {
+  ): Promise<GetFileNodesResponse> {
     const ids = nodeIds.join(",");
     const url = `${FIGMA_API_BASE}/files/${fileKey}/nodes?ids=${encodeURIComponent(ids)}`;
     const response = await fetch(url, {
@@ -123,7 +134,7 @@ export class FigmaClient {
       );
     }
 
-    return response.json() as Promise<GetFileResponse>;
+    return response.json() as Promise<GetFileNodesResponse>;
   }
 }
 

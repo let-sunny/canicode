@@ -1,4 +1,5 @@
 import type { GetFileResponse, Node } from "@figma/rest-api-spec";
+import type { GetFileNodesResponse } from "./figma-client.js";
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 
 /**
@@ -126,6 +127,29 @@ function transformNode(node: Node): AnalysisNode {
   }
 
   return base;
+}
+
+/**
+ * Transform Figma /v1/files/{key}/nodes response to analysis types.
+ * Returns the first node's subtree as the document.
+ */
+export function transformFileNodesResponse(
+  fileKey: string,
+  response: GetFileNodesResponse
+): AnalysisFile {
+  const entries = Object.values(response.nodes);
+  const first = entries[0];
+  if (!first) throw new Error("No nodes returned from Figma API");
+
+  return {
+    fileKey,
+    name: response.name,
+    lastModified: response.lastModified,
+    version: response.version,
+    document: transformNode(first.document),
+    components: transformComponents(first.components),
+    styles: transformStyles(first.styles),
+  };
 }
 
 function transformComponents(

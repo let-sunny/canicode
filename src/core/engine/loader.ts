@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { FigmaClient } from "../adapters/figma-client.js";
 import { loadFigmaFileFromJson } from "../adapters/figma-file-loader.js";
-import { transformFigmaResponse } from "../adapters/figma-transformer.js";
+import { transformFigmaResponse, transformFileNodesResponse } from "../adapters/figma-transformer.js";
 import { parseFigmaUrl } from "../adapters/figma-url-parser.js";
 import { getFigmaToken } from "./config-store.js";
 import type { AnalysisFile } from "../contracts/figma-node.js";
@@ -61,6 +61,16 @@ async function loadFromApi(
   }
 
   const client = new FigmaClient({ token: figmaToken });
+
+  if (nodeId) {
+    // Fetch only the target node subtree — faster, less rate limit impact
+    const response = await client.getFileNodes(fileKey, [nodeId.replace(/-/g, ":")]);
+    return {
+      file: transformFileNodesResponse(fileKey, response),
+      nodeId,
+    };
+  }
+
   const response = await client.getFile(fileKey);
   return {
     file: transformFigmaResponse(fileKey, response),
