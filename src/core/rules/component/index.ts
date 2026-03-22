@@ -268,3 +268,64 @@ export const singleUseComponent = defineRule({
   definition: singleUseComponentDef,
   check: singleUseComponentCheck,
 });
+
+// ============================================
+// missing-component-description
+// ============================================
+
+/**
+ * Module-level Set for deduplication across nodes within a single analysis run.
+ * Tracks componentIds that have already been flagged to avoid duplicate issues
+ * when many INSTANCE nodes reference the same component.
+ *
+ * Note: This Set persists for the lifetime of the module (i.e., the process).
+ * The analysis engine is expected to clear it between runs if needed, but since
+ * each CLI invocation starts a fresh process this is safe in practice.
+ */
+const seenMissingDescriptionComponentIds = new Set<string>();
+
+const missingComponentDescriptionDef: RuleDefinition = {
+  id: "missing-component-description",
+  name: "Missing Component Description",
+  category: "component",
+  why: "Component descriptions in Figma are the primary channel for communicating intent, usage guidelines, and prop expectations to developers. Without them, developers must reverse-engineer purpose from visual appearance alone.",
+  impact: "Increases implementation ambiguity, especially for icon-only components, compound components with multiple variants, and components whose names are variant key strings that give no prose context.",
+  fix: "Open the component in Figma, select it, and add a description in the right-hand panel under the component's properties. Include: what the component is, when to use it, any accessibility or interaction notes, and the owning team or design token set if applicable.",
+};
+
+const missingComponentDescriptionCheck: RuleCheckFn = (node, context) => {
+  if (node.type !== "INSTANCE") return null;
+
+  const componentId = node.componentId;
+  if (!componentId) return null;
+
+  const componentMeta = context.file.components[componentId];
+  if (!componentMeta) return null;
+
+  if (componentMeta.description.trim() !== "") return null;
+
+  // Deduplicate: emit at most one issue per unique componentId
+  if (seenMissingDescriptionComponentIds.has(componentId)) return null;
+  seenMissingDescriptionComponentIds.add(componentId);
+
+  return {
+    ruleId: missingComponentDescriptionDef.id,
+    nodeId: node.id,
+    nodePath: context.path.join(" > "),
+    message: `Component "${componentMeta.name}" has no description. Descriptions help developers understand purpose and usage.`,
+  };
+};
+
+export const missingComponentDescription = defineRule({
+  definition: missingComponentDescriptionDef,
+  check: missingComponentDescriptionCheck,
+});
+
+/**
+ * Reset deduplication state between analysis runs.
+ * Call this at the start of each analysis if the process is long-running
+ * (e.g. MCP server mode).
+ */
+export function resetMissingComponentDescriptionState(): void {
+  seenMissingDescriptionComponentIds.clear();
+}

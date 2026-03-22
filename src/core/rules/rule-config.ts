@@ -121,7 +121,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
 
   // ============================================
-  // Component (6 rules)
+  // Component (7 rules)
   // ============================================
   "missing-component": {
     severity: "risk",
@@ -154,6 +154,11 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   "single-use-component": {
     severity: "suggestion",
     score: -1,
+    enabled: true,
+  },
+  "missing-component-description": {
+    severity: "missing-info",
+    score: -2,
     enabled: true,
   },
 
