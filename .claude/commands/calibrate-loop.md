@@ -26,7 +26,7 @@ Read `logs/calibration/calibration-analysis.json`. If `issueCount` is 0, stop he
 
 ### Step 2 — Converter
 
-Spawn a `general-purpose` subagent. In the prompt, include the full converter instructions from `.claude/agents/calibration-converter.md` and add:
+Spawn a `general-purpose` subagent. In the prompt, include the full converter instructions from `.claude/agents/calibration/converter.md` and add:
 
 ```
 Activity log: <paste LOG_FILE here>

@@ -187,6 +187,8 @@ For architecture details, see [`CLAUDE.md`](CLAUDE.md). For calibration pipeline
 - [x] **Phase 4** — Figma comment from report (per-issue "Comment" button in HTML report, posts to Figma node via API)
 - [x] **Phase 5** — Custom rules with pattern matching (node name/type/attribute conditions)
 - [ ] **Phase 6** — Screenshot comparison (Figma vs AI-generated code, visual diff)
+- [ ] **Phase 7** — Calibration pipeline upgrade (screenshot-based visual diff for score validation)
+- [ ] **Phase 8** — Rule discovery pipeline (5-agent debate: researcher → designer → implementer → evaluator → critic)
 
 ## Support
 
