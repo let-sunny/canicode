@@ -45,9 +45,10 @@ Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggest
 
 Rule scores aren't guesswork — they're **calibrated by AI agents debating each other**:
 
-1. Agent A converts the flagged design to code
-2. Agent B evaluates how hard it actually was
-3. Agent C decides if the score should change
+1. **Runner** analyzes the design and flags issues
+2. **Converter** converts the flagged nodes to actual code
+3. **Critic** challenges whether the scores match the real difficulty
+4. **Arbitrator** makes the final call — adjust or keep
 
 Too harsh → score goes down. Too lenient → score goes up. This runs continuously against real Figma files submitted by the community. See [`docs/CALIBRATION.md`](docs/CALIBRATION.md).
 
@@ -102,7 +103,7 @@ Requires the official Figma MCP. Then use `/canicode` with a Figma URL.
 ```yaml
 - uses: let-sunny/canicode-action@v0.1.0
   with:
-    figma_url: ${{ steps.figma.outputs.url }}
+    figma_url: 'https://www.figma.com/design/ABC123/MyDesign?node-id=1-234'
     figma_token: ${{ secrets.FIGMA_TOKEN }}
     min_score: 70
 ```
@@ -153,8 +154,7 @@ For architecture details, see [`CLAUDE.md`](CLAUDE.md). For calibration pipeline
 
 ## Support
 
-- **Bug reports:** [GitHub Issues](https://github.com/let-sunny/canicode/issues)
-- **Questions and discussions:** [GitHub Issues](https://github.com/let-sunny/canicode/issues)
+- **Bugs and questions:** [GitHub Issues](https://github.com/let-sunny/canicode/issues)
 - **Privacy:** See [PRIVACY.md](PRIVACY.md) for details on data collection and how to opt out
 
 ## License
