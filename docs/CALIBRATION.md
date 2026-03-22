@@ -196,3 +196,33 @@ Most rejections fell into two categories:
 > "Proposed change of 67% exceeds the 50% per-round cap. Midpoint applied."
 
 The Critic's conservatism prevented score whiplash — without it, `no-auto-layout` would have oscillated between -2 and -10 indefinitely.
+
+---
+
+## Rule Discovery Pipeline
+
+New rules are added through a 5-agent debate pipeline (`/add-rule`):
+
+```
+/add-rule "concept" fixture.json
+
+Step 1 — Researcher: explore fixture data for the concept
+Step 2 — Designer: propose rule spec (ID, category, severity, score)
+Step 3 — Implementer: write rule code + tests
+Step 4 — Evaluator: run against fixtures, measure impact + false positives
+Step 5 — Critic: decide KEEP / ADJUST / DROP
+```
+
+### Known Limitations
+
+1. **Heuristic rules can't be visually validated.** Rules like `missing-component-description` flag absent metadata — there's no before/after code to compare. The pipeline can only assess these by false positive rate, not actual implementation difficulty.
+
+2. **Test fixtures with both positive and negative cases needed.** Current fixtures tend to be all-or-nothing (e.g., 0% description coverage). Effective evaluation requires fixtures where some components have descriptions and some don't, so the rule's precision can be measured.
+
+3. **Calibration `nodeIssueSummaries` empty bug.** The `calibrate-analyze` command returns `nodeIssueSummaries: []` even when issues exist, blocking the Converter step. Needs investigation.
+
+### Next Steps
+
+- Design test fixtures with controlled positive/negative cases per concept
+- Integrate `visual-compare` into Evaluator for rules that affect visual output
+- Fix calibration `nodeIssueSummaries` grouping for the Converter step
