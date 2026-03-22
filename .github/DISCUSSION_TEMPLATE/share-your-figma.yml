@@ -17,7 +17,9 @@ body:
     id: figma-url
     attributes:
       label: Figma URL
-      description: Paste your Figma file URL. Include `?node-id=` for a specific section.
+      description: >-
+        Paste your Figma file URL. Include `?node-id=` for a specific section.
+        **The file must be publicly accessible** — go to Share > "Anyone with the link" > "can view" in Figma before submitting.
       placeholder: "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
     validations:
       required: true
