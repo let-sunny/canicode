@@ -28,7 +28,7 @@
 
 ## How It Works
 
-39 rules across 6 categories check every node in the Figma tree. Every rule score is **calibrated by AI agents debating each other** — one converts the design to code, another evaluates the difficulty, and a third decides whether the score should go up or down. Rules that are too harsh get reduced; rules that are too lenient get increased. This happens continuously against real Figma files. See [`docs/CALIBRATION.md`](docs/CALIBRATION.md).
+39 rules. 6 categories. Every node in the Figma tree.
 
 | Category | Rules | What it checks |
 |----------|-------|----------------|
@@ -39,7 +39,17 @@
 | AI Readability | 5 | Structure clarity, z-index reliance, empty frames |
 | Handoff Risk | 5 | Hardcoded values, truncation handling, placeholder images |
 
-Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggestion**. Scores use density + diversity weighting per category, combined into an overall grade (S/A+/A/B+/B/C+/C/D/F).
+Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggestion**.
+
+### AI-Calibrated Scores
+
+Rule scores aren't guesswork — they're **calibrated by AI agents debating each other**:
+
+1. Agent A converts the flagged design to code
+2. Agent B evaluates how hard it actually was
+3. Agent C decides if the score should change
+
+Too harsh → score goes down. Too lenient → score goes up. This runs continuously against real Figma files submitted by the community. See [`docs/CALIBRATION.md`](docs/CALIBRATION.md).
 
 ---
 
