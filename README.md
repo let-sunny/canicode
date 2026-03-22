@@ -47,7 +47,7 @@ Scores use density + diversity weighting per category, combined into an overall 
 
 ## Getting Started
 
-Six ways to use CanICode. Pick one.
+Five ways to use CanICode. Pick one.
 
 ### 1. CLI
 
