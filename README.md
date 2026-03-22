@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo.png" alt="CanICode" width="80">
+  <img src="docs/images/logo.png" alt="CanICode" width="80">
 </p>
 
 <h1 align="center">CanICode</h1>
@@ -20,7 +20,7 @@
 <p align="center"><strong><a href="https://let-sunny.github.io/canicode/">Try it in your browser</a></strong> — no install needed.</p>
 
 <p align="center">
-  <img src="docs/screenshot.png" alt="CanICode Report" width="720">
+  <img src="docs/images/screenshot.png" alt="CanICode Report" width="720">
 </p>
 
 ---

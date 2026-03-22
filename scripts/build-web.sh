@@ -56,6 +56,9 @@ node -e "
   console.log('  index.html written (' + Math.round(output.length / 1024) + ' KB)');
 "
 
+# Copy favicon
+cp "$ROOT/docs/images/favicon.png" "$WEB_DIST/favicon.png"
+
 echo ""
 echo "=== Web app built successfully ==="
 echo "  $WEB_DIST/browser.global.js"
