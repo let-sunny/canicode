@@ -166,6 +166,7 @@ IMPORTANT — Before calling this tool, check which data source is available:
             type: "text" as const,
             text: JSON.stringify(
               {
+                version: pkg.version,
                 fileName: file.name,
                 nodeCount: result.nodeCount,
                 maxDepth: result.maxDepth,
@@ -300,7 +301,7 @@ Use this when the user asks about customization, configuration, rule settings, o
       }
 
       return {
-        content: [{ type: "text" as const, text: content }],
+        content: [{ type: "text" as const, text: `canicode v${pkg.version}\n\n${content}` }],
       };
     } catch {
       return {

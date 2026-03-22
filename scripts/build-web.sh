@@ -48,6 +48,10 @@ node -e "
     output = output.slice(0, idx) + content + output.slice(idx + placeholder.length);
   }
 
+  // Inject version
+  const version = require('$ROOT/package.json').version;
+  output = output.replace('/* __VERSION__ */', version);
+
   fs.writeFileSync('$OUTPUT', output, 'utf-8');
   console.log('  index.html written (' + Math.round(output.length / 1024) + ' KB)');
 "
