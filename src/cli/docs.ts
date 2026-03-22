@@ -97,6 +97,8 @@ CANICODE SETUP GUIDE
                     from Figma MCP's own generated code (React + Tailwind),
                     not raw Figma node properties. Results may differ
                     slightly from CLI due to this interpretation layer.
+
+  Details:          github.com/let-sunny/canicode/blob/main/docs/MCP-VS-CLI.md
 `.trimStart());
 }
 
