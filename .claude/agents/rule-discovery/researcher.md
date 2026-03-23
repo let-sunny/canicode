@@ -29,6 +29,10 @@ You will receive:
    - Are there recurring gaps related to this concept?
    - How many times has this gap appeared across runs?
    - What pixel impact does it have?
+6. Question existing categories and rules:
+   - Does this concept fit an existing category, or does it expose a gap in the category structure?
+   - Are there existing rules that overlap with this concept? Should they be merged or split?
+   - Could existing rules be recategorized based on this new understanding?
 
 ## Output
 
@@ -50,6 +54,11 @@ Append your report to the activity log file specified by the orchestrator.
 - Nodes with field present: N (X%)
 - Nodes with field empty/default: N (X%)
 - Notable patterns: ...
+
+### Category & Rule Structure Review
+- Best fit category: <existing category> / propose new: <name>
+- Overlapping existing rules: none / <list with reasoning>
+- Recategorization suggestions: none / <suggestions>
 
 ### Recommendation
 - Feasible to build a rule: yes/no
