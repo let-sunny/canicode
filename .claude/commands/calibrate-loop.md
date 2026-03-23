@@ -100,11 +100,16 @@ Append to `$RUN_DIR/activity.jsonl`:
 npx canicode calibrate-evaluate _ _ --run-dir $RUN_DIR
 ```
 
-Read `$RUN_DIR/summary.md`, extract proposals. If zero proposals, skip to Step 7.
+Read `$RUN_DIR/summary.md`, extract proposals.
 
 Append to `$RUN_DIR/activity.jsonl`:
 ```json
 {"step":"Evaluation","timestamp":"<ISO8601>","result":"overscored=<N> underscored=<N> validated=<N> proposals=<N>","durationMs":<ms>}
+```
+
+If zero proposals, write `$RUN_DIR/debate.json` with skip reason and jump to Step 7:
+```json
+{"critic": null, "arbitrator": null, "skipped": "zero proposals from evaluation"}
 ```
 
 ### Step 5 — Critic
