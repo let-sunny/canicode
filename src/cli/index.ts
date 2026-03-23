@@ -494,6 +494,21 @@ cli
       if (!existsSync(outDir)) {
         mkdirSync(outDir, { recursive: true });
       }
+
+      // Backup existing report with timestamp before overwriting
+      if (existsSync(outPath)) {
+        const { readFile: readFileAsync } = await import("node:fs/promises");
+        const existing = await readFileAsync(outPath, "utf-8");
+        // Extract timestamp from the "Generated:" line
+        const match = existing.match(/Generated:\s*(\d{4}-\d{2}-\d{2}T[\d:.]+Z)/);
+        if (match?.[1]) {
+          const ts = match[1].replace(/[:.]/g, "-").replace("T", "-").replace("Z", "");
+          const backupPath = outPath.replace(/\.md$/, `--${ts}.md`);
+          await writeFile(backupPath, existing, "utf-8");
+          console.log(`  Previous report backed up: ${backupPath}`);
+        }
+      }
+
       await writeFile(outPath, result.markdown, "utf-8");
 
       console.log("Gap rule review report written.");

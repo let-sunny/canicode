@@ -47,7 +47,8 @@ Return this JSON structure:
 
 ## Rules
 
-- **Do NOT write to log files.** The orchestrator handles all file I/O.
+- **Do NOT write to ANY file except `src/rules/rule-config.ts`.** No log files, no `new-rule-proposals.md`, no `debate.json`, no `activity.jsonl`. The orchestrator handles ALL other file I/O.
+- **Do NOT create files.** Only Edit existing `rule-config.ts` when applying approved score changes.
 - Only modify `rule-config.ts` for approved score/severity changes.
 - Never force-push or amend existing commits.
 - If tests fail, revert everything and report which change caused the failure.
