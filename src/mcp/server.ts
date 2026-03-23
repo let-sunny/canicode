@@ -304,6 +304,73 @@ Use this when the user asks about customization, configuration, rule settings, o
   },
 );
 
+server.tool(
+  "visual-compare",
+  `Compare AI-generated code against a Figma design at the pixel level.
+
+Takes an HTML file path and a Figma URL, renders the HTML with Playwright,
+fetches the Figma screenshot, and computes pixel-level similarity using pixelmatch.
+
+Returns similarity percentage (0-100%), diff pixel count, and paths to
+the Figma screenshot, code screenshot, and diff image.
+
+Viewport is automatically matched to the Figma screenshot dimensions.
+
+Requires: Playwright with Chromium installed, Figma API token.`,
+  {
+    codePath: z.string().describe("Path to the HTML file to render and compare"),
+    figmaUrl: z.string().describe("Figma URL with node-id (e.g., https://www.figma.com/design/ABC/File?node-id=1-234)"),
+    token: z.string().optional().describe("Figma API token (falls back to FIGMA_TOKEN env var)"),
+    outputDir: z.string().optional().describe("Output directory for screenshots (default: /tmp/canicode-visual-compare)"),
+  },
+  {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true,
+    title: "Visual Compare",
+  },
+  async ({ codePath, figmaUrl, token, outputDir }) => {
+    try {
+      const { visualCompare } = await import("../core/engine/visual-compare.js");
+      const figmaToken = token ?? process.env["FIGMA_TOKEN"];
+      if (!figmaToken) {
+        return {
+          content: [{ type: "text" as const, text: "Error: Figma token required. Provide via token parameter or FIGMA_TOKEN env var." }],
+          isError: true,
+        };
+      }
+
+      const result = await visualCompare({
+        figmaUrl,
+        figmaToken,
+        codePath,
+        outputDir,
+      });
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            similarity: result.similarity,
+            diffPixels: result.diffPixels,
+            totalPixels: result.totalPixels,
+            width: result.width,
+            height: result.height,
+            figmaScreenshot: result.figmaScreenshotPath,
+            codeScreenshot: result.codeScreenshotPath,
+            diff: result.diffPath,
+          }, null, 2),
+        }],
+      };
+    } catch (error) {
+      return {
+        content: [{ type: "text" as const, text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+        isError: true,
+      };
+    }
+  },
+);
+
 async function main() {
   const monitoringConfig: Parameters<typeof initMonitoring>[0] = {
     environment: "mcp",
