@@ -329,23 +329,23 @@ export const missingMaxWidth = defineRule({
 const deepNestingDef: RuleDefinition = {
   id: "deep-nesting",
   name: "Deep Nesting",
-  category: "layout",
-  why: "Deep nesting makes the structure hard to understand and maintain",
-  impact: "Increases complexity, harder to debug layout issues",
-  fix: "Flatten the structure by removing unnecessary wrapper frames",
+  category: "handoff-risk",
+  why: "Deep nesting within a single component makes the structure hard to understand for developers during handoff",
+  impact: "Developers must trace through many layers to understand layout intent, increasing implementation time",
+  fix: "Flatten the structure by extracting deeply nested groups into sub-components",
 };
 
 const deepNestingCheck: RuleCheckFn = (node, context, options) => {
   const maxDepth = (options?.["maxDepth"] as number) ?? getRuleOption("deep-nesting", "maxDepth", 5);
 
-  if (context.depth < maxDepth) return null;
+  if (context.componentDepth < maxDepth) return null;
   if (!isContainerNode(node)) return null;
 
   return {
     ruleId: deepNestingDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" is nested ${context.depth} levels deep (max: ${maxDepth})`,
+    message: `"${node.name}" is nested ${context.componentDepth} levels deep within its component (max: ${maxDepth})`,
   };
 };
 

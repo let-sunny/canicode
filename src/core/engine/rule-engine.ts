@@ -171,6 +171,7 @@ export class RuleEngine {
       issues,
       0,
       [],
+      0,
       undefined,
       undefined
     );
@@ -214,10 +215,15 @@ export class RuleEngine {
     issues: AnalysisIssue[],
     depth: number,
     path: string[],
+    componentDepth: number,
     parent?: AnalysisNode,
     siblings?: AnalysisNode[]
   ): void {
     const nodePath = [...path, node.name];
+
+    // Reset componentDepth at component boundaries
+    const isComponentBoundary = node.type === "COMPONENT" || node.type === "COMPONENT_SET" || node.type === "INSTANCE";
+    const currentComponentDepth = isComponentBoundary ? 0 : componentDepth;
 
     // Skip nodes matching excluded types or name patterns
     if (this.excludeNodeTypes && this.excludeNodeTypes.has(node.type)) {
@@ -232,6 +238,7 @@ export class RuleEngine {
       file,
       parent,
       depth,
+      componentDepth: currentComponentDepth,
       maxDepth,
       path: nodePath,
       siblings,
@@ -284,6 +291,7 @@ export class RuleEngine {
           issues,
           depth + 1,
           nodePath,
+          currentComponentDepth + 1,
           node,
           node.children
         );

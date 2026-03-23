@@ -37,6 +37,8 @@ export interface RuleContext {
   file: AnalysisFile;
   parent?: AnalysisNode | undefined;
   depth: number;
+  /** Depth relative to the nearest COMPONENT/INSTANCE ancestor. Resets at component boundaries. */
+  componentDepth: number;
   maxDepth: number;
   path: string[];
   siblings?: AnalysisNode[] | undefined;
