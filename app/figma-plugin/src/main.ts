@@ -160,8 +160,8 @@ function transformPluginNode(node: SceneNode): AnalysisNode {
   }
 
   // Corner radius
-  if ("cornerRadius" in node && typeof node.cornerRadius === "number" && node.cornerRadius !== figma.mixed) {
-    result.cornerRadius = node.cornerRadius as number;
+  if ("cornerRadius" in node && node.cornerRadius !== figma.mixed && typeof node.cornerRadius === "number") {
+    result.cornerRadius = node.cornerRadius;
   }
 
   // Bound variables (design tokens)
