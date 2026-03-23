@@ -24,14 +24,21 @@ Convert the **entire root node** (the full scoped design) as one standalone HTML
 
 ## Data Source
 
-First, generate the design tree from the fixture:
+Use BOTH sources together for accurate conversion:
+
+**Primary source — design tree (structure + CSS-ready values):**
 ```
 npx canicode design-tree <fixture-path> --output /tmp/design-tree.txt
 ```
-
 This produces a 4KB DOM-like tree with inline CSS styles instead of 250KB+ raw JSON. Each node = one HTML element. Every style value is CSS-ready.
 
-If the input is a Figma URL, call `get_design_context` MCP tool instead.
+**Secondary source — fixture JSON (exact raw values):**
+Read the original fixture JSON directly when you need to verify a value from the design tree. Use it to cross-check colors, spacing, font sizes, and any value that seems ambiguous or lossy in the design tree output.
+
+> **Rule: If design tree and fixture disagree, trust the fixture.**
+> The design tree is a compressed representation. The fixture JSON contains the authoritative raw values from Figma.
+
+If the input is a Figma URL, call `get_design_context` MCP tool instead (no fixture JSON available in that case — use design context as the sole source).
 
 ## Steps
 
@@ -95,6 +102,11 @@ Write results to `logs/calibration/calibration-conversion.json`:
 ```
 
 Also append a brief summary to the activity log file specified by the orchestrator.
+The log uses **JSON Lines format** — append exactly one JSON object on a single line:
+
+```json
+{"step":"Converter","timestamp":"<ISO8601>","result":"similarity=<N>% difficulty=<level>","durationMs":<ms>}
+```
 
 ## Rules
 

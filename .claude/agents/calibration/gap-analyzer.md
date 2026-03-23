@@ -89,20 +89,10 @@ Write gap analysis to `logs/calibration/gaps/<fixture-name>-<timestamp>.json`:
 ```
 
 Also append a summary to the activity log file specified by the orchestrator.
+The log uses **JSON Lines format** — append exactly one JSON object on a single line:
 
-```
-## HH:mm — Gap Analyzer
-**Similarity:** 95%
-**Total gaps:** 5
-
-| Category | Count | Actionable | Covered by rule |
-|----------|-------|-----------|-----------------|
-| spacing | 2 | yes | no |
-| typography | 1 | no | - |
-| ...
-
-**New rule candidates:** 2
-**Rendering artifacts (not actionable):** 2
+```json
+{"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"similarity=95% gaps=5 actionable=3 newRuleCandidates=2","durationMs":<ms>}
 ```
 
 ## Rules

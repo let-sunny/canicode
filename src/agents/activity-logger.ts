@@ -9,9 +9,8 @@ export interface ActivityStep {
   durationMs: number;
 }
 
-function getTimestamp(): string {
-  const now = new Date();
-  return now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+function getIsoTimestamp(): string {
+  return new Date().toISOString();
 }
 
 function getDateTimeString(): string {
@@ -40,7 +39,7 @@ export class ActivityLogger {
   constructor(fixturePath?: string, logDir = "logs/activity") {
     const dateTimeStr = getDateTimeString();
     const fixtureName = fixturePath ? extractFixtureName(fixturePath) : "unknown";
-    this.logPath = resolve(logDir, `${dateTimeStr}-${fixtureName}.md`);
+    this.logPath = resolve(logDir, `${dateTimeStr}-${fixtureName}.jsonl`);
   }
 
   /**
@@ -55,33 +54,41 @@ export class ActivityLogger {
     }
 
     if (!existsSync(this.logPath)) {
-      const ts = getDateTimeString();
-      await writeFile(this.logPath, `# Calibration Activity Log — ${ts}\n\n`, "utf-8");
+      // Write the initial "session-start" entry as the first JSON line
+      const entry = {
+        step: "session-start",
+        timestamp: getIsoTimestamp(),
+        result: "Calibration activity log initialized",
+        durationMs: 0,
+      };
+      await writeFile(this.logPath, JSON.stringify(entry) + "\n", "utf-8");
     }
 
     this.initialized = true;
   }
 
   /**
-   * Log a pipeline step
+   * Log a pipeline step as a JSON Lines entry
    */
   async logStep(activity: ActivityStep): Promise<void> {
     await this.ensureInitialized();
 
-    const lines: string[] = [];
-    lines.push(`## ${getTimestamp()} — ${activity.step}`);
-    if (activity.nodePath) {
-      lines.push(`- Node: ${activity.nodePath}`);
-    }
-    lines.push(`- Result: ${activity.result}`);
-    lines.push(`- Duration: ${activity.durationMs}ms`);
-    lines.push("");
+    const entry: Record<string, unknown> = {
+      step: activity.step,
+      timestamp: getIsoTimestamp(),
+      result: activity.result,
+      durationMs: activity.durationMs,
+    };
 
-    await appendFile(this.logPath, lines.join("\n") + "\n", "utf-8");
+    if (activity.nodePath !== undefined) {
+      entry["nodePath"] = activity.nodePath;
+    }
+
+    await appendFile(this.logPath, JSON.stringify(entry) + "\n", "utf-8");
   }
 
   /**
-   * Log a summary at pipeline completion
+   * Log a summary at pipeline completion as a JSON Lines entry
    */
   async logSummary(summary: {
     totalDurationMs: number;
@@ -93,19 +100,18 @@ export class ActivityLogger {
   }): Promise<void> {
     await this.ensureInitialized();
 
-    const lines: string[] = [];
-    lines.push(`## ${getTimestamp()} — Pipeline Summary`);
-    lines.push(`- Status: ${summary.status}`);
-    lines.push(`- Total Duration: ${summary.totalDurationMs}ms`);
-    lines.push(`- Nodes Analyzed: ${summary.nodesAnalyzed}`);
-    lines.push(`- Nodes Converted: ${summary.nodesConverted}`);
-    lines.push(`- Mismatches Found: ${summary.mismatches}`);
-    lines.push(`- Adjustments Proposed: ${summary.adjustments}`);
-    lines.push("");
-    lines.push("---");
-    lines.push("");
+    const entry = {
+      step: "Pipeline Summary",
+      timestamp: getIsoTimestamp(),
+      result: summary.status,
+      durationMs: summary.totalDurationMs,
+      nodesAnalyzed: summary.nodesAnalyzed,
+      nodesConverted: summary.nodesConverted,
+      mismatches: summary.mismatches,
+      adjustments: summary.adjustments,
+    };
 
-    await appendFile(this.logPath, lines.join("\n") + "\n", "utf-8");
+    await appendFile(this.logPath, JSON.stringify(entry) + "\n", "utf-8");
   }
 
   getLogPath(): string {

@@ -3,7 +3,7 @@
  * and computes pixel-level similarity using pixelmatch.
  */
 
-import { writeFileSync, readFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, readFileSync, mkdirSync, existsSync, statSync, copyFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
@@ -27,8 +27,30 @@ export interface VisualCompareOptions {
   viewport?: { width: number; height: number } | undefined;
 }
 
+const FIGMA_CACHE_DIR = "/tmp/canicode-figma-cache";
+const FIGMA_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
 /**
- * Fetch Figma node screenshot via REST API.
+ * Get the cache path for a given fileKey + nodeId combination.
+ */
+function getFigmaCachePath(fileKey: string, nodeId: string): string {
+  // Sanitize nodeId for use as filename (replace : with -)
+  const safeNodeId = nodeId.replace(/:/g, "-");
+  return resolve(FIGMA_CACHE_DIR, `${fileKey}_${safeNodeId}.png`);
+}
+
+/**
+ * Check if a cached Figma screenshot exists and is still fresh (within TTL).
+ */
+function isCacheFresh(cachePath: string): boolean {
+  if (!existsSync(cachePath)) return false;
+  const stats = statSync(cachePath);
+  return Date.now() - stats.mtimeMs < FIGMA_CACHE_TTL_MS;
+}
+
+/**
+ * Fetch Figma node screenshot via REST API, with file-based caching.
+ * Cache key: fileKey + nodeId. Cache location: /tmp/canicode-figma-cache/. TTL: 1 hour.
  */
 async function fetchFigmaScreenshot(
   fileKey: string,
@@ -36,6 +58,15 @@ async function fetchFigmaScreenshot(
   token: string,
   outputPath: string,
 ): Promise<void> {
+  const cachePath = getFigmaCachePath(fileKey, nodeId);
+
+  // Return cached version if fresh
+  if (isCacheFresh(cachePath)) {
+    mkdirSync(dirname(outputPath), { recursive: true });
+    copyFileSync(cachePath, outputPath);
+    return;
+  }
+
   const res = await fetch(
     `https://api.figma.com/v1/images/${fileKey}?ids=${nodeId}&format=png&scale=1`,
     { headers: { "X-Figma-Token": token } },
@@ -50,8 +81,14 @@ async function fetchFigmaScreenshot(
   if (!imgRes.ok) throw new Error(`Failed to download Figma screenshot: ${imgRes.status}`);
 
   const buffer = Buffer.from(await imgRes.arrayBuffer());
+
+  // Write to output path
   mkdirSync(dirname(outputPath), { recursive: true });
   writeFileSync(outputPath, buffer);
+
+  // Save to cache
+  mkdirSync(FIGMA_CACHE_DIR, { recursive: true });
+  writeFileSync(cachePath, buffer);
 }
 
 /**
@@ -172,11 +209,19 @@ export async function visualCompare(options: VisualCompareOptions): Promise<Visu
   await fetchFigmaScreenshot(fileKey, nodeId, options.figmaToken, figmaScreenshotPath);
 
   // Step 2: Read Figma screenshot dimensions, use as viewport for code rendering
+  if (!existsSync(figmaScreenshotPath)) {
+    throw new Error(`Figma screenshot was not created at expected path: ${figmaScreenshotPath}`);
+  }
   const figmaPng = PNG.sync.read(readFileSync(figmaScreenshotPath));
   const viewport = options.viewport ?? { width: figmaPng.width, height: figmaPng.height };
 
   // Step 3: Render code screenshot at the same size
   await renderCodeScreenshot(options.codePath, codeScreenshotPath, viewport);
+
+  // Validate both screenshots exist before comparing
+  if (!existsSync(codeScreenshotPath)) {
+    throw new Error(`Code screenshot was not created at expected path: ${codeScreenshotPath}`);
+  }
 
   // Compare
   const result = compareScreenshots(figmaScreenshotPath, codeScreenshotPath, diffPath);

@@ -5,6 +5,16 @@ tools: Read, Write
 model: claude-sonnet-4-6
 ---
 
+## Common Review Framework
+
+All critics follow this base protocol:
+1. Review each proposal independently
+2. Apply rejection heuristics (specific to this pipeline)
+3. Output decision (APPROVE/REJECT/REVISE) with exact rule and reason
+4. Be strict — when in doubt, REJECT or REVISE
+
+---
+
 You are the Critic agent in a rule discovery pipeline. You receive the Evaluator's test results and decide whether the new rule should be kept.
 
 ## Input
@@ -32,27 +42,13 @@ You will receive:
 ## Output
 
 Append your critique to the activity log file specified by the orchestrator.
+The log uses **JSON Lines format** — append exactly one JSON object on a single line:
 
+```json
+{"step":"Critic","timestamp":"<ISO8601>","result":"<KEEP|ADJUST|DROP> for rule <rule-id>","durationMs":<ms>,"ruleId":"<rule-id>","decision":"<KEEP|ADJUST|DROP>","evidenceStrength":"<strong|moderate|weak>","falsePositiveConcern":"<none|low|high>","difficultyCorrelation":"<strong|moderate|weak>","adjustments":{"score":-7,"severity":"blocking","triggerChange":"..."},"dropReason":"..."}
 ```
-## HH:mm — Critic
-### Review: `<rule-id>`
 
-**Decision:** KEEP / ADJUST / DROP
-
-**Reasoning:**
-- Evidence strength: strong / moderate / weak
-- False positive concern: none / low / high
-- Correlation with difficulty: strong / moderate / weak
-
-**If ADJUST:**
-- Suggested score: -X (was -Y)
-- Suggested severity: <severity> (was <severity>)
-- Suggested trigger change: ...
-
-**If DROP:**
-- Reason: ...
-- Alternative approach: ... (if any)
-```
+For KEEP decisions, omit `adjustments` and `dropReason`. For ADJUST decisions, omit `dropReason`. For DROP decisions, omit `adjustments`.
 
 ## Rules
 

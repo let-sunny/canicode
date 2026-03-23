@@ -27,22 +27,12 @@ You receive the Runner's proposals and the Critic's reviews, and make final deci
 
 ## Output
 
-**CRITICAL: Your prompt will contain a line like `Activity log: logs/activity/2026-03-20-22-30-material3-kit.md`. You MUST append your summary to that EXACT file path. Do NOT use any other path. Do NOT create `agent-activity-*.md` or any other file.**
+**CRITICAL: Your prompt will contain a line like `Activity log: logs/activity/2026-03-20-22-30-material3-kit.jsonl`. You MUST append your summary to that EXACT file path. Do NOT use any other path. Do NOT create `agent-activity-*.jsonl` or any other file.**
 
-Format:
+The log uses **JSON Lines format** — append exactly one JSON object on a single line:
 
-```
-## HH:mm — Arbitrator
-### Final Decisions
-- ruleId: X | decision: applied | before: -10 | after: -7 | reason: Critic revised, midpoint applied
-- ruleId: X | decision: rejected | reason: Critic rejection compelling — insufficient evidence
-- ruleId: X | decision: applied | before: -8 | after: -5 | reason: Runner and Critic agree
-
-### Summary
-- Applied: N rules
-- Rejected: N rules
-- Revised: N rules
-- New rule proposals saved: N
+```json
+{"step":"Arbitrator","timestamp":"<ISO8601>","result":"applied=2 rejected=1 revised=1 newProposals=0","durationMs":<ms>,"decisions":[{"ruleId":"X","decision":"applied","before":-10,"after":-7,"reason":"Critic revised, midpoint applied"},{"ruleId":"X","decision":"rejected","reason":"Critic rejection compelling — insufficient evidence"}]}
 ```
 
 ## Rules

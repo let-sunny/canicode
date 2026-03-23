@@ -16,24 +16,12 @@ You are the Runner agent in a calibration pipeline. You perform analysis only �
 ## Output
 
 Append your report to the activity log file specified by the orchestrator.
-If no log file is specified, use `logs/activity/YYYY-MM-DD-HH-mm-<fixture-name>.md`.
+If no log file is specified, use `logs/activity/YYYY-MM-DD-HH-mm-<fixture-name>.jsonl`.
 
-```
-## HH:mm — Runner (Analysis)
-**Fixture:** $input
-**Analysis output:** logs/calibration/calibration-analysis.json
+The log uses **JSON Lines format** — append exactly one JSON object on a single line:
 
-| Metric | Value |
-|--------|-------|
-| Nodes | ... |
-| Issues | ... |
-| Grade | ... |
-| Nodes with issues | ... |
-
-### Top nodes for conversion
-- nodeId: X | nodePath: Y | flaggedRules: N
-- nodeId: X | nodePath: Y | flaggedRules: N
-...
+```json
+{"step":"Runner","timestamp":"<ISO8601>","result":"nodes=<N> issues=<N> grade=<X>","durationMs":<ms>,"fixture":"<input>","analysisOutput":"logs/calibration/calibration-analysis.json"}
 ```
 
 ## Rules

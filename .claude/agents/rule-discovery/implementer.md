@@ -36,20 +36,10 @@ You will receive:
 ## Output
 
 Append your implementation summary to the activity log file specified by the orchestrator.
+The log uses **JSON Lines format** — append exactly one JSON object on a single line:
 
-```
-## HH:mm — Implementer
-### Files Modified
-- `src/core/contracts/figma-node.ts` — added field X
-- `src/core/adapters/figma-transformer.ts` — parse field X
-- `src/core/rules/<category>/index.ts` — new rule `<id>`
-- `src/core/rules/rule-config.ts` — config entry
-- `src/core/rules/index.ts` — registration
-
-### Tests
-- ✅ pnpm lint
-- ✅ pnpm test:run (N new tests)
-- ✅ pnpm build
+```json
+{"step":"Implementer","timestamp":"<ISO8601>","result":"implemented rule <rule-id> lintOk=true testsOk=true buildOk=true","durationMs":<ms>,"ruleId":"<rule-id>","filesModified":["src/core/rules/<category>/index.ts","src/core/rules/rule-config.ts","src/core/rules/index.ts"],"newTests":0,"lintOk":true,"testsOk":true,"buildOk":true}
 ```
 
 ## Rules

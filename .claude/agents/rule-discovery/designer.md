@@ -31,33 +31,10 @@ You will receive:
 ## Output
 
 Append your proposal to the activity log file specified by the orchestrator.
+The log uses **JSON Lines format** — append exactly one JSON object on a single line:
 
-```
-## HH:mm — Designer
-### Rule Proposal
-
-| Field | Value |
-|-------|-------|
-| Rule ID | `<id>` |
-| Category | <category> |
-| Severity | <severity> |
-| Initial score | -<N> |
-| Trigger | <when does this fire> |
-
-**Message:** "<what the user sees>"
-**Why:** "<why this matters for implementation>"
-**Impact:** "<what happens if ignored>"
-**Fix:** "<how the designer should fix it>"
-
-### Check Logic (pseudocode)
-```
-if node.type === 'COMPONENT' && !node.description:
-  return violation
-```
-
-### Transformer Changes Needed
-- [ ] Add field X to AnalysisNode
-- [ ] Parse field X in figma-transformer.ts
+```json
+{"step":"Designer","timestamp":"<ISO8601>","result":"proposed rule <rule-id>","durationMs":<ms>,"ruleId":"<rule-id>","category":"<category>","severity":"<severity>","initialScore":-5,"trigger":"<when does this fire>","requiresTransformerChanges":false}
 ```
 
 ## Rules

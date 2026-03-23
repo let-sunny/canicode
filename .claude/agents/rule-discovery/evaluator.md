@@ -34,29 +34,10 @@ You will receive:
 ## Output
 
 Append your evaluation to the activity log file specified by the orchestrator.
+The log uses **JSON Lines format** — append exactly one JSON object on a single line:
 
-```
-## HH:mm — Evaluator
-### Rule: `<rule-id>`
-
-| Fixture | Issues | Nodes Affected | Score Impact |
-|---------|--------|---------------|--------------|
-| material3-kit.json | N | N | -X% |
-| simple-ds.json | N | N | -X% |
-
-### False Positive Assessment
-- Checked N flagged nodes
-- Genuine issues: N
-- Likely false positives: N
-- False positive rate: X%
-
-### Conversion Test
-- Node A: <difficulty> — rule flag justified: yes/no
-- Node B: <difficulty> — rule flag justified: yes/no
-
-### Verdict
-- KEEP / ADJUST / DROP
-- Reason: ...
+```json
+{"step":"Evaluator","timestamp":"<ISO8601>","result":"verdict=<KEEP|ADJUST|DROP> falsePositiveRate=<X>%","durationMs":<ms>,"ruleId":"<rule-id>","fixtures":[{"name":"material3-kit.json","issues":0,"nodesAffected":0,"scoreImpact":"-X%"}],"falsePositiveRate":"<X>%","verdict":"<KEEP|ADJUST|DROP>","verdictReason":"..."}
 ```
 
 ## Rules

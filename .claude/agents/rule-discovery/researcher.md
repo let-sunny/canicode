@@ -37,33 +37,10 @@ You will receive:
 ## Output
 
 Append your report to the activity log file specified by the orchestrator.
+The log uses **JSON Lines format** — append exactly one JSON object on a single line:
 
-```
-## HH:mm — Researcher
-**Concept:** <concept>
-**Fixtures analyzed:** <list>
-
-### Field Availability
-- Field name in Figma API: `<field>`
-- Parsed in transformer: yes/no
-- Stored in AnalysisNode: yes/no
-- Existing rules using it: none / <list>
-
-### Data Patterns
-- Total nodes: N
-- Nodes with field present: N (X%)
-- Nodes with field empty/default: N (X%)
-- Notable patterns: ...
-
-### Category & Rule Structure Review
-- Best fit category: <existing category> / propose new: <name>
-- Overlapping existing rules: none / <list with reasoning>
-- Recategorization suggestions: none / <suggestions>
-
-### Recommendation
-- Feasible to build a rule: yes/no
-- Requires transformer changes: yes/no
-- Suggested direction: ...
+```json
+{"step":"Researcher","timestamp":"<ISO8601>","result":"concept=<concept> feasible=<yes|no>","durationMs":<ms>,"concept":"<concept>","fixtures":["<fixture-path>"],"fieldAvailable":true,"parsedInTransformer":false,"requiresTransformerChanges":true,"feasible":true,"suggestedDirection":"..."}
 ```
 
 ## Rules

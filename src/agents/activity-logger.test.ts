@@ -4,6 +4,17 @@ import { tmpdir } from "node:os";
 import { rm } from "node:fs/promises";
 import { ActivityLogger } from "./activity-logger.js";
 
+/**
+ * Parse a .jsonl file into an array of parsed JSON objects.
+ */
+function readJsonLines(filePath: string): Record<string, unknown>[] {
+  const content = readFileSync(filePath, "utf-8");
+  return content
+    .split("\n")
+    .filter((line) => line.trim().length > 0)
+    .map((line) => JSON.parse(line) as Record<string, unknown>);
+}
+
 describe("ActivityLogger", () => {
   let tempDir: string;
 
@@ -29,15 +40,17 @@ describe("ActivityLogger", () => {
     const logPath = logger.getLogPath();
     expect(existsSync(logPath)).toBe(true);
 
-    const content = readFileSync(logPath, "utf-8");
-    expect(content).toContain("# Calibration Activity Log");
-    expect(content).toContain("Analyze Node");
-    expect(content).toContain("- Node: Frame > Button");
-    expect(content).toContain("- Result: success");
-    expect(content).toContain("- Duration: 150ms");
+    const entries = readJsonLines(logPath);
+    // First entry is the session-start header, second is our step
+    const stepEntry = entries.find((e) => e["step"] === "Analyze Node");
+    expect(stepEntry).toBeDefined();
+    expect(stepEntry!["nodePath"]).toBe("Frame > Button");
+    expect(stepEntry!["result"]).toBe("success");
+    expect(stepEntry!["durationMs"]).toBe(150);
+    expect(typeof stepEntry!["timestamp"]).toBe("string");
   });
 
-  it("logStep with nodePath includes node line in output", async () => {
+  it("logStep with nodePath includes nodePath field in entry", async () => {
     const logger = new ActivityLogger("fixtures/sample.json", tempDir);
 
     await logger.logStep({
@@ -47,11 +60,12 @@ describe("ActivityLogger", () => {
       durationMs: 200,
     });
 
-    const content = readFileSync(logger.getLogPath(), "utf-8");
-    expect(content).toContain("- Node: Page > Header > Logo");
+    const entries = readJsonLines(logger.getLogPath());
+    const stepEntry = entries.find((e) => e["step"] === "Convert Component");
+    expect(stepEntry!["nodePath"]).toBe("Page > Header > Logo");
   });
 
-  it("logStep without nodePath omits node line", async () => {
+  it("logStep without nodePath omits nodePath field", async () => {
     const logger = new ActivityLogger("fixtures/sample.json", tempDir);
 
     await logger.logStep({
@@ -60,13 +74,15 @@ describe("ActivityLogger", () => {
       durationMs: 10,
     });
 
-    const content = readFileSync(logger.getLogPath(), "utf-8");
-    expect(content).not.toContain("- Node:");
-    expect(content).toContain("- Result: ready");
-    expect(content).toContain("- Duration: 10ms");
+    const entries = readJsonLines(logger.getLogPath());
+    const stepEntry = entries.find((e) => e["step"] === "Initialize Pipeline");
+    expect(stepEntry).toBeDefined();
+    expect("nodePath" in stepEntry!).toBe(false);
+    expect(stepEntry!["result"]).toBe("ready");
+    expect(stepEntry!["durationMs"]).toBe(10);
   });
 
-  it("logSummary writes summary section with all fields and trailing ---", async () => {
+  it("logSummary writes summary entry with all fields", async () => {
     const logger = new ActivityLogger("fixtures/sample.json", tempDir);
 
     await logger.logSummary({
@@ -78,15 +94,15 @@ describe("ActivityLogger", () => {
       status: "completed",
     });
 
-    const content = readFileSync(logger.getLogPath(), "utf-8");
-    expect(content).toContain("Pipeline Summary");
-    expect(content).toContain("- Status: completed");
-    expect(content).toContain("- Total Duration: 5000ms");
-    expect(content).toContain("- Nodes Analyzed: 42");
-    expect(content).toContain("- Nodes Converted: 38");
-    expect(content).toContain("- Mismatches Found: 4");
-    expect(content).toContain("- Adjustments Proposed: 3");
-    expect(content).toContain("---");
+    const entries = readJsonLines(logger.getLogPath());
+    const summaryEntry = entries.find((e) => e["step"] === "Pipeline Summary");
+    expect(summaryEntry).toBeDefined();
+    expect(summaryEntry!["result"]).toBe("completed");
+    expect(summaryEntry!["durationMs"]).toBe(5000);
+    expect(summaryEntry!["nodesAnalyzed"]).toBe(42);
+    expect(summaryEntry!["nodesConverted"]).toBe(38);
+    expect(summaryEntry!["mismatches"]).toBe(4);
+    expect(summaryEntry!["adjustments"]).toBe(3);
   });
 
   it("multiple logStep calls append to the same file (not overwrite)", async () => {
@@ -104,18 +120,22 @@ describe("ActivityLogger", () => {
       durationMs: 200,
     });
 
-    const content = readFileSync(logger.getLogPath(), "utf-8");
-    expect(content).toContain("First Step");
-    expect(content).toContain("Second Step");
-    expect(content).toContain("- Result: ok");
-    expect(content).toContain("- Result: done");
+    const entries = readJsonLines(logger.getLogPath());
+    const firstEntry = entries.find((e) => e["step"] === "First Step");
+    const secondEntry = entries.find((e) => e["step"] === "Second Step");
+
+    expect(firstEntry).toBeDefined();
+    expect(secondEntry).toBeDefined();
+    expect(firstEntry!["result"]).toBe("ok");
+    expect(secondEntry!["result"]).toBe("done");
   });
 
-  it("getLogPath contains fixture name and datetime", () => {
+  it("getLogPath contains fixture name, datetime, and .jsonl extension", () => {
     const logger = new ActivityLogger("fixtures/http-design.json", tempDir);
     const logPath = logger.getLogPath();
 
     expect(logPath).toContain("http-design");
+    expect(logPath.endsWith(".jsonl")).toBe(true);
 
     const now = new Date();
     const year = now.getFullYear();

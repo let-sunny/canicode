@@ -22,7 +22,7 @@ import type { MismatchCase } from "./contracts/evaluation-agent.js";
 import type { ScoreReport } from "@/core/engine/scoring.js";
 
 import { runAnalysisAgent, extractRuleScores } from "./analysis-agent.js";
-import { runConversionAgent } from "./conversion-agent.js";
+import { runConversionAgent } from "./node-conversion-agent.js";
 import { runEvaluationAgent } from "./evaluation-agent.js";
 import { runTuningAgent } from "./tuning-agent.js";
 import { generateCalibrationReport } from "./report-generator.js";

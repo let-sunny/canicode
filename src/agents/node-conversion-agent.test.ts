@@ -3,7 +3,7 @@ import type {
   ConversionExecutor,
   ConversionExecutorResult,
 } from "./contracts/conversion-agent.js";
-import { runConversionAgent } from "./conversion-agent.js";
+import { runConversionAgent } from "./node-conversion-agent.js";
 
 function makeExecutorResult(
   overrides: Partial<ConversionExecutorResult> = {}

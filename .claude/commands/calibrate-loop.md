@@ -11,10 +11,21 @@ You are the orchestrator. Do NOT make calibration decisions yourself. Only pass 
 Generate the activity log filename. Extract the fixture name (e.g. `fixtures/material3-kit.json` → `material3-kit`). Build the path:
 
 ```
-LOG_FILE=logs/activity/YYYY-MM-DD-HH-mm-<fixture-name>.md
+LOG_FILE=logs/activity/YYYY-MM-DD-HH-mm-<fixture-name>.jsonl
 ```
 
-Create the file with a header. Store the exact path — you will paste it verbatim into every subagent prompt below.
+Create the file and write the first JSON Lines entry:
+
+```json
+{"step":"session-start","timestamp":"<ISO8601>","result":"Calibration activity log initialized","durationMs":0}
+```
+
+The log uses **JSON Lines format** (one JSON object per line). Each entry has this shape:
+```json
+{"step":"<StepName>","timestamp":"<ISO8601>","result":"<summary>","durationMs":<ms>}
+```
+
+Store the exact path — you will paste it verbatim into every subagent prompt below.
 
 ### Step 1 — Analysis (CLI)
 
@@ -42,16 +53,28 @@ The Converter will implement the ENTIRE design as one HTML page and run visual-c
 
 ### Step 3 — Gap Analysis
 
-Spawn the `calibration-gap-analyzer` subagent. Provide:
-- Screenshot paths: `/tmp/canicode-visual-compare/figma.png`, `/tmp/canicode-visual-compare/code.png`, `/tmp/canicode-visual-compare/diff.png`
-- Similarity score from the Converter's output
-- Generated HTML path: `/tmp/calibration-output.html`
-- Fixture path
-- Analysis JSON path: `logs/calibration/calibration-analysis.json`
+Before spawning the Gap Analyzer, check whether the visual-compare screenshots were produced by the Converter:
 
+```bash
+test -f /tmp/canicode-visual-compare/figma.png && echo "EXISTS" || echo "MISSING"
 ```
-Append your summary to: <paste LOG_FILE here>
-```
+
+- **If `/tmp/canicode-visual-compare/figma.png` does NOT exist**: skip Gap Analyzer entirely. Log a warning to `LOG_FILE`:
+  ```
+  WARNING: Gap Analyzer skipped — /tmp/canicode-visual-compare/figma.png not found. Visual-compare may have failed or been skipped by Converter.
+  ```
+  Then proceed directly to Step 4.
+
+- **If the file exists**: spawn the `calibration-gap-analyzer` subagent. Provide:
+  - Screenshot paths: `/tmp/canicode-visual-compare/figma.png`, `/tmp/canicode-visual-compare/code.png`, `/tmp/canicode-visual-compare/diff.png`
+  - Similarity score from the Converter's output
+  - Generated HTML path: `/tmp/calibration-output.html`
+  - Fixture path
+  - Analysis JSON path: `logs/calibration/calibration-analysis.json`
+
+  ```
+  Append your summary to: <paste LOG_FILE here>
+  ```
 
 Gap data is saved to `logs/calibration/gaps/` and accumulates over time for rule discovery.
 
