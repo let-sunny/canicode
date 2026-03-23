@@ -1,7 +1,7 @@
 ---
 name: calibration-arbitrator
 description: Makes final calibration decisions by weighing Runner and Critic. Applies approved changes to rule-config.ts and commits. Use after calibration-critic completes.
-tools: Read, Write, Edit, Bash
+tools: Read, Edit, Bash
 model: claude-sonnet-4-6
 ---
 
@@ -27,34 +27,27 @@ You receive the Runner's proposals and the Critic's reviews, and make final deci
 
 ## Output
 
-Read `$RUN_DIR/debate.json` (written by the Critic), then append your decisions to it:
+**Do NOT write to any log files. Return your decisions as JSON text so the orchestrator can save it.**
+
+Only `rule-config.ts` may be edited directly (for approved score changes). All log writes are the orchestrator's job.
+
+Return this JSON structure:
 
 ```json
 {
-  "critic": { ... },
-  "arbitrator": {
-    "timestamp": "<ISO8601>",
-    "summary": "applied=2 rejected=1 revised=1 newProposals=0",
-    "decisions": [
-      {"ruleId": "X", "decision": "applied", "before": -10, "after": -7, "reason": "Critic revised, midpoint applied"},
-      {"ruleId": "X", "decision": "rejected", "reason": "Critic rejection compelling — insufficient evidence"}
-    ],
-    "newRuleProposals": []
-  }
+  "timestamp": "<ISO8601>",
+  "summary": "applied=2 rejected=1 revised=1 newProposals=0",
+  "decisions": [
+    {"ruleId": "X", "decision": "applied", "before": -10, "after": -7, "reason": "Critic revised, midpoint applied"},
+    {"ruleId": "X", "decision": "rejected", "reason": "Critic rejection compelling — insufficient evidence"}
+  ],
+  "newRuleProposals": []
 }
 ```
 
-Also append a summary to `$RUN_DIR/activity.jsonl`.
-The log uses **JSON Lines format** — append exactly one JSON object on a single line:
-
-```json
-{"step":"Arbitrator","timestamp":"<ISO8601>","result":"applied=2 rejected=1 revised=1 newProposals=0","durationMs":<ms>}
-```
-
-**CRITICAL: The run directory path will be provided in your prompt as `Run directory: <path>`. Use that EXACT path. Do NOT create files in any other location.**
-
 ## Rules
 
+- **Do NOT write to log files.** The orchestrator handles all file I/O.
 - Only modify `rule-config.ts` for approved score/severity changes.
 - Never force-push or amend existing commits.
 - If tests fail, revert everything and report which change caused the failure.

@@ -37,21 +37,16 @@ You will receive:
 
 ## Output
 
-Write your findings to `$RUN_DIR/research.json`:
+**Do NOT write any files. Return your findings as JSON text so the orchestrator can save it.**
+
+Return this JSON structure:
 
 ```json
 {"step":"Researcher","timestamp":"<ISO8601>","result":"concept=<concept> feasible=<yes|no>","durationMs":<ms>,"concept":"<concept>","fixtures":["<fixture-path>"],"fieldAvailable":true,"parsedInTransformer":false,"requiresTransformerChanges":true,"feasible":true,"suggestedDirection":"..."}
 ```
 
-Also append a summary to `$RUN_DIR/activity.jsonl`.
-The log uses **JSON Lines format** — append exactly one JSON object on a single line:
-
-```json
-{"step":"Researcher","timestamp":"<ISO8601>","result":"concept=<concept> feasible=<yes|no>","durationMs":<ms>}
-```
-
 ## Rules
 
-- Do NOT modify any source files. Only write to the run directory.
+- **Do NOT write any files.** The orchestrator handles all file I/O.
 - Be thorough — the Designer agent depends on your data.
 - If the concept doesn't exist in the fixture data, say so clearly.

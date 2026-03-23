@@ -1,7 +1,7 @@
 ---
 name: calibration-gap-analyzer
 description: Analyzes visual diff between Figma screenshot and AI-generated code to identify specific causes of pixel differences. Accumulates gap data for rule discovery.
-tools: Bash, Read, Write
+tools: Bash, Read
 model: claude-sonnet-4-6
 ---
 
@@ -53,7 +53,9 @@ You will be given:
 
 ## Output
 
-Write gap analysis to `$RUN_DIR/gaps.json`:
+**Do NOT write any files. Return the gap analysis as JSON text so the orchestrator can save it.**
+
+Return this JSON structure:
 
 ```json
 {
@@ -69,14 +71,6 @@ Write gap analysis to `$RUN_DIR/gaps.json`:
       "causedByInterpretation": false,
       "actionable": true,
       "suggestedRuleCategory": "layout"
-    },
-    {
-      "category": "typography",
-      "description": "System font fallback — Inter not available in Playwright",
-      "pixelImpact": "medium",
-      "coveredByRule": null,
-      "actionable": false,
-      "reason": "Rendering environment limitation"
     }
   ],
   "summary": {
@@ -89,16 +83,9 @@ Write gap analysis to `$RUN_DIR/gaps.json`:
 }
 ```
 
-Also append a summary to `$RUN_DIR/activity.jsonl`.
-The log uses **JSON Lines format** — append exactly one JSON object on a single line:
-
-```json
-{"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"similarity=95% gaps=5 actionable=3 newRuleCandidates=2","durationMs":<ms>}
-```
-
 ## Rules
 
-- Do NOT modify any source files. Only write to the run directory.
+- **Do NOT write any files.** The orchestrator handles all file I/O.
 - Be specific about pixel values — "4px off" not "slightly off".
 - Distinguish actionable gaps from rendering artifacts clearly.
 - This data accumulates over time — future rule discovery agents will read it.
