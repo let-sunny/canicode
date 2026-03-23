@@ -104,7 +104,6 @@ Override score, severity, or enable/disable individual rules:
 | `fixed-size-in-auto-layout` | -5 | risk |
 | `missing-min-width` | -5 | risk |
 | `missing-max-width` | -4 | risk |
-| `deep-nesting` | -4 | risk |
 | `overflow-hidden-abuse` | -3 | missing-info |
 | `inconsistent-sibling-layout-direction` | -2 | missing-info |
 
@@ -160,6 +159,7 @@ Override score, severity, or enable/disable individual rules:
 | `image-no-placeholder` | -4 | risk |
 | `prototype-link-in-design` | -2 | suggestion |
 | `no-dev-status` | -2 | suggestion |
+| `deep-nesting` | -4 | risk |
 
 ### Example Configs
 

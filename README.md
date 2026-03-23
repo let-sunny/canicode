@@ -30,16 +30,16 @@
 
 ## How It Works
 
-39 rules. 6 categories. Every node in the Figma tree.
+40 rules. 6 categories. Every node in the Figma tree.
 
 | Category | Rules | What it checks |
 |----------|-------|----------------|
-| Layout | 11 | Auto-layout usage, responsive behavior, nesting depth |
+| Layout | 10 | Auto-layout usage, responsive behavior |
 | Design Token | 7 | Color/font/shadow tokenization, spacing consistency |
 | Component | 6 | Component reuse, detached instances, variant coverage |
 | Naming | 5 | Semantic names, default names, naming conventions |
 | AI Readability | 5 | Structure clarity, z-index reliance, empty frames |
-| Handoff Risk | 5 | Hardcoded values, truncation handling, placeholder images |
+| Handoff Risk | 6 | Hardcoded values, truncation handling, placeholder images, deep nesting |
 
 Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggestion**.
 
