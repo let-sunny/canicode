@@ -2,6 +2,10 @@
 
 A CLI tool that analyzes Figma design structures to provide development-friendliness and AI-friendliness scores and reports.
 
+## Core Goal
+
+**Can AI implement this Figma design pixel-perfectly?** Everything in this project serves this single question. Every rule, score, category, and pipeline exists to measure and improve how accurately AI can reproduce a Figma design as code. The metric is `visual-compare` similarity (0-100%).
+
 ## Tech Stack
 
 - **Runtime**: Node.js (>=18)
