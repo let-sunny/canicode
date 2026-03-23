@@ -108,19 +108,30 @@ function compareScreenshots(
   const raw1 = PNG.sync.read(readFileSync(path1));
   const raw2 = PNG.sync.read(readFileSync(path2));
 
-  // Resize to same dimensions (use larger as target)
-  const width = Math.max(raw1.width, raw2.width);
-  const height = Math.max(raw1.height, raw2.height);
+  // Size mismatch = implementation failure
+  if (raw1.width !== raw2.width || raw1.height !== raw2.height) {
+    // Still generate a diff image for debugging (resize to larger)
+    const width = Math.max(raw1.width, raw2.width);
+    const height = Math.max(raw1.height, raw2.height);
+    const img1 = resizePng(raw1, width, height);
+    const img2 = resizePng(raw2, width, height);
+    const diff = new PNG({ width, height });
+    pixelmatch(img1.data, img2.data, diff.data, width, height, { threshold: 0.1 });
+    mkdirSync(dirname(diffOutputPath), { recursive: true });
+    writeFileSync(diffOutputPath, PNG.sync.write(diff));
 
-  const img1 = (raw1.width !== width || raw1.height !== height)
-    ? resizePng(raw1, width, height)
-    : raw1;
-  const img2 = (raw2.width !== width || raw2.height !== height)
-    ? resizePng(raw2, width, height)
-    : raw2;
+    return {
+      similarity: 0,
+      diffPixels: width * height,
+      totalPixels: width * height,
+      width,
+      height,
+    };
+  }
 
+  const { width, height } = raw1;
   const diff = new PNG({ width, height });
-  const diffPixels = pixelmatch(img1.data, img2.data, diff.data, width, height, {
+  const diffPixels = pixelmatch(raw1.data, raw2.data, diff.data, width, height, {
     threshold: 0.1,
   });
 
