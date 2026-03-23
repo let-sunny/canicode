@@ -71,14 +71,17 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
    | 50-70% | hard |
    | <50% | failed |
 
-6. Review each issue in `nodeIssueSummaries`:
+6. **MANDATORY — Rule Impact Assessment**: For EVERY rule ID in `nodeIssueSummaries[].flaggedRuleIds`, assess its actual impact on conversion. Read the analysis JSON, collect all unique `flaggedRuleIds`, and for each one write an entry in `ruleImpactAssessment`. This array MUST NOT be empty if there are flagged rules.
    - Did this rule's issue actually make the conversion harder?
    - What was its real impact on the final similarity score?
-7. Note any difficulties NOT covered by existing rules
+   - Rate as: `easy` (no real difficulty), `moderate` (some guessing needed), `hard` (significant pixel loss), `failed` (could not reproduce)
+7. Note any difficulties NOT covered by existing rules as `uncoveredStruggles`
 
 ## Output
 
-Write results to `$RUN_DIR/conversion.json`:
+Write results to `$RUN_DIR/conversion.json`.
+
+**CRITICAL: `ruleImpactAssessment` MUST contain one entry per unique flagged rule ID. An empty array means the calibration pipeline cannot evaluate rule scores.**
 
 ```json
 {
@@ -91,8 +94,14 @@ Write results to `$RUN_DIR/conversion.json`:
     {
       "ruleId": "raw-color",
       "issueCount": 4,
-      "actualImpact": "easy | moderate | hard | failed",
-      "description": "How this rule's issues affected the overall conversion"
+      "actualImpact": "easy",
+      "description": "Colors were directly available in design tree, no difficulty"
+    },
+    {
+      "ruleId": "detached-instance",
+      "issueCount": 2,
+      "actualImpact": "easy",
+      "description": "Detached instances rendered identically to attached ones"
     }
   ],
   "interpretations": [
@@ -107,13 +116,6 @@ Write results to `$RUN_DIR/conversion.json`:
     }
   ]
 }
-```
-
-Also append a brief summary to `$RUN_DIR/activity.jsonl`.
-The log uses **JSON Lines format** — append exactly one JSON object on a single line:
-
-```json
-{"step":"Converter","timestamp":"<ISO8601>","result":"similarity=<N>% difficulty=<level>","durationMs":<ms>}
 ```
 
 ## Rules
