@@ -235,32 +235,110 @@ server.tool(
 
 server.tool(
   "docs",
-  `Get the customization guide for CanICode.
+  `Get documentation for CanICode.
 
-Returns documentation on:
-- Config overrides (excludeNodeNames, excludeNodeTypes, gridBase, colorTolerance, per-rule score/severity/enabled)
-- Custom rules (how to add project-specific checks)
-- All 39 rule IDs with default scores and severity
-- Example configs (strict, relaxed, mobile-first)
+Available topics:
+- setup: Installation and token configuration
+- rules: All rule IDs with default scores and severity
+- config: Config overrides (scores, severity, node exclusions, thresholds)
+- custom-rules: How to add project-specific checks
+- visual-compare: Pixel-level comparison between Figma and AI-generated code
+- all: Full customization guide
 
-Use this when the user asks about customization, configuration, rule settings, or how to adjust scores.`,
+Use this when the user asks about how to use canicode, configuration, rules, visual comparison, or any feature.`,
   {
-    topic: z.enum(["all", "config", "custom-rules", "rules"]).optional()
-      .describe("Specific topic: config (overrides), custom-rules (adding new rules), rules (all rule IDs). Default: all"),
+    topic: z.enum(["all", "setup", "rules", "config", "custom-rules", "visual-compare"]).optional()
+      .describe("Topic to retrieve. Default: all"),
   },
   {
     readOnlyHint: true,
     destructiveHint: false,
     openWorldHint: false,
-    title: "Get Customization Guide",
+    title: "Get Documentation",
   },
   async ({ topic }) => {
+    const selectedTopic = topic ?? "all";
+
+    // Inline topics (not from CUSTOMIZATION.md)
+    const inlineTopics: Record<string, string> = {
+      "setup": `# Setup
+
+## CLI
+\`\`\`bash
+npm install -g canicode
+canicode init --token figd_xxxxxxxxxxxxx
+\`\`\`
+
+Get your token: Figma → Settings → Security → Personal access tokens → Generate new token
+
+## MCP Server (Claude Code / Cursor / Claude Desktop)
+\`\`\`bash
+claude mcp add canicode -- npx -y -p canicode canicode-mcp
+claude mcp add -s project -t http figma https://mcp.figma.com/mcp
+\`\`\`
+
+With Figma API token (no Figma MCP needed):
+\`\`\`bash
+claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode canicode-mcp
+\`\`\``,
+
+      "visual-compare": `# Visual Compare
+
+Pixel-level comparison between Figma design and AI-generated code.
+
+## Usage
+\`\`\`bash
+canicode visual-compare ./index.html --figma-url 'https://www.figma.com/design/ABC/File?node-id=1-234'
+\`\`\`
+
+## Options
+| Option | Default | Description |
+|--------|---------|-------------|
+| --figma-url <url> | (required) | Figma URL with node-id |
+| --token <token> | FIGMA_TOKEN env | Figma API token |
+| --output <dir> | /tmp/canicode-visual-compare | Output directory |
+| --width <px> | (from Figma screenshot) | Viewport width override |
+| --height <px> | (from Figma screenshot) | Viewport height override |
+
+## Output Files
+/tmp/canicode-visual-compare/
+  figma.png — Figma screenshot (scale=2)
+  code.png — Playwright render of your HTML
+  diff.png — Pixel diff (red = different)
+
+## JSON Output (stdout)
+{
+  "similarity": 87,
+  "diffPixels": 1340,
+  "totalPixels": 102400,
+  "width": 800, "height": 600,
+  "figmaScreenshot": "...", "codeScreenshot": "...", "diff": "..."
+}
+
+## How It Works
+1. Fetches Figma screenshot via REST API (scale=2)
+2. Reads screenshot dimensions
+3. Renders HTML with Playwright at same viewport size
+4. Compares pixel-by-pixel with pixelmatch (threshold: 0.1)
+
+## Requirements
+- npx playwright install chromium
+- Figma API token with read access`,
+    };
+
+    // Check inline topics first
+    if (selectedTopic in inlineTopics) {
+      return {
+        content: [{ type: "text" as const, text: `canicode v${pkg.version}\n\n${inlineTopics[selectedTopic]}` }],
+      };
+    }
+
+    // Fall back to CUSTOMIZATION.md for config/custom-rules/rules/all
     const { readFile } = await import("node:fs/promises");
     const { resolve, dirname } = await import("node:path");
     const { fileURLToPath } = await import("node:url");
 
     try {
-      // Resolve docs/CUSTOMIZATION.md relative to the package
       const __dirname = dirname(fileURLToPath(import.meta.url));
       const docPath = resolve(__dirname, "../../docs/CUSTOMIZATION.md");
       let content: string;
@@ -268,19 +346,17 @@ Use this when the user asks about customization, configuration, rule settings, o
       try {
         content = await readFile(docPath, "utf-8");
       } catch {
-        // Fallback: try from package root (npm installed location)
         const altPath = resolve(__dirname, "../docs/CUSTOMIZATION.md");
         content = await readFile(altPath, "utf-8");
       }
 
-      // Filter by topic if specified
-      if (topic && topic !== "all") {
+      if (selectedTopic !== "all") {
         const sections: Record<string, string> = {
           "config": "## Config Overrides",
           "custom-rules": "## Custom Rules",
           "rules": "### All Rule IDs",
         };
-        const header = sections[topic];
+        const header = sections[selectedTopic];
         if (header) {
           const startIdx = content.indexOf(header);
           if (startIdx !== -1) {
@@ -297,7 +373,7 @@ Use this when the user asks about customization, configuration, rule settings, o
       };
     } catch {
       return {
-        content: [{ type: "text" as const, text: "Customization guide not found. See: https://github.com/let-sunny/canicode/blob/main/docs/CUSTOMIZATION.md" }],
+        content: [{ type: "text" as const, text: "Documentation not found. See: https://github.com/let-sunny/canicode" }],
         isError: true,
       };
     }
