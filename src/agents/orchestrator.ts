@@ -19,6 +19,22 @@ import {
 import type { CalibrationEvidenceEntry, DiscoveryEvidenceEntry } from "./evidence-collector.js";
 
 /**
+ * Patterns that indicate environment/tooling noise rather than design issues.
+ * Used to filter out non-actionable entries from discovery evidence.
+ */
+export const ENVIRONMENT_NOISE_PATTERNS = [
+  /\bfont\s*(cdn|availability|fallback|loading|download)\b/i,
+  /\bgoogle\s*fonts?\b/i,
+  /\bretina\b/i,
+  /\bdevicescalefactor\b/i,
+  /\bDPI\b/,
+  /\bscreenshot\s*(resolution|dimension|size|scale)\b/i,
+  /\bnetwork\b/i,
+  /\bCDN\s*(block|unavailabl|fail)/i,
+  /\bCI\s*(environment|limitation|constraint)\b/i,
+];
+
+/**
  * Node types that are pure graphics — not useful for code conversion
  */
 const EXCLUDED_NODE_TYPES: Set<AnalysisNodeType> = new Set([
@@ -273,10 +289,13 @@ export function runCalibrationEvaluate(
     }
     appendCalibrationEvidence(calibrationEntries);
 
-    // Append discovery evidence (missing-rule)
+    // Append discovery evidence (missing-rule), filtering out environment/tooling noise
     const discoveryEntries: DiscoveryEvidenceEntry[] = [];
     for (const m of evaluationOutput.mismatches) {
       if (m.type === "missing-rule") {
+        const isNoise = ENVIRONMENT_NOISE_PATTERNS.some(p => p.test(m.reasoning));
+        if (isNoise) continue;
+
         const categoryMatch = m.reasoning.match(/category:\s*([^,)]+)/);
         const category = categoryMatch?.[1]?.trim() ?? "unknown";
         const descMatch = m.reasoning.match(/Uncovered struggle: "([^"]+)"/);
