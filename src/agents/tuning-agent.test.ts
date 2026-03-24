@@ -238,6 +238,69 @@ describe("runTuningAgent", () => {
     expect(result.newRuleProposals).toHaveLength(0);
   });
 
+  it("merges prior evidence to boost supportingCases and confidence", () => {
+    const input: TuningAgentInput = {
+      mismatches: [
+        makeMismatch({
+          type: "overscored",
+          ruleId: "no-auto-layout",
+          currentScore: -8,
+          currentSeverity: "blocking",
+          actualDifficulty: "easy",
+          reasoning: "Single current case",
+        }),
+      ],
+      ruleScores: {
+        "no-auto-layout": { score: -8, severity: "blocking" },
+      },
+      priorEvidence: {
+        "no-auto-layout": {
+          overscoredCount: 2,
+          underscoredCount: 0,
+          overscoredDifficulties: ["easy", "easy"],
+          underscoredDifficulties: [],
+        },
+      },
+    };
+
+    const result = runTuningAgent(input);
+
+    expect(result.adjustments).toHaveLength(1);
+    const adj = result.adjustments[0]!;
+    expect(adj.ruleId).toBe("no-auto-layout");
+    // 1 current + 2 prior = 3 → high confidence
+    expect(adj.supportingCases).toBe(3);
+    expect(adj.confidence).toBe("high");
+    expect(adj.reasoning).toContain("+ 2 case(s) from prior runs");
+  });
+
+  it("generates prior-only proposals when no current mismatches but strong prior evidence", () => {
+    const input: TuningAgentInput = {
+      mismatches: [],
+      ruleScores: {
+        "raw-color": { score: -6, severity: "risk" },
+      },
+      priorEvidence: {
+        "raw-color": {
+          overscoredCount: 3,
+          underscoredCount: 0,
+          overscoredDifficulties: ["easy", "easy", "easy"],
+          underscoredDifficulties: [],
+        },
+      },
+    };
+
+    const result = runTuningAgent(input);
+
+    expect(result.adjustments).toHaveLength(1);
+    const adj = result.adjustments[0]!;
+    expect(adj.ruleId).toBe("raw-color");
+    expect(adj.supportingCases).toBe(3);
+    expect(adj.confidence).toBe("high");
+    expect(adj.reasoning).toContain("+ 3 case(s) from prior runs");
+  });
+
+
   it("ignores validated mismatches and only processes overscored/underscored/missing-rule", () => {
     const input: TuningAgentInput = {
       mismatches: [

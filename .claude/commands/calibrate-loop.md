@@ -113,6 +113,8 @@ Proceed to Step 4.
 
 After the Gap Analyzer returns, **you** write the JSON to `$RUN_DIR/gaps.json`.
 
+> **Note**: Discovery evidence from gap analysis is collected programmatically by the orchestrator during Step 4 (Evaluation). Do not manually append to `data/discovery-evidence.json`.
+
 Append to `$RUN_DIR/activity.jsonl`:
 ```json
 {"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"gaps=<N> actionable=<N>","durationMs":<ms>}
@@ -179,6 +181,21 @@ After the Arbitrator returns, **you** update `$RUN_DIR/debate.json` — read the
 Append to `$RUN_DIR/activity.jsonl`:
 ```json
 {"step":"Arbitrator","timestamp":"<ISO8601>","result":"applied=<N> rejected=<N>","durationMs":<ms>}
+```
+
+### Step 6.5 — Prune evidence
+
+After the Arbitrator applies changes, prune calibration evidence for the applied rules:
+
+```bash
+npx canicode calibrate-prune-evidence $RUN_DIR
+```
+
+This reads `debate.json`, extracts applied/revised ruleIds, and removes their entries from `data/calibration-evidence.json`.
+
+Append to `$RUN_DIR/activity.jsonl`:
+```json
+{"step":"PruneEvidence","timestamp":"<ISO8601>","result":"pruned=<N> ruleIds","durationMs":<ms>}
 ```
 
 ### Step 7 — Generate Report

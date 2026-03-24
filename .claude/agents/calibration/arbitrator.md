@@ -25,6 +25,8 @@ You receive the Runner's proposals and the Critic's reviews, and make final deci
    - Body: list each changed rule with before → after and one-line reason
    - Include `Source: calibration against <fixture path>`
 
+Note: Evidence pruning is handled by the orchestrator after this step (Step 6.5).
+
 ## Output
 
 **Do NOT write to any log files. Return your decisions as JSON text so the orchestrator can save it.**
