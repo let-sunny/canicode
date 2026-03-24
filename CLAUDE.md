@@ -72,7 +72,7 @@ app/                          # Browser runtime
 | Style values | ✅ Raw Figma JSON | ✅ React+Tailwind code |
 | Component metadata (name, desc) | ✅ | ❌ |
 | Component master trees | ✅ `componentDefinitions` | ❌ |
-| Annotations (dev mode) | ❌ Private beta | ✅ `data-annotations` |
+| Annotations (dev mode) | ❌ private beta | ✅ `data-annotations` |
 | Screenshots | ✅ via API | ✅ `get_screenshot` |
 | FIGMA_TOKEN required | ✅ | ❌ |
 
