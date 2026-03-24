@@ -84,7 +84,10 @@ Same detail as in [`CLAUDE.md`](CLAUDE.md); summarized here for quick reference.
 | Screenshots | ✅ via API | ✅ `get_screenshot` |
 | FIGMA_TOKEN required | ✅ | ❌ |
 
-**When to use which:** accurate component analysis (e.g. style overrides, missing-component rules) → **CLI with FIGMA_TOKEN**. Quick structure/style checks or annotation-aware flows → **MCP**. Offline/CI → **CLI with saved fixtures** (`save-fixture`).
+**When to use which:**
+- Accurate component analysis (style overrides, missing-component rules) → **CLI with FIGMA_TOKEN**
+- Quick structure/style checks or annotation-aware flows → **MCP**
+- Offline/CI → **CLI with saved fixtures** (`save-fixture`)
 
 </details>
 

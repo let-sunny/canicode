@@ -41,9 +41,10 @@ This skill is the **MCP path** only. For some goals, `canicode analyze` with **F
 | Component metadata (name, desc) | ✅ | ❌ |
 | Component master trees | ✅ `componentDefinitions` | ❌ |
 | Annotations (dev mode) | ❌ private beta | ✅ `data-annotations` in code |
+| Screenshots | ✅ via API | ✅ `get_screenshot` |
 | FIGMA_TOKEN | Required for live API | Not required when Figma MCP is connected |
 
-Use **CLI + token** when the user needs reliable component-master analysis. Use **this skill** for fast checks and workflows that rely on dev annotations.
+Use **CLI + token** when the user needs accurate component analysis. Use **this skill** for fast checks and workflows that rely on dev annotations.
 
 ## How to Analyze a Figma URL
 

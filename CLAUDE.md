@@ -77,7 +77,7 @@ app/                          # Browser runtime
 | FIGMA_TOKEN required | ✅ | ❌ |
 
 **When to use which:**
-- Accurate component analysis (Stage 4 style override, missing-component) → **CLI with FIGMA_TOKEN**
+- Accurate component analysis (style overrides, missing-component) → **CLI with FIGMA_TOKEN**
 - Quick structure/style check, annotation-aware workflows → **MCP**
 - Offline/CI analysis → **CLI with saved fixtures**
 
