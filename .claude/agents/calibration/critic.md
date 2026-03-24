@@ -1,7 +1,7 @@
 ---
 name: calibration-critic
 description: Challenges calibration proposals from Runner. Rejects low-confidence or over-aggressive adjustments. Use after calibration-runner completes.
-tools: Read, Write
+tools: Read
 model: claude-sonnet-4-6
 ---
 
@@ -35,16 +35,25 @@ For each proposal, output ONE of:
 
 ## Output
 
-**CRITICAL: Your prompt will contain a line like `Append your critique to: logs/activity/2026-03-20-22-30-material3-kit.jsonl`. You MUST append your output to that EXACT file path. Do NOT use any other path. Do NOT create `agent-activity-*.jsonl` or any other file.**
+**Do NOT write any files. Return your critique as JSON text so the orchestrator can save it.**
 
-The log uses **JSON Lines format** — append exactly one JSON object on a single line:
+Return this JSON structure:
 
 ```json
-{"step":"Critic","timestamp":"<ISO8601>","result":"approved=1 rejected=1 revised=1","durationMs":<ms>,"reviews":[{"ruleId":"X","decision":"APPROVE","reason":"3 cases, high confidence"},{"ruleId":"X","decision":"REJECT","reason":"Rule 1 — only 1 case with low confidence"},{"ruleId":"X","decision":"REVISE","revised":-7,"reason":"Rule 2 — change too large, midpoint applied"}]}
+{
+  "timestamp": "<ISO8601>",
+  "summary": "approved=1 rejected=1 revised=1",
+  "reviews": [
+    {"ruleId": "X", "decision": "APPROVE", "reason": "3 cases, high confidence"},
+    {"ruleId": "X", "decision": "REJECT", "reason": "Rule 1 — only 1 case with low confidence"},
+    {"ruleId": "X", "decision": "REVISE", "revised": -7, "reason": "Rule 2 — change too large, midpoint applied"}
+  ]
+}
 ```
 
 ## Rules
 
+- **Do NOT write any files.** The orchestrator handles all file I/O.
 - Do NOT modify `src/rules/rule-config.ts`.
 - Be strict. When in doubt, REJECT or REVISE.
 - Return your full critique so the Arbitrator can decide.

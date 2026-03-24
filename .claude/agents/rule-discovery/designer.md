@@ -1,7 +1,7 @@
 ---
 name: rule-discovery-designer
 description: Proposes rule specification based on Researcher findings. Defines check logic, severity, category, and initial score.
-tools: Read, Write
+tools: Read
 model: claude-sonnet-4-6
 ---
 
@@ -30,8 +30,9 @@ You will receive:
 
 ## Output
 
-Append your proposal to the activity log file specified by the orchestrator.
-The log uses **JSON Lines format** — append exactly one JSON object on a single line:
+**Do NOT write any files. Return your proposal as JSON text so the orchestrator can save it.**
+
+Return this JSON structure:
 
 ```json
 {"step":"Designer","timestamp":"<ISO8601>","result":"proposed rule <rule-id>","durationMs":<ms>,"ruleId":"<rule-id>","category":"<category>","severity":"<severity>","initialScore":-5,"trigger":"<when does this fire>","requiresTransformerChanges":false}

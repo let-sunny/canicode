@@ -6,34 +6,37 @@ Input: $ARGUMENTS (Figma URL with node-id, e.g. `https://www.figma.com/design/AB
 
 You are the orchestrator. Do NOT make calibration decisions yourself. Only pass data between agents and run deterministic CLI steps.
 
+**CRITICAL: You are responsible for writing ALL files to $RUN_DIR. Subagents return text/JSON — you write files. Never rely on a subagent to write to the correct path.**
+
 ### Step 0 — Setup
 
-Generate the activity log filename. Extract a short name from the URL (fileKey or design name). Build the path:
+Extract a short name from the URL (fileKey or design name). Create the run directory:
 
 ```
-LOG_FILE=logs/activity/YYYY-MM-DD-HH-mm-<name>.jsonl
+RUN_DIR=logs/calibration/<name>--<YYYY-MM-DD-HHMM>/
+mkdir -p $RUN_DIR
 ```
 
-Create the file and write the first JSON Lines entry:
+Create `$RUN_DIR/activity.jsonl` and write the first JSON Lines entry:
 
 ```json
 {"step":"session-start","timestamp":"<ISO8601>","result":"Calibration activity log initialized","durationMs":0}
 ```
 
-The log uses **JSON Lines format** (one JSON object per line). Each entry has this shape:
-```json
-{"step":"<StepName>","timestamp":"<ISO8601>","result":"<summary>","durationMs":<ms>}
-```
-
-Store the exact path — you will paste it verbatim into every subagent prompt below.
+Store the exact `RUN_DIR` path — you will paste it verbatim into every subagent prompt below.
 
 ### Step 1 — Analysis (CLI)
 
 ```
-npx canicode calibrate-analyze "$ARGUMENTS" --output logs/calibration/calibration-analysis.json
+npx canicode calibrate-analyze "$ARGUMENTS" --run-dir $RUN_DIR
 ```
 
-Read `logs/calibration/calibration-analysis.json`. If `issueCount` is 0, stop here.
+Read `$RUN_DIR/analysis.json`. If `issueCount` is 0, stop here.
+
+Append to `$RUN_DIR/activity.jsonl`:
+```json
+{"step":"Analysis","timestamp":"<ISO8601>","result":"nodes=<N> issues=<N> grade=<X>","durationMs":<ms>}
+```
 
 ### Step 2 — Converter
 
@@ -46,66 +49,101 @@ This is a Figma URL. Use `get_design_context` MCP tool with fileKey and root nod
 Figma URL: <paste input URL here>
 fileKey: <extracted fileKey>
 Root nodeId: <extracted nodeId>
-Activity log: <paste LOG_FILE here>
-Append a brief summary to this EXACT file. Do NOT write to any other log file.
+Run directory: <paste RUN_DIR here>
 ```
 
-The Converter will implement the ENTIRE design as one HTML page and run visual-compare.
+After the Converter returns, **verify** files exist in $RUN_DIR:
+```bash
+ls $RUN_DIR/conversion.json $RUN_DIR/output.html
+```
+
+If `conversion.json` is missing, write it yourself from the Converter's returned summary.
+
+Append to `$RUN_DIR/activity.jsonl`:
+```json
+{"step":"Converter","timestamp":"<ISO8601>","result":"similarity=<N>% difficulty=<level>","durationMs":<ms>}
+```
 
 ### Step 3 — Gap Analysis
 
-Before spawning the Gap Analyzer, check whether the visual-compare screenshots were produced by the Converter:
+Check whether screenshots were produced:
 
 ```bash
-test -f /tmp/canicode-visual-compare/figma.png && echo "EXISTS" || echo "MISSING"
+test -f $RUN_DIR/figma.png && echo "EXISTS" || echo "MISSING"
 ```
 
-- **If `/tmp/canicode-visual-compare/figma.png` does NOT exist**: skip Gap Analyzer entirely. Log a warning to `LOG_FILE`:
-  ```
-  WARNING: Gap Analyzer skipped — /tmp/canicode-visual-compare/figma.png not found. Visual-compare may have failed or been skipped by Converter.
-  ```
-  Then proceed directly to Step 4.
+**If MISSING**: append to `$RUN_DIR/activity.jsonl`:
+```json
+{"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"SKIPPED — figma.png not found","durationMs":0}
+```
+Proceed to Step 4.
 
-- **If the file exists**: spawn the `calibration-gap-analyzer` subagent. Provide:
-  - Screenshot paths: `/tmp/canicode-visual-compare/figma.png`, `/tmp/canicode-visual-compare/code.png`, `/tmp/canicode-visual-compare/diff.png`
-  - Similarity score from the Converter's output
-  - Generated HTML path: `/tmp/calibration-output.html`
-  - Figma URL
-  - Analysis JSON path: `logs/calibration/calibration-analysis.json`
+**If EXISTS**: spawn the `calibration-gap-analyzer` subagent. In the prompt include:
+- Screenshot paths: `$RUN_DIR/figma.png`, `$RUN_DIR/code.png`, `$RUN_DIR/diff.png`
+- Similarity score, HTML path, fixture/URL, analysis JSON path
+- The Converter's interpretations list
+- **Tell the agent: "Return the gap analysis as JSON. Do NOT write any files."**
 
-  ```
-  Append your summary to: <paste LOG_FILE here>
-  ```
+After the Gap Analyzer returns, **you** write the JSON to `$RUN_DIR/gaps.json`.
 
-Gap data is saved to `logs/calibration/gaps/` and accumulates over time for rule discovery.
+Append to `$RUN_DIR/activity.jsonl`:
+```json
+{"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"gaps=<N> actionable=<N>","durationMs":<ms>}
+```
 
 ### Step 4 — Evaluation (CLI)
 
 ```
-npx canicode calibrate-evaluate logs/calibration/calibration-analysis.json logs/calibration/calibration-conversion.json
+npx canicode calibrate-evaluate _ _ --run-dir $RUN_DIR
 ```
 
-Read the generated report, extract proposals. If zero proposals, stop.
+Read `$RUN_DIR/summary.md`, extract proposals.
+
+Append to `$RUN_DIR/activity.jsonl`:
+```json
+{"step":"Evaluation","timestamp":"<ISO8601>","result":"overscored=<N> underscored=<N> validated=<N> proposals=<N>","durationMs":<ms>}
+```
+
+If zero proposals, write `$RUN_DIR/debate.json` with skip reason and jump to Step 7:
+```json
+{"critic": null, "arbitrator": null, "skipped": "zero proposals from evaluation"}
+```
 
 ### Step 5 — Critic
 
-Spawn the `calibration-critic` subagent. The prompt MUST include this exact line:
+Spawn the `calibration-critic` subagent. In the prompt:
+- Include only the proposal list (NOT the Converter's reasoning)
+- **Tell the agent: "Return your reviews as JSON. Do NOT write any files."**
 
-```
-Append your critique to: <paste LOG_FILE here>
+After the Critic returns, **you** write the JSON to `$RUN_DIR/debate.json`.
+
+Append to `$RUN_DIR/activity.jsonl`:
+```json
+{"step":"Critic","timestamp":"<ISO8601>","result":"approved=<N> rejected=<N> revised=<N>","durationMs":<ms>}
 ```
 
 ### Step 6 — Arbitrator
 
-Spawn the `calibration-arbitrator` subagent. The prompt MUST include this exact line:
+Spawn the `calibration-arbitrator` subagent. In the prompt:
+- Include proposals and the Critic's reviews
+- **Tell the agent: "Return your decisions as JSON. Only edit rule-config.ts if applying changes. Do NOT write to logs."**
+
+After the Arbitrator returns, **you** update `$RUN_DIR/debate.json` — add the `arbitrator` field.
+
+Append to `$RUN_DIR/activity.jsonl`:
+```json
+{"step":"Arbitrator","timestamp":"<ISO8601>","result":"applied=<N> rejected=<N>","durationMs":<ms>}
+```
+
+### Step 7 — Generate Report
 
 ```
-Activity log: <paste LOG_FILE here>
+npx canicode calibrate-gap-report --output logs/calibration/REPORT.md
 ```
 
 ### Done
 
-Report the final summary from the Arbitrator.
+Report the final summary: similarity, proposals, decisions, and path to `logs/calibration/REPORT.md`.
 
 ## Rules
 
@@ -113,5 +151,6 @@ Report the final summary from the Arbitrator.
 - Pass only structured data between agents — never raw reasoning.
 - The Critic must NOT see the Runner's or Converter's reasoning, only the proposal list.
 - Only the Arbitrator may edit `rule-config.ts`.
-- Steps 1 and 3 are CLI commands — run them directly with Bash.
-- **CRITICAL**: Every subagent prompt MUST contain the exact LOG_FILE path. Do NOT use placeholders. Paste the actual path string.
+- Steps 1, 4, 7 are CLI commands — run them directly with Bash.
+- **CRITICAL: YOU write all files to $RUN_DIR. Subagents (Gap Analyzer, Critic, Arbitrator) MUST return JSON as text — tell them "Do NOT write any files." You are the only one who writes to $RUN_DIR.**
+- **CRITICAL: After each step, append to $RUN_DIR/activity.jsonl yourself. Do NOT rely on subagents to append.**

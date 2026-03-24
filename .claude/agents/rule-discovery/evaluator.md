@@ -1,7 +1,7 @@
 ---
 name: rule-discovery-evaluator
 description: Tests new rule against fixtures. Reports issue count, false positive rate, and score impact.
-tools: Bash, Read, Write
+tools: Bash, Read
 model: claude-sonnet-4-6
 ---
 
@@ -33,8 +33,9 @@ You will receive:
 
 ## Output
 
-Append your evaluation to the activity log file specified by the orchestrator.
-The log uses **JSON Lines format** — append exactly one JSON object on a single line:
+**Do NOT write any files. Return your evaluation as JSON text so the orchestrator can save it.**
+
+Return this JSON structure:
 
 ```json
 {"step":"Evaluator","timestamp":"<ISO8601>","result":"verdict=<KEEP|ADJUST|DROP> falsePositiveRate=<X>%","durationMs":<ms>,"ruleId":"<rule-id>","fixtures":[{"name":"material3-kit.json","issues":0,"nodesAffected":0,"scoreImpact":"-X%"}],"falsePositiveRate":"<X>%","verdict":"<KEEP|ADJUST|DROP>","verdictReason":"..."}

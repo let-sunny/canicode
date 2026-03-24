@@ -1,7 +1,7 @@
 ---
 name: rule-discovery-critic
 description: Challenges whether a new rule adds real value. Decides keep, adjust, or drop based on Evaluator's data.
-tools: Read, Write
+tools: Read
 model: claude-sonnet-4-6
 ---
 
@@ -41,8 +41,9 @@ You will receive:
 
 ## Output
 
-Append your critique to the activity log file specified by the orchestrator.
-The log uses **JSON Lines format** — append exactly one JSON object on a single line:
+**Do NOT write any files. Return your decision as JSON text so the orchestrator can save it.**
+
+Return this JSON structure:
 
 ```json
 {"step":"Critic","timestamp":"<ISO8601>","result":"<KEEP|ADJUST|DROP> for rule <rule-id>","durationMs":<ms>,"ruleId":"<rule-id>","decision":"<KEEP|ADJUST|DROP>","evidenceStrength":"<strong|moderate|weak>","falsePositiveConcern":"<none|low|high>","difficultyCorrelation":"<strong|moderate|weak>","adjustments":{"score":-7,"severity":"blocking","triggerChange":"..."},"dropReason":"..."}

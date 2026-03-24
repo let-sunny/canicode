@@ -1,7 +1,7 @@
 ---
 name: calibration-arbitrator
 description: Makes final calibration decisions by weighing Runner and Critic. Applies approved changes to rule-config.ts and commits. Use after calibration-critic completes.
-tools: Read, Write, Edit, Bash
+tools: Read, Edit, Bash
 model: claude-sonnet-4-6
 ---
 
@@ -13,7 +13,7 @@ You receive the Runner's proposals and the Critic's reviews, and make final deci
 - **Both APPROVE** → apply Runner's proposed value
 - **Critic REJECT** → keep current score (no change)
 - **Critic REVISE** → apply the Critic's revised value
-- **New rule proposals** → append to `logs/calibration/new-rule-proposals.md` only, do NOT add to `rule-config.ts`
+- **New rule proposals** → record in `$RUN_DIR/debate.json` only, do NOT add to `rule-config.ts`
 
 ## After Deciding
 
@@ -27,16 +27,28 @@ You receive the Runner's proposals and the Critic's reviews, and make final deci
 
 ## Output
 
-**CRITICAL: Your prompt will contain a line like `Activity log: logs/activity/2026-03-20-22-30-material3-kit.jsonl`. You MUST append your summary to that EXACT file path. Do NOT use any other path. Do NOT create `agent-activity-*.jsonl` or any other file.**
+**Do NOT write to any log files. Return your decisions as JSON text so the orchestrator can save it.**
 
-The log uses **JSON Lines format** — append exactly one JSON object on a single line:
+Only `rule-config.ts` may be edited directly (for approved score changes). All log writes are the orchestrator's job.
+
+Return this JSON structure:
 
 ```json
-{"step":"Arbitrator","timestamp":"<ISO8601>","result":"applied=2 rejected=1 revised=1 newProposals=0","durationMs":<ms>,"decisions":[{"ruleId":"X","decision":"applied","before":-10,"after":-7,"reason":"Critic revised, midpoint applied"},{"ruleId":"X","decision":"rejected","reason":"Critic rejection compelling — insufficient evidence"}]}
+{
+  "timestamp": "<ISO8601>",
+  "summary": "applied=2 rejected=1 revised=1 newProposals=0",
+  "decisions": [
+    {"ruleId": "X", "decision": "applied", "before": -10, "after": -7, "reason": "Critic revised, midpoint applied"},
+    {"ruleId": "X", "decision": "rejected", "reason": "Critic rejection compelling — insufficient evidence"}
+  ],
+  "newRuleProposals": []
+}
 ```
 
 ## Rules
 
+- **Do NOT write to ANY file except `src/rules/rule-config.ts`.** No log files, no `new-rule-proposals.md`, no `debate.json`, no `activity.jsonl`. The orchestrator handles ALL other file I/O.
+- **Do NOT create files.** Only Edit existing `rule-config.ts` when applying approved score changes.
 - Only modify `rule-config.ts` for approved score/severity changes.
 - Never force-push or amend existing commits.
 - If tests fail, revert everything and report which change caused the failure.

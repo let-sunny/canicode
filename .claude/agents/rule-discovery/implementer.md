@@ -35,12 +35,12 @@ You will receive:
 
 ## Output
 
-Append your implementation summary to the activity log file specified by the orchestrator.
-The log uses **JSON Lines format** — append exactly one JSON object on a single line:
+**Do NOT write to log files.** The orchestrator handles activity logging.
 
-```json
-{"step":"Implementer","timestamp":"<ISO8601>","result":"implemented rule <rule-id> lintOk=true testsOk=true buildOk=true","durationMs":<ms>,"ruleId":"<rule-id>","filesModified":["src/core/rules/<category>/index.ts","src/core/rules/rule-config.ts","src/core/rules/index.ts"],"newTests":0,"lintOk":true,"testsOk":true,"buildOk":true}
-```
+Return a summary of what you did, including:
+- Rule ID
+- Files modified
+- Whether lint, tests, and build passed
 
 ## Rules
 

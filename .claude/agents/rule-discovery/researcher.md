@@ -12,6 +12,7 @@ You are the Researcher agent in a rule discovery pipeline. Your job is to explor
 You will receive:
 - A **concept** to investigate (e.g., "component description", "annotations", "component properties")
 - One or more **fixture paths** (e.g., `fixtures/material3-kit.json`)
+- A **run directory** (`$RUN_DIR`)
 
 ## Steps
 
@@ -25,7 +26,7 @@ You will receive:
    - Is it stored in `src/core/contracts/figma-node.ts`?
    - Are there existing rules that use it?
 4. Check the Figma REST API spec (`@figma/rest-api-spec`) for the field's type and availability
-5. Read accumulated gap data in `logs/calibration/gaps/*.json`:
+5. Read accumulated gap data in `logs/calibration/*/gaps.json`:
    - Are there recurring gaps related to this concept?
    - How many times has this gap appeared across runs?
    - What pixel impact does it have?
@@ -36,8 +37,9 @@ You will receive:
 
 ## Output
 
-Append your report to the activity log file specified by the orchestrator.
-The log uses **JSON Lines format** — append exactly one JSON object on a single line:
+**Do NOT write any files. Return your findings as JSON text so the orchestrator can save it.**
+
+Return this JSON structure:
 
 ```json
 {"step":"Researcher","timestamp":"<ISO8601>","result":"concept=<concept> feasible=<yes|no>","durationMs":<ms>,"concept":"<concept>","fixtures":["<fixture-path>"],"fieldAvailable":true,"parsedInTransformer":false,"requiresTransformerChanges":true,"feasible":true,"suggestedDirection":"..."}
@@ -45,6 +47,6 @@ The log uses **JSON Lines format** — append exactly one JSON object on a singl
 
 ## Rules
 
-- Do NOT modify any source files. Only write to `logs/`.
+- **Do NOT write any files.** The orchestrator handles all file I/O.
 - Be thorough — the Designer agent depends on your data.
 - If the concept doesn't exist in the fixture data, say so clearly.
