@@ -34,9 +34,8 @@ export class FigmaClient {
     return new FigmaClient({ token });
   }
 
-  async getFile(fileKey: string, options?: { geometry?: boolean }): Promise<GetFileResponse> {
-    const params = options?.geometry !== false ? "?geometry=paths" : "";
-    const url = `${FIGMA_API_BASE}/files/${fileKey}${params}`;
+  async getFile(fileKey: string): Promise<GetFileResponse> {
+    const url = `${FIGMA_API_BASE}/files/${fileKey}`;
     const response = await fetch(url, {
       headers: {
         "X-Figma-Token": this.token,
@@ -119,7 +118,7 @@ export class FigmaClient {
     nodeIds: string[]
   ): Promise<GetFileNodesResponse> {
     const ids = nodeIds.join(",");
-    const url = `${FIGMA_API_BASE}/files/${fileKey}/nodes?ids=${encodeURIComponent(ids)}&geometry=paths`;
+    const url = `${FIGMA_API_BASE}/files/${fileKey}/nodes?ids=${encodeURIComponent(ids)}`;
     const response = await fetch(url, {
       headers: {
         "X-Figma-Token": this.token,
