@@ -1,6 +1,7 @@
 import type { RuleCheckFn, RuleDefinition } from "../../contracts/rule.js";
 import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
+import { getRuleOption } from "../rule-config.js";
 
 // ============================================
 // Helper functions
@@ -199,9 +200,9 @@ const invisibleLayerDef: RuleDefinition = {
   id: "invisible-layer",
   name: "Invisible Layer",
   category: "ai-readability",
-  why: "Hidden layers add noise and may confuse analysis tools",
-  impact: "Exported code may include unnecessary elements",
-  fix: "Delete hidden layers or move them to a separate 'archive' page",
+  why: "Hidden layers increase API response size and node count but are skipped during code generation. They are a normal part of the Figma workflow (version history, A/B options, state layers) and do not block implementation.",
+  impact: "Minor token overhead from larger API responses. No impact on code generation accuracy since hidden nodes are excluded from the design tree.",
+  fix: "No action required if hidden layers are intentional. Clean up unused hidden layers to reduce file size. If a frame has many hidden children representing states, consider using Figma's Slot feature for cleaner state management.",
 };
 
 const invisibleLayerCheck: RuleCheckFn = (node, context) => {
@@ -210,11 +211,27 @@ const invisibleLayerCheck: RuleCheckFn = (node, context) => {
   // Skip if parent is also invisible (only report top-level invisible)
   if (context.parent?.visible === false) return null;
 
+  // Check if parent has many hidden children — suggest Slot
+  const slotThreshold =
+    getRuleOption("invisible-layer", "slotRecommendationThreshold", 3);
+  const hiddenSiblingCount = context.siblings
+    ? context.siblings.filter((s) => s.visible === false).length
+    : 0;
+
+  if (hiddenSiblingCount >= slotThreshold) {
+    return {
+      ruleId: invisibleLayerDef.id,
+      nodeId: node.id,
+      nodePath: context.path.join(" > "),
+      message: `"${node.name}" is hidden (${hiddenSiblingCount} hidden siblings) — if these represent states, consider using Figma Slots instead`,
+    };
+  }
+
   return {
     ruleId: invisibleLayerDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" is hidden - consider removing if not needed`,
+    message: `"${node.name}" is hidden — no impact on code generation, clean up if unused`,
   };
 };
 
