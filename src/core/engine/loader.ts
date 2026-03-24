@@ -13,10 +13,12 @@ export interface LoadResult {
   nodeId?: string | undefined;
 }
 
+/** Check if input string is a Figma URL. */
 export function isFigmaUrl(input: string): boolean {
   return input.includes("figma.com/");
 }
 
+/** Check if input string is a JSON file path. */
 export function isJsonFile(input: string): boolean {
   return input.endsWith(".json");
 }
@@ -44,6 +46,10 @@ export function resolveFixturePath(input: string): string {
   return resolve(join(input, "data.json"));
 }
 
+/**
+ * Load a Figma file from a URL, JSON file, or fixture directory.
+ * Resolves component master node trees for accurate analysis.
+ */
 export async function loadFile(
   input: string,
   token?: string,
