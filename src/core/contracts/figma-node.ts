@@ -31,6 +31,7 @@ export const AnalysisNodeTypeSchema = z.enum([
   "LINK_UNFURL",
   "TABLE",
   "TABLE_CELL",
+  "SLOT",
 ]);
 
 export type AnalysisNodeType = z.infer<typeof AnalysisNodeTypeSchema>;
