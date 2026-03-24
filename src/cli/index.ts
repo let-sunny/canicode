@@ -864,7 +864,6 @@ cli
   .action(async (input: string, options: { token?: string; output?: string; vectorDir?: string }) => {
     try {
       const { file } = await loadFile(input, options.token);
-      const { generateDesignTree } = await import("../core/engine/design-tree.js");
 
       // Auto-detect vector dir from fixture path
       let vectorDir = options.vectorDir;
@@ -876,16 +875,17 @@ cli
         if (existsSync(autoDir)) vectorDir = autoDir;
       }
 
-      const tree = generateDesignTree(file, vectorDir ? { vectorDir } : undefined);
+      const { generateDesignTreeWithStats } = await import("../core/engine/design-tree.js");
+      const stats = generateDesignTreeWithStats(file, vectorDir ? { vectorDir } : undefined);
 
       if (options.output) {
         const outputDir = dirname(resolve(options.output));
         if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
         const { writeFile: writeFileAsync } = await import("node:fs/promises");
-        await writeFileAsync(resolve(options.output), tree, "utf-8");
-        console.log(`Design tree saved: ${resolve(options.output)} (${Math.round(tree.length / 1024)}KB)`);
+        await writeFileAsync(resolve(options.output), stats.tree, "utf-8");
+        console.log(`Design tree saved: ${resolve(options.output)} (${Math.round(stats.bytes / 1024)}KB, ~${stats.estimatedTokens} tokens)`);
       } else {
-        console.log(tree);
+        console.log(stats.tree);
       }
     } catch (error) {
       console.error("\nError:", error instanceof Error ? error.message : String(error));
