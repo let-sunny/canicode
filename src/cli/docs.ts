@@ -7,6 +7,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const pkg = require("../../package.json") as { version: string };
 
+/** Print the docs index with available topics. */
 export function printDocsIndex(): void {
   console.log(`
 CANICODE DOCUMENTATION (v${pkg.version})
@@ -19,6 +20,7 @@ Full documentation: github.com/let-sunny/canicode#readme
 `.trimStart());
 }
 
+/** Print the setup guide (CLI, MCP, Skills). */
 export function printDocsSetup(): void {
   console.log(`
 CANICODE SETUP GUIDE
@@ -102,6 +104,7 @@ CANICODE SETUP GUIDE
 `.trimStart());
 }
 
+/** Print custom rules guide with examples. */
 export function printDocsRules(): void {
   console.log(`
 CUSTOM RULES GUIDE
@@ -159,6 +162,7 @@ TIP: Ask any LLM "Write a canicode custom rule that checks X" with the
 `.trimStart());
 }
 
+/** Print config override guide with examples. */
 export function printDocsConfig(): void {
   console.log(`
 CONFIG GUIDE
@@ -276,6 +280,7 @@ const DOCS_TOPICS: Record<string, () => void> = {
   "design-tree": printDocsDesignTree,
 };
 
+/** Route docs command to the appropriate topic handler. */
 export function handleDocs(topic?: string): void {
   if (!topic) {
     printDocsIndex();

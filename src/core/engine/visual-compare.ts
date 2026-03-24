@@ -8,6 +8,7 @@ import { resolve, dirname } from "node:path";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
 
+/** Result of a visual comparison between Figma design and rendered code. */
 export interface VisualCompareResult {
   similarity: number;
   diffPixels: number;
@@ -19,6 +20,7 @@ export interface VisualCompareResult {
   diffPath: string;
 }
 
+/** Options for the visual comparison pipeline. */
 export interface VisualCompareOptions {
   figmaUrl: string;
   figmaToken: string;

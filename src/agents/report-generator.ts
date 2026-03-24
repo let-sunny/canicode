@@ -2,6 +2,7 @@ import type { ScoreReport } from "@/core/engine/scoring.js";
 import type { MismatchCase } from "./contracts/evaluation-agent.js";
 import type { ScoreAdjustment, NewRuleProposal } from "./contracts/tuning-agent.js";
 
+/** Data structure for generating calibration report markdown. */
 export interface CalibrationReportData {
   fileKey: string;
   fileName: string;

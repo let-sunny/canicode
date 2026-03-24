@@ -159,6 +159,7 @@ export function moveFixtureToDone(fixturePath: string, fixturesDir: string = DEF
 
 // --- Debate result parsing ---
 
+/** A single decision from the Arbitrator in debate.json. */
 export interface DebateDecision {
   ruleId: string;
   decision: string;
@@ -167,6 +168,7 @@ export interface DebateDecision {
   reason?: string | undefined;
 }
 
+/** Parsed debate.json structure from a calibration run. */
 export interface DebateResult {
   critic: {
     summary: string;
@@ -211,27 +213,41 @@ export function parseDebateResult(runDir: string): DebateResult | null {
   }
 }
 
-/**
- * Extract ruleIds that were applied or revised by the Arbitrator.
- */
+/** Type guard for debate decision records (defensive against malformed JSON). */
 function isDecisionRecord(d: unknown): d is { decision?: unknown; ruleId?: unknown } {
   return d !== null && typeof d === "object";
 }
 
+/** Normalize a decision field value to lowercase trimmed string. */
+function normalizeDecision(d: { decision?: unknown }): string {
+  return String(d.decision ?? "").trim().toLowerCase();
+}
+
+/** Count decisions matching a set of decision types. */
+function countDecisions(decisions: unknown[], types: Set<string>): number {
+  return decisions.filter((d) => {
+    if (!isDecisionRecord(d)) return false;
+    return types.has(normalizeDecision(d));
+  }).length;
+}
+
+const APPLIED_TYPES = new Set(["applied", "revised"]);
+const REJECTED_TYPES = new Set(["rejected"]);
+
+/**
+ * Extract ruleIds that were applied or revised by the Arbitrator.
+ */
 export function extractAppliedRuleIds(debate: DebateResult): string[] {
   if (!debate.arbitrator) return [];
   const decisions = debate.arbitrator.decisions;
   if (!Array.isArray(decisions)) return [];
   return decisions
-    .filter((d) => {
-      if (!isDecisionRecord(d)) return false;
-      const dec = String(d.decision ?? "").trim().toLowerCase();
-      return dec === "applied" || dec === "revised";
-    })
-    .map((d) => String(d.ruleId ?? "").trim())
+    .filter((d) => isDecisionRecord(d) && APPLIED_TYPES.has(normalizeDecision(d)))
+    .map((d) => String((d as { ruleId?: unknown }).ruleId ?? "").trim())
     .filter((id) => id.length > 0);
 }
 
+/** Options for convergence checking. */
 export interface ConvergenceOptions {
   /**
    * When true, converged iff no applied/revised decisions (ignore rejected count).
@@ -252,16 +268,8 @@ export function isConverged(runDir: string, options?: ConvergenceOptions): boole
   if (!debate.arbitrator) return false;
   const decisions = debate.arbitrator.decisions;
   if (!Array.isArray(decisions)) return false;
-  const changed = decisions.filter((d) => {
-    if (!isDecisionRecord(d)) return false;
-    const dec = String(d.decision ?? "").trim().toLowerCase();
-    return dec === "applied" || dec === "revised";
-  }).length;
-  const rejected = decisions.filter((d) => {
-    if (!isDecisionRecord(d)) return false;
-    const dec = String(d.decision ?? "").trim().toLowerCase();
-    return dec === "rejected";
-  }).length;
+  const changed = countDecisions(decisions, APPLIED_TYPES);
+  const rejected = countDecisions(decisions, REJECTED_TYPES);
   if (options?.lenient) {
     return changed === 0;
   }

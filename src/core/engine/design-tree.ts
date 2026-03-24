@@ -226,6 +226,7 @@ function renderNode(
   return lines.join("\n");
 }
 
+/** Options for design tree generation. */
 export interface DesignTreeOptions {
   /** Directory containing <nodeId>.svg files for VECTOR nodes */
   vectorDir?: string;
