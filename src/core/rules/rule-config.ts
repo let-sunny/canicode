@@ -212,8 +212,8 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "invisible-layer": {
-    severity: "blocking",
-    score: -10,
+    severity: "suggestion",
+    score: -1,
     enabled: true,
   },
   "empty-frame": {

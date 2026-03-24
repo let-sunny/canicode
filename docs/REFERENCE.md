@@ -147,7 +147,7 @@ Override score, severity, or enable/disable individual rules:
 | `ambiguous-structure` | -10 | blocking |
 | `z-index-dependent-layout` | -5 | risk |
 | `missing-layout-hint` | -3 | missing-info |
-| `invisible-layer` | -10 | blocking |
+| `invisible-layer` | -1 | suggestion |
 | `empty-frame` | -2 | missing-info |
 
 **Handoff Risk (5 rules)**
