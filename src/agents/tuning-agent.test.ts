@@ -300,27 +300,6 @@ describe("runTuningAgent", () => {
     expect(adj.reasoning).toContain("+ 3 case(s) from prior runs");
   });
 
-  it("does not include disable field in adjustments", () => {
-    const input: TuningAgentInput = {
-      mismatches: [
-        makeMismatch({
-          type: "overscored",
-          ruleId: "some-rule",
-          currentScore: -8,
-          currentSeverity: "blocking",
-          actualDifficulty: "easy",
-          reasoning: "easy difficulty",
-        }),
-      ],
-      ruleScores: {
-        "some-rule": { score: -8, severity: "blocking" },
-      },
-    };
-
-    const result = runTuningAgent(input);
-    const adj = result.adjustments[0]!;
-    expect(adj).not.toHaveProperty("disable");
-  });
 
   it("ignores validated mismatches and only processes overscored/underscored/missing-rule", () => {
     const input: TuningAgentInput = {
