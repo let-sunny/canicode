@@ -57,10 +57,15 @@ body {
 
 /* ---- Category grid ---- */
 .cat-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
   margin-bottom: 16px;
+}
+.cat-grid .cat-card {
+  flex: 0 1 calc(33.33% - 6px);
+  min-width: 90px;
 }
 .cat-card {
   background: var(--card);
