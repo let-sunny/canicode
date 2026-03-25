@@ -147,6 +147,7 @@ const BaseAnalysisNodeSchema = z.object({
   individualStrokeWeights: z.record(z.string(), z.number()).optional(),
   effects: z.array(z.unknown()).optional(),
   cornerRadius: z.number().optional(),
+  opacity: z.number().optional(),
 
   // Variable binding analysis (design tokens)
   boundVariables: z.record(z.string(), z.unknown()).optional(),
@@ -162,6 +163,9 @@ const BaseAnalysisNodeSchema = z.object({
       description: z.string().optional(),
     })
     .optional(),
+
+  // Prototype interactions
+  interactions: z.array(z.unknown()).optional(),
 
   // Naming analysis metadata
   isAsset: z.boolean().optional(),

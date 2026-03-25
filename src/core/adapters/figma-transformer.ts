@@ -194,6 +194,9 @@ function transformNode(node: Node): AnalysisNode {
   if ("cornerRadius" in node && typeof node.cornerRadius === "number") {
     base.cornerRadius = node.cornerRadius;
   }
+  if ("opacity" in node && typeof node.opacity === "number" && node.opacity < 1) {
+    base.opacity = node.opacity;
+  }
 
   // Variable bindings
   if ("boundVariables" in node && node.boundVariables) {
@@ -211,6 +214,11 @@ function transformNode(node: Node): AnalysisNode {
   // Handoff status
   if ("devStatus" in node && node.devStatus) {
     base.devStatus = node.devStatus as AnalysisNode["devStatus"];
+  }
+
+  // Prototype interactions
+  if ("interactions" in node && Array.isArray(node.interactions) && node.interactions.length > 0) {
+    base.interactions = node.interactions;
   }
 
   // Recursively transform children

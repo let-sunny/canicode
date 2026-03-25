@@ -162,7 +162,6 @@ describe("calculateScores", () => {
       "no-auto-layout", "group-usage", "deep-nesting", "fixed-size-in-auto-layout",
       "missing-responsive-behavior", "absolute-position-in-auto-layout",
       "fixed-width-in-responsive-context", "missing-min-width", "missing-max-width",
-      "overflow-hidden-abuse", "inconsistent-sibling-layout-direction",
     ] as const;
 
     const issues: AnalysisIssue[] = [];
@@ -276,10 +275,10 @@ describe("calculateGrade (via calculateScores)", () => {
     const rulesPerCat: Record<Category, string[]> = {
       layout: ["no-auto-layout", "group-usage", "deep-nesting", "fixed-size-in-auto-layout", "missing-responsive-behavior"],
       token: ["raw-color", "raw-font", "inconsistent-spacing", "magic-number-spacing", "raw-shadow"],
-      component: ["missing-component", "detached-instance", "variant-not-used", "component-property-unused", "single-use-component"],
+      component: ["missing-component", "detached-instance", "missing-component-description"],
       naming: ["default-name", "non-semantic-name", "inconsistent-naming-convention", "numeric-suffix-name", "too-long-name"],
       "ai-readability": ["ambiguous-structure", "z-index-dependent-layout", "missing-layout-hint", "invisible-layer", "empty-frame"],
-      "handoff-risk": ["hardcode-risk", "text-truncation-unhandled", "image-no-placeholder", "prototype-link-in-design", "no-dev-status"],
+      "handoff-risk": ["hardcode-risk", "text-truncation-unhandled", "prototype-link-in-design"],
     };
 
     for (const cat of categories) {

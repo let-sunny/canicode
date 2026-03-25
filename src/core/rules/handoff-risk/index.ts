@@ -18,17 +18,6 @@ function isTextNode(node: AnalysisNode): boolean {
   return node.type === "TEXT";
 }
 
-function isImageNode(node: AnalysisNode): boolean {
-  // Images are often rectangles with image fills
-  if (node.type === "RECTANGLE" && node.fills) {
-    for (const fill of node.fills) {
-      const fillObj = fill as Record<string, unknown>;
-      if (fillObj["type"] === "IMAGE") return true;
-    }
-  }
-  return false;
-}
-
 // ============================================
 // hardcode-risk
 // ============================================
@@ -37,9 +26,9 @@ const hardcodeRiskDef: RuleDefinition = {
   id: "hardcode-risk",
   name: "Hardcode Risk",
   category: "handoff-risk",
-  why: "Absolute positioning with fixed values creates inflexible layouts",
-  impact: "Layout will break when content changes or on different screens",
-  fix: "Use Auto Layout with relative positioning",
+  why: "Hardcoded position/size values force AI to use magic numbers instead of computed layouts",
+  impact: "Generated code is brittle — any content change (longer text, different image) breaks the layout",
+  fix: "Use Auto Layout with relative positioning so AI generates flexible CSS",
 };
 
 const hardcodeRiskCheck: RuleCheckFn = (node, context) => {
@@ -74,9 +63,9 @@ const textTruncationUnhandledDef: RuleDefinition = {
   id: "text-truncation-unhandled",
   name: "Text Truncation Unhandled",
   category: "handoff-risk",
-  why: "Text nodes without truncation handling may overflow",
-  impact: "Long text will break the layout",
-  fix: "Set text truncation (ellipsis) or ensure container can grow",
+  why: "Long text in a narrow container without truncation rules — AI doesn't know if it should clip, ellipsis, or grow",
+  impact: "AI may generate code where text overflows the container, breaking the visual layout",
+  fix: "Set text truncation (ellipsis) or ensure the container uses 'Hug' so the intent is explicit",
 };
 
 const textTruncationUnhandledCheck: RuleCheckFn = (node, context) => {
@@ -114,60 +103,85 @@ export const textTruncationUnhandled = defineRule({
 });
 
 // ============================================
-// image-no-placeholder
-// ============================================
-
-const imageNoPlaceholderDef: RuleDefinition = {
-  id: "image-no-placeholder",
-  name: "Image No Placeholder",
-  category: "handoff-risk",
-  why: "Images without placeholder state may cause layout shifts",
-  impact: "Poor user experience during image loading",
-  fix: "Define a placeholder state or background color",
-};
-
-const imageNoPlaceholderCheck: RuleCheckFn = (node, context) => {
-  if (!isImageNode(node)) return null;
-
-  // Check if there's a background color or placeholder indicator
-  // This is a heuristic - images should have fallback fills
-  if (node.fills && Array.isArray(node.fills) && node.fills.length === 1) {
-    const fill = node.fills[0] as Record<string, unknown>;
-    if (fill["type"] === "IMAGE") {
-      return {
-        ruleId: imageNoPlaceholderDef.id,
-        nodeId: node.id,
-        nodePath: context.path.join(" > "),
-        message: `"${node.name}" image has no placeholder fill`,
-      };
-    }
-  }
-
-  return null;
-};
-
-export const imageNoPlaceholder = defineRule({
-  definition: imageNoPlaceholderDef,
-  check: imageNoPlaceholderCheck,
-});
-
-// ============================================
 // prototype-link-in-design
 // ============================================
 
 const prototypeLinkInDesignDef: RuleDefinition = {
   id: "prototype-link-in-design",
-  name: "Prototype Link in Design",
+  name: "Missing Prototype Interaction",
   category: "handoff-risk",
-  why: "Prototype connections may affect how the design is interpreted",
-  impact: "Developers may misunderstand which elements should be interactive",
-  fix: "Document interactions separately or use clear naming",
+  why: "Interactive-looking elements without prototype interactions force developers to guess behavior",
+  impact: "Developers cannot know the intended interaction (hover state, navigation, etc.)",
+  fix: "Add prototype interactions to interactive elements, or use naming to clarify non-interactive intent",
 };
 
-const prototypeLinkInDesignCheck: RuleCheckFn = (_node, _context) => {
-  // This would require checking prototype/interaction data
-  // Not available in basic node structure - needs more Figma API data
-  return null;
+/** Name patterns that suggest an interactive element */
+const INTERACTIVE_NAME_PATTERNS = [
+  /\bbtn\b/i, /\bbutton\b/i, /\blink\b/i, /\btab\b/i,
+  /\bcta\b/i, /\btoggle\b/i, /\bswitch\b/i, /\bcheckbox\b/i,
+  /\bradio\b/i, /\bdropdown\b/i, /\bselect\b/i, /\bmenu\b/i,
+  /\bnav\b/i, /\bclickable\b/i, /\btappable\b/i,
+];
+
+/** Variant names that imply interactive states */
+const STATE_VARIANT_PATTERNS = [
+  /\bhover\b/i, /\bpressed\b/i, /\bactive\b/i, /\bfocused\b/i,
+  /\bdisabled\b/i, /\bselected\b/i,
+];
+
+function looksInteractive(node: AnalysisNode): boolean {
+  // Check name patterns
+  if (node.name && INTERACTIVE_NAME_PATTERNS.some((p) => p.test(node.name))) {
+    return true;
+  }
+
+  // Check if component has state variants (hover, pressed, etc.)
+  if (node.componentPropertyDefinitions) {
+    const propValues = Object.values(node.componentPropertyDefinitions);
+    for (const prop of propValues) {
+      const p = prop as Record<string, unknown>;
+      // VARIANT type properties with state-like values
+      if (p["type"] === "VARIANT" && p["variantOptions"]) {
+        const options = p["variantOptions"];
+        if (Array.isArray(options) && options.some((opt) => typeof opt === "string" && STATE_VARIANT_PATTERNS.some((pat) => pat.test(opt)))) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+/** Check if any descendant has interactions defined */
+function hasDescendantInteractions(node: AnalysisNode): boolean {
+  if (node.interactions && node.interactions.length > 0) return true;
+  for (const child of node.children ?? []) {
+    if (hasDescendantInteractions(child)) return true;
+  }
+  return false;
+}
+
+const prototypeLinkInDesignCheck: RuleCheckFn = (node, context) => {
+  // Only check components and instances (interactive elements are typically components)
+  if (node.type !== "COMPONENT" && node.type !== "INSTANCE" && node.type !== "FRAME") return null;
+
+  if (!looksInteractive(node)) return null;
+
+  // If interactions exist on this node, it's covered
+  if (node.interactions && node.interactions.length > 0) return null;
+
+  // Skip container frames whose children already have interactions (e.g., "Button Group" wrapping interactive buttons)
+  if (node.type === "FRAME" && node.children && node.children.length > 0) {
+    if (hasDescendantInteractions(node)) return null;
+  }
+
+  return {
+    ruleId: prototypeLinkInDesignDef.id,
+    nodeId: node.id,
+    nodePath: context.path.join(" > "),
+    message: `"${node.name}" looks interactive but has no prototype interactions defined`,
+  };
 };
 
 export const prototypeLinkInDesign = defineRule({
@@ -175,36 +189,3 @@ export const prototypeLinkInDesign = defineRule({
   check: prototypeLinkInDesignCheck,
 });
 
-// ============================================
-// no-dev-status
-// ============================================
-
-const noDevStatusDef: RuleDefinition = {
-  id: "no-dev-status",
-  name: "No Dev Status",
-  category: "handoff-risk",
-  why: "Without dev status, developers cannot know if a design is ready",
-  impact: "May implement designs that are still in progress",
-  fix: "Mark frames as 'Ready for Dev' or 'Completed' when appropriate",
-};
-
-const noDevStatusCheck: RuleCheckFn = (node, context) => {
-  // Only check top-level frames (likely screens/pages)
-  if (node.type !== "FRAME") return null;
-  if (context.depth > 1) return null;
-
-  // Check for devStatus
-  if (node.devStatus) return null;
-
-  return {
-    ruleId: noDevStatusDef.id,
-    nodeId: node.id,
-    nodePath: context.path.join(" > "),
-    message: `"${node.name}" has no dev status set`,
-  };
-};
-
-export const noDevStatus = defineRule({
-  definition: noDevStatusDef,
-  check: noDevStatusCheck,
-});

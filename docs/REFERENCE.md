@@ -92,7 +92,7 @@ Override score, severity, or enable/disable individual rules:
 
 ### All Rule IDs
 
-**Layout (11 rules)**
+**Layout (9 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
@@ -104,8 +104,6 @@ Override score, severity, or enable/disable individual rules:
 | `fixed-size-in-auto-layout` | -5 | risk |
 | `missing-min-width` | -5 | risk |
 | `missing-max-width` | -4 | risk |
-| `overflow-hidden-abuse` | -3 | missing-info |
-| `inconsistent-sibling-layout-direction` | -2 | missing-info |
 
 **Token (7 rules)**
 
@@ -119,15 +117,12 @@ Override score, severity, or enable/disable individual rules:
 | `raw-opacity` | -5 | risk |
 | `multiple-fill-colors` | -3 | missing-info |
 
-**Component (6 rules)**
+**Component (3 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
 | `missing-component` | -7 | risk |
 | `detached-instance` | -5 | risk |
-| `variant-not-used` | -3 | suggestion |
-| `component-property-unused` | -2 | suggestion |
-| `single-use-component` | -2 | suggestion |
 | `missing-component-description` | -2 | missing-info |
 
 **Naming (5 rules)**
@@ -150,16 +145,13 @@ Override score, severity, or enable/disable individual rules:
 | `invisible-layer` | -1 | suggestion |
 | `empty-frame` | -2 | missing-info |
 
-**Handoff Risk (5 rules)**
+**Handoff Risk (3 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
 | `hardcode-risk` | -5 | risk |
 | `text-truncation-unhandled` | -5 | risk |
-| `image-no-placeholder` | -4 | risk |
 | `prototype-link-in-design` | -2 | suggestion |
-| `no-dev-status` | -2 | suggestion |
-| `deep-nesting` | -4 | risk |
 
 ### Example Configs
 

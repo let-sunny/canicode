@@ -100,8 +100,6 @@ export type RuleId =
   | "missing-min-width"
   | "missing-max-width"
   | "deep-nesting"
-  | "overflow-hidden-abuse"
-  | "inconsistent-sibling-layout-direction"
   // Token (7)
   | "raw-color"
   | "raw-font"
@@ -110,12 +108,9 @@ export type RuleId =
   | "raw-shadow"
   | "raw-opacity"
   | "multiple-fill-colors"
-  // Component (6)
+  // Component (4)
   | "missing-component"
   | "detached-instance"
-  | "variant-not-used"
-  | "component-property-unused"
-  | "single-use-component"
   | "missing-component-description"
   // Naming (5)
   | "default-name"
@@ -132,9 +127,7 @@ export type RuleId =
   // Handoff Risk (5)
   | "hardcode-risk"
   | "text-truncation-unhandled"
-  | "image-no-placeholder"
-  | "prototype-link-in-design"
-  | "no-dev-status";
+  | "prototype-link-in-design";
 
 /**
  * Categories that support depthWeight

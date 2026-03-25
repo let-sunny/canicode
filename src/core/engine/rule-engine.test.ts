@@ -243,31 +243,34 @@ describe("RuleEngine.analyze — rule filtering", () => {
   });
 
   it("skips rules disabled in config (enabled: false)", () => {
+    // Frame without auto-layout triggers no-auto-layout rule when enabled
     const doc = makeNode({
       id: "0:1",
       name: "Document",
       type: "DOCUMENT",
       children: [
-        makeNode({ id: "f:1", name: "Frame", type: "FRAME" }),
+        makeNode({ id: "f:1", name: "Frame", type: "FRAME", children: [makeNode({ id: "c:1" })] }),
       ],
     });
     const file = makeFile({ document: doc });
 
-    // Positive control: explicitly enable no-dev-status to prove it can fire
-    const enabledConfigs = { ...RULE_CONFIGS };
-    enabledConfigs["no-dev-status"] = { ...enabledConfigs["no-dev-status"], enabled: true };
-    const resultEnabled = analyzeFile(file, { configs: enabledConfigs });
-    const devStatusEnabled = resultEnabled.issues.filter(
-      (i) => i.violation.ruleId === "no-dev-status"
+    // Positive control: no-auto-layout fires when enabled (default)
+    const resultEnabled = analyzeFile(file);
+    const enabledIssues = resultEnabled.issues.filter(
+      (i) => i.violation.ruleId === "no-auto-layout"
     );
-    expect(devStatusEnabled.length).toBeGreaterThan(0);
+    expect(enabledIssues.length).toBeGreaterThan(0);
 
-    // Default config: no-dev-status is disabled → no issues
-    const result = analyzeFile(file);
-    const devStatusIssues = result.issues.filter(
-      (i) => i.violation.ruleId === "no-dev-status"
+    // Disable the rule → no issues for that rule
+    const disabledConfigs = { ...RULE_CONFIGS };
+    const baseConfig = disabledConfigs["no-auto-layout"];
+    expect(baseConfig).toBeDefined();
+    disabledConfigs["no-auto-layout"] = { ...baseConfig!, enabled: false };
+    const result = analyzeFile(file, { configs: disabledConfigs });
+    const disabledIssues = result.issues.filter(
+      (i) => i.violation.ruleId === "no-auto-layout"
     );
-    expect(devStatusIssues.length).toBe(0);
+    expect(disabledIssues.length).toBe(0);
   });
 });
 
