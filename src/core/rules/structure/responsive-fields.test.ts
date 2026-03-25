@@ -101,8 +101,8 @@ describe("fixed-size-in-auto-layout", () => {
   });
 });
 
-describe("missing-min-width", () => {
-  it("flags FILL container without minWidth in auto-layout", () => {
+describe("missing-size-constraint", () => {
+  it("flags FILL container without any size constraints", () => {
     const file = makeFile(
       makeNode({
         name: "Root",
@@ -120,13 +120,13 @@ describe("missing-min-width", () => {
     );
     const result = analyzeFile(file);
     const issues = result.issues.filter(
-      (i) => i.rule.definition.id === "missing-min-width",
+      (i) => i.rule.definition.id === "missing-size-constraint",
     );
     expect(issues.length).toBeGreaterThanOrEqual(1);
-    expect(issues.at(0)?.violation.message).toContain("Content");
+    expect(issues.at(0)?.violation.message).toContain("min or max");
   });
 
-  it("does not flag FILL container that has minWidth set", () => {
+  it("flags missing maxWidth when minWidth is set and container is wide", () => {
     const file = makeFile(
       makeNode({
         name: "Root",
@@ -145,9 +145,10 @@ describe("missing-min-width", () => {
     );
     const result = analyzeFile(file);
     const issues = result.issues.filter(
-      (i) => i.rule.definition.id === "missing-min-width",
+      (i) => i.rule.definition.id === "missing-size-constraint",
     );
-    expect(issues).toHaveLength(0);
+    expect(issues.length).toBeGreaterThanOrEqual(1);
+    expect(issues.at(0)?.violation.message).toContain("max-width");
   });
 
   it("does not flag FIXED container", () => {
@@ -168,14 +169,12 @@ describe("missing-min-width", () => {
     );
     const result = analyzeFile(file);
     const issues = result.issues.filter(
-      (i) => i.rule.definition.id === "missing-min-width",
+      (i) => i.rule.definition.id === "missing-size-constraint",
     );
     expect(issues).toHaveLength(0);
   });
-});
 
-describe("missing-max-width", () => {
-  it("flags FILL container without maxWidth", () => {
+  it("flags missing maxWidth when only minWidth is set on wide container", () => {
     const file = makeFile(
       makeNode({
         name: "Root",
@@ -186,6 +185,7 @@ describe("missing-max-width", () => {
             name: "TextBlock",
             type: "FRAME",
             layoutSizingHorizontal: "FILL",
+            minWidth: 100,
             absoluteBoundingBox: { x: 0, y: 0, width: 600, height: 100 },
             children: [
               makeNode({ name: "Label", type: "TEXT", characters: "Hello" }),
@@ -196,13 +196,13 @@ describe("missing-max-width", () => {
     );
     const result = analyzeFile(file);
     const issues = result.issues.filter(
-      (i) => i.rule.definition.id === "missing-max-width",
+      (i) => i.rule.definition.id === "missing-size-constraint",
     );
     expect(issues.length).toBeGreaterThanOrEqual(1);
-    expect(issues.at(0)?.violation.message).toContain("TextBlock");
+    expect(issues.at(0)?.violation.message).toContain("max-width");
   });
 
-  it("does not flag FILL container that has maxWidth set", () => {
+  it("flags missing minWidth when only maxWidth is set", () => {
     const file = makeFile(
       makeNode({
         name: "Root",
@@ -210,23 +210,21 @@ describe("missing-max-width", () => {
         layoutMode: "HORIZONTAL",
         children: [
           makeNode({
-            name: "TextBlock",
+            name: "Content",
             type: "FRAME",
             layoutSizingHorizontal: "FILL",
             maxWidth: 800,
-            absoluteBoundingBox: { x: 0, y: 0, width: 600, height: 100 },
-            children: [
-              makeNode({ name: "Label", type: "TEXT", characters: "Hello" }),
-            ],
+            absoluteBoundingBox: { x: 0, y: 0, width: 300, height: 100 },
           }),
         ],
       }),
     );
     const result = analyzeFile(file);
     const issues = result.issues.filter(
-      (i) => i.rule.definition.id === "missing-max-width",
+      (i) => i.rule.definition.id === "missing-size-constraint",
     );
-    expect(issues).toHaveLength(0);
+    expect(issues.length).toBeGreaterThanOrEqual(1);
+    expect(issues.at(0)?.violation.message).toContain("min-width");
   });
 
   it("does not flag FILL container outside auto-layout parent", () => {
@@ -249,7 +247,7 @@ describe("missing-max-width", () => {
     );
     const result = analyzeFile(file);
     const issues = result.issues.filter(
-      (i) => i.rule.definition.id === "missing-max-width",
+      (i) => i.rule.definition.id === "missing-size-constraint",
     );
     expect(issues).toHaveLength(0);
   });
