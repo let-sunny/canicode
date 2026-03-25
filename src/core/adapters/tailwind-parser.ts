@@ -64,6 +64,8 @@ export function extractStylesFromClasses(classes: string): ExtractedStyles {
   let gap: number | undefined;
   let overflowX = false;
   let overflowY = false;
+  let overflowXHidden = false;
+  let overflowYHidden = false;
 
   for (const token of tokens) {
     // Layout direction
@@ -170,6 +172,10 @@ export function extractStylesFromClasses(classes: string): ExtractedStyles {
     // Overflow
     else if (token === "overflow-hidden") {
       styles.clipsContent = true;
+    } else if (token === "overflow-x-hidden") {
+      overflowXHidden = true;
+    } else if (token === "overflow-y-hidden") {
+      overflowYHidden = true;
     } else if (token === "overflow-x-auto" || token === "overflow-x-scroll") {
       overflowX = true;
     } else if (token === "overflow-y-auto" || token === "overflow-y-scroll") {
@@ -227,12 +233,19 @@ export function extractStylesFromClasses(classes: string): ExtractedStyles {
   }
 
   // Resolve overflow direction from collected flags
-  if (overflowX && overflowY) {
+  // Hidden flags suppress scrolling on that axis
+  const effectiveX = overflowX && !overflowXHidden;
+  const effectiveY = overflowY && !overflowYHidden;
+  if (effectiveX && effectiveY) {
     styles.overflowDirection = "HORIZONTAL_AND_VERTICAL_SCROLLING";
-  } else if (overflowX) {
+  } else if (effectiveX) {
     styles.overflowDirection = "HORIZONTAL_SCROLLING";
-  } else if (overflowY) {
+  } else if (effectiveY) {
     styles.overflowDirection = "VERTICAL_SCROLLING";
+  }
+  // Axis-specific hidden implies clipping on that axis
+  if (overflowXHidden || overflowYHidden) {
+    styles.clipsContent = true;
   }
 
   return styles;

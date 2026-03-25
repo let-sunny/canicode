@@ -216,4 +216,16 @@ describe("extractStylesFromClasses — responsive fields", () => {
     expect(styles.itemSpacing).toBe(8);
     expect(styles.counterAxisSpacing).toBe(16);
   });
+
+  it("handles overflow-x-hidden with overflow-y-auto", () => {
+    const styles = extractStylesFromClasses("overflow-x-hidden overflow-y-auto");
+    expect(styles.clipsContent).toBe(true);
+    expect(styles.overflowDirection).toBe("VERTICAL_SCROLLING");
+  });
+
+  it("handles overflow-y-hidden suppressing y-scroll", () => {
+    const styles = extractStylesFromClasses("overflow-auto overflow-y-hidden");
+    expect(styles.clipsContent).toBe(true);
+    expect(styles.overflowDirection).toBe("HORIZONTAL_SCROLLING");
+  });
 });

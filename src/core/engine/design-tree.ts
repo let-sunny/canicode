@@ -141,17 +141,19 @@ function renderNode(
       const dir = node.layoutMode === "VERTICAL" ? "column" : "row";
       styles.push(`display: flex; flex-direction: ${dir}`);
       if (node.layoutWrap === "WRAP") styles.push(`flex-wrap: wrap`);
-      if (node.itemSpacing != null && node.counterAxisSpacing != null) {
-        styles.push(`gap: ${node.itemSpacing}px ${node.counterAxisSpacing}px`);
-      } else if (node.itemSpacing != null) {
-        styles.push(`gap: ${node.itemSpacing}px`);
-      } else if (node.counterAxisSpacing != null) {
+      if (node.itemSpacing != null) {
+        const mainGap = node.layoutMode === "VERTICAL" ? "row-gap" : "column-gap";
+        styles.push(`${mainGap}: ${node.itemSpacing}px`);
+      }
+      if (node.counterAxisSpacing != null) {
         const crossGap = node.layoutMode === "VERTICAL" ? "column-gap" : "row-gap";
         styles.push(`${crossGap}: ${node.counterAxisSpacing}px`);
       }
       if (node.primaryAxisAlignItems) styles.push(`justify-content: ${mapAlign(node.primaryAxisAlignItems)}`);
       if (node.counterAxisAlignItems) styles.push(`align-items: ${mapAlign(node.counterAxisAlignItems)}`);
-      if (node.counterAxisAlignContent) styles.push(`align-content: ${mapAlign(node.counterAxisAlignContent)}`);
+      if (node.counterAxisAlignContent && node.counterAxisAlignContent !== "AUTO") {
+        styles.push(`align-content: ${mapAlign(node.counterAxisAlignContent)}`);
+      }
     }
   }
 
