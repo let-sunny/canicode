@@ -58,6 +58,7 @@ function createMockResult(issues: AnalysisIssue[]): AnalysisResult {
   return {
     file: mockFile,
     issues,
+    failedRules: [],
     maxDepth: 5,
     nodeCount: 10,
     analyzedAt: "2026-01-01T00:00:00Z",

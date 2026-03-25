@@ -376,7 +376,7 @@ describe("RuleEngine.analyze — tree traversal", () => {
 // ─── Error handling ───────────────────────────────────────────────────────────
 
 describe("RuleEngine.analyze — error resilience", () => {
-  it("continues analysis when a rule throws an error", () => {
+  it("continues analysis and tracks failures when a rule throws", () => {
     const doc = makeNode({
       id: "0:1",
       name: "Document",
@@ -394,24 +394,31 @@ describe("RuleEngine.analyze — error resilience", () => {
     const originalCheck = defaultNameRule!.check;
     defaultNameRule!.check = () => { throw new Error("boom"); };
 
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
     try {
       // Analysis should still complete despite the throwing rule
       const result = analyzeFile(file);
       expect(result.issues).toBeDefined();
       expect(result.nodeCount).toBe(2);
 
-      // Verify the error was logged
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("default-name"),
-        expect.any(Error)
-      );
+      // failedRules should contain the failure details
+      expect(result.failedRules.length).toBeGreaterThan(0);
+
+      const failure = result.failedRules.find((f) => f.ruleId === "default-name");
+      expect(failure).toBeDefined();
+      expect(failure!.error).toBe("boom");
+      expect(failure!.nodeName).toBeDefined();
+      expect(failure!.nodeId).toBeDefined();
     } finally {
-      // Restore the original check function and console spy
+      // Restore the original check function
       defaultNameRule!.check = originalCheck;
-      consoleSpy.mockRestore();
     }
+  });
+
+  it("returns empty failedRules when no rules throw", () => {
+    const file = makeFile();
+    const result = analyzeFile(file);
+
+    expect(result.failedRules).toEqual([]);
   });
 });
 

@@ -3,7 +3,7 @@
 
 export { version as VERSION } from "../package.json";
 export { analyzeFile } from "./core/engine/rule-engine.js";
-export type { AnalysisResult, AnalysisIssue, RuleEngineOptions } from "./core/engine/rule-engine.js";
+export type { AnalysisResult, AnalysisIssue, RuleFailure, RuleEngineOptions } from "./core/engine/rule-engine.js";
 export { calculateScores, formatScoreSummary, getCategoryLabel, getSeverityLabel, gradeToClassName } from "./core/engine/scoring.js";
 export type { ScoreReport, CategoryScoreResult, Grade } from "./core/engine/scoring.js";
 export { transformFigmaResponse, transformFileNodesResponse } from "./core/adapters/figma-transformer.js";

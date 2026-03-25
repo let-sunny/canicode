@@ -56,7 +56,7 @@ function makeResult(issues: AnalysisIssue[], nodeCount = 100): AnalysisResult {
     components: {},
     styles: {},
   };
-  return { file, issues, maxDepth: 5, nodeCount, analyzedAt: new Date().toISOString() };
+  return { file, issues, failedRules: [], maxDepth: 5, nodeCount, analyzedAt: new Date().toISOString() };
 }
 
 // ─── calculateScores ──────────────────────────────────────────────────────────
