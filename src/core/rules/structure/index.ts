@@ -9,7 +9,7 @@ import { isExcludedName } from "../excluded-names.js";
 // ============================================
 
 function isContainerNode(node: AnalysisNode): boolean {
-  return node.type === "FRAME" || node.type === "GROUP" || node.type === "COMPONENT";
+  return node.type === "FRAME" || node.type === "GROUP" || node.type === "COMPONENT" || node.type === "INSTANCE";
 }
 
 function hasAutoLayout(node: AnalysisNode): boolean {
@@ -58,8 +58,9 @@ const noAutoLayoutCheck: RuleCheckFn = (node, context) => {
       for (let j = i + 1; j < node.children.length; j++) {
         const childA = node.children[i];
         const childB = node.children[j];
+        if (!childA || !childB) continue;
 
-        if (childA && childB && hasOverlappingBounds(childA, childB)) {
+        if (hasOverlappingBounds(childA, childB)) {
           if (childA.visible !== false && childB.visible !== false) {
             return {
               ruleId: noAutoLayoutDef.id,

@@ -87,7 +87,7 @@ describe("no-auto-layout", () => {
     expect(result!.message).toContain("overlapping");
   });
 
-  it("returns null when overlapping children are hidden", () => {
+  it("flags basic no-auto-layout when overlapping children are hidden", () => {
     const child1 = makeNode({
       id: "c:1",
       visible: false,

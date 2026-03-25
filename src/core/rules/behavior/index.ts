@@ -172,6 +172,7 @@ const overflowBehaviorUnknownCheck: RuleCheckFn = (node, context) => {
     return (
       childBox.x < parentBox.x ||
       childBox.y < parentBox.y ||
+      // +1 tolerance for floating-point rounding in Figma coordinates
       childBox.x + childBox.width > parentBox.x + parentBox.width + 1 ||
       childBox.y + childBox.height > parentBox.y + parentBox.height + 1
     );
@@ -214,8 +215,11 @@ const wrapBehaviorUnknownCheck: RuleCheckFn = (node, context) => {
   // Check if children total width exceeds parent
   const parentBox = node.absoluteBoundingBox;
   if (!parentBox) return null;
-  const totalChildWidth = visibleChildren.reduce((sum, child) => {
-    return sum + (child.absoluteBoundingBox?.width ?? 0);
+  // Skip if any child lacks bounding box data — can't reliably compare widths
+  const childrenWithBox = visibleChildren.filter(c => c.absoluteBoundingBox);
+  if (childrenWithBox.length !== visibleChildren.length) return null;
+  const totalChildWidth = childrenWithBox.reduce((sum, child) => {
+    return sum + child.absoluteBoundingBox!.width;
   }, 0);
   if (totalChildWidth <= parentBox.width) return null;
   return {

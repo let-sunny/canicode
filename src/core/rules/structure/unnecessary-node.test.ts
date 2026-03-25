@@ -93,6 +93,15 @@ describe("unnecessary-node", () => {
     expect(unnecessaryNode.check(node, makeContext())).toBeNull();
   });
 
+  it("allows frames at exact 48x48 boundary", () => {
+    const node = makeNode({
+      type: "FRAME",
+      name: "Icon Placeholder",
+      absoluteBoundingBox: { x: 0, y: 0, width: 48, height: 48 },
+    });
+    expect(unnecessaryNode.check(node, makeContext())).toBeNull();
+  });
+
   it("flags empty frame without bounding box", () => {
     const node = makeNode({ type: "FRAME", name: "NoBox" });
     const result = unnecessaryNode.check(node, makeContext());
