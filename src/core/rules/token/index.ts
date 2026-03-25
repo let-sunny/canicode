@@ -290,10 +290,55 @@ const multipleFillColorsDef: RuleDefinition = {
   fix: "Consolidate to a single color token so the intent is unambiguous",
 };
 
-const multipleFillColorsCheck: RuleCheckFn = (_node, _context, _options) => {
-  // This rule needs to analyze colors across multiple nodes
-  // It's better suited for a post-processing analysis phase
-  // Simplified implementation - would need global context
+/** Extract solid fill color as [r,g,b] (0-255) from a node, or null */
+function extractSolidColor(node: AnalysisNode): [number, number, number] | null {
+  if (!node.fills || !Array.isArray(node.fills) || node.fills.length === 0) return null;
+  // Skip nodes with style references (already tokenized)
+  if (node.styles && "fill" in node.styles) return null;
+  for (const fill of node.fills) {
+    const f = fill as Record<string, unknown>;
+    if (f["type"] === "SOLID" && f["color"]) {
+      const c = f["color"] as Record<string, number>;
+      return [
+        Math.round((c["r"] ?? 0) * 255),
+        Math.round((c["g"] ?? 0) * 255),
+        Math.round((c["b"] ?? 0) * 255),
+      ];
+    }
+  }
+  return null;
+}
+
+/** Euclidean distance between two RGB colors */
+function colorDistance(a: [number, number, number], b: [number, number, number]): number {
+  return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2);
+}
+
+const multipleFillColorsCheck: RuleCheckFn = (node, context, options) => {
+  if (!context.siblings || context.siblings.length < 2) return null;
+
+  const myColor = extractSolidColor(node);
+  if (!myColor) return null;
+
+  const tolerance = (options?.["tolerance"] as number) ?? getRuleOption("multiple-fill-colors", "tolerance", 10);
+
+  for (const sibling of context.siblings) {
+    if (sibling.id === node.id) continue;
+    const sibColor = extractSolidColor(sibling);
+    if (!sibColor) continue;
+
+    const dist = colorDistance(myColor, sibColor);
+    // Flag if colors are similar but not identical (distance > 0 but within tolerance)
+    if (dist > 0 && dist <= tolerance) {
+      return {
+        ruleId: multipleFillColorsDef.id,
+        nodeId: node.id,
+        nodePath: context.path.join(" > "),
+        message: `"${node.name}" has a near-duplicate fill color compared to sibling "${sibling.name}" (distance: ${Math.round(dist)})`,
+      };
+    }
+  }
+
   return null;
 };
 
