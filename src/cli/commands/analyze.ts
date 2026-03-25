@@ -49,6 +49,8 @@ export function registerAnalyze(cli: CAC): void {
     .example("  canicode analyze ./fixtures/my-design --config ./my-config.json")
     .action(async (input: string, options: AnalyzeOptions) => {
       const analysisStart = Date.now();
+      // In --json mode, progress goes to stderr so stdout stays machine-readable
+      const log = options.json ? console.error : console.log;
       trackEvent(EVENTS.ANALYSIS_STARTED, { source: isJsonFile(input) || isFixtureDir(input) ? "fixture" : "figma" });
       try {
         // Check init
@@ -66,7 +68,7 @@ export function registerAnalyze(cli: CAC): void {
               "ANTHROPIC_API_KEY required for --screenshot mode. Set it in .env or environment."
             );
           }
-          console.log("Screenshot comparison mode enabled (coming soon).\n");
+          log("Screenshot comparison mode enabled (coming soon).\n");
         }
 
         // Load file
@@ -82,7 +84,7 @@ export function registerAnalyze(cli: CAC): void {
             const picked = pickRandomScope(file.document);
             if (picked) {
               effectiveNodeId = picked.id;
-              console.log(`\nAuto-scoped to "${picked.name}" (${picked.id}, ${countNodes(picked)} nodes) — file too large (${totalNodes} nodes) for unscoped analysis.`);
+              log(`\nAuto-scoped to "${picked.name}" (${picked.id}, ${countNodes(picked)} nodes) — file too large (${totalNodes} nodes) for unscoped analysis.`);
             } else {
               console.warn(`\nWarning: Could not find a suitable scope in fixture. Analyzing all ${totalNodes} nodes.`);
             }
@@ -101,8 +103,8 @@ export function registerAnalyze(cli: CAC): void {
           console.warn("Tip: Add ?node-id=XXX to analyze a specific section.\n");
         }
 
-        console.log(`\nAnalyzing: ${file.name}`);
-        console.log(`Nodes: ${totalNodes}`);
+        log(`\nAnalyzing: ${file.name}`);
+        log(`Nodes: ${totalNodes}`);
 
         // Build rule configs: start from preset or defaults
         let configs: Record<string, RuleConfig> = options.preset
@@ -118,7 +120,7 @@ export function registerAnalyze(cli: CAC): void {
           configs = mergeConfigs(configs, configFile);
           excludeNodeNames = configFile.excludeNodeNames;
           excludeNodeTypes = configFile.excludeNodeTypes;
-          console.log(`Config loaded: ${options.config}`);
+          log(`Config loaded: ${options.config}`);
         }
 
         // Load and register custom rules
@@ -128,7 +130,7 @@ export function registerAnalyze(cli: CAC): void {
             ruleRegistry.register(rule);
           }
           configs = { ...configs, ...customConfigs };
-          console.log(`Custom rules loaded: ${rules.length} rules from ${options.customRules}`);
+          log(`Custom rules loaded: ${rules.length} rules from ${options.customRules}`);
         }
 
         // Build analysis options
@@ -141,7 +143,7 @@ export function registerAnalyze(cli: CAC): void {
 
         // Run analysis
         const result = analyzeFile(file, analyzeOptions);
-        console.log(`Nodes: ${result.nodeCount} (max depth: ${result.maxDepth})`);
+        log(`Nodes: ${result.nodeCount} (max depth: ${result.maxDepth})`);
 
         // Calculate scores
         const scores = calculateScores(result);
@@ -149,6 +151,10 @@ export function registerAnalyze(cli: CAC): void {
         // JSON output mode
         if (options.json) {
           console.log(JSON.stringify(buildResultJson(file.name, result, scores), null, 2));
+          // Exit with error code if grade is F (CI support)
+          if (scores.overall.grade === "F") {
+            process.exitCode = 1;
+          }
           return;
         }
 
