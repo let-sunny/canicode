@@ -64,7 +64,6 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   margin-bottom: 16px;
-  overflow: hidden;
 }
 .cat-row {
   display: flex;
@@ -110,16 +109,9 @@ body {
   white-space: nowrap;
 }
 
-/* ---- Tooltips (Figma iframe doesn't support title attr) ---- */
-[data-tip] {
-  position: relative;
-}
-[data-tip]::after {
-  content: attr(data-tip);
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
+/* ---- Tooltips ---- */
+.cic-tooltip {
+  position: fixed;
   padding: 5px 10px;
   background: #18181b;
   color: #fafafa;
@@ -133,11 +125,9 @@ body {
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.15s;
-  z-index: 100;
+  z-index: 1000;
 }
-[data-tip]:hover::after {
-  opacity: 1;
-}
+.cic-tooltip.visible { opacity: 1; }
 
 /* ---- Summary bar ---- */
 .summary-bar {

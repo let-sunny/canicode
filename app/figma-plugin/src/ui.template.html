@@ -347,6 +347,28 @@
         }
       }
     };
+
+    // ---- Tooltip (JS-based, works inside Figma iframe) ----
+    (function() {
+      var tip = document.createElement('div');
+      tip.className = 'cic-tooltip';
+      document.body.appendChild(tip);
+      document.addEventListener('mouseover', function(e) {
+        var el = e.target.closest('[data-tip]');
+        if (!el) { tip.classList.remove('visible'); return; }
+        tip.textContent = el.getAttribute('data-tip');
+        var rect = el.getBoundingClientRect();
+        tip.style.left = Math.min(rect.left, window.innerWidth - 230) + 'px';
+        tip.style.top = (rect.top - tip.offsetHeight - 6) + 'px';
+        if (rect.top - tip.offsetHeight - 6 < 0) {
+          tip.style.top = (rect.bottom + 6) + 'px';
+        }
+        tip.classList.add('visible');
+      });
+      document.addEventListener('mouseout', function(e) {
+        if (!e.target.closest('[data-tip]')) tip.classList.remove('visible');
+      });
+    })();
   </script>
 </body>
 </html>
