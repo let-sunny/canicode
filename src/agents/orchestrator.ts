@@ -15,6 +15,8 @@ import {
   loadCalibrationEvidence,
   appendCalibrationEvidence,
   appendDiscoveryEvidence,
+  loadElasticityEvidence,
+  aggregateElasticity,
 } from "./evidence-collector.js";
 import type { CalibrationEvidenceEntry, DiscoveryEvidenceEntry } from "./evidence-collector.js";
 
@@ -257,15 +259,26 @@ export function runCalibrationEvaluate(
     ruleScores,
   });
 
-  // Load prior evidence if collecting
+  // Load prior evidence and elasticity data if collecting
   const priorEvidence = options?.collectEvidence
     ? loadCalibrationEvidence()
     : undefined;
+
+  let elasticityProfiles;
+  try {
+    const elasticityEntries = loadElasticityEvidence();
+    if (elasticityEntries.length > 0) {
+      elasticityProfiles = aggregateElasticity(elasticityEntries);
+    }
+  } catch {
+    // Non-fatal — elasticity data is supplementary
+  }
 
   const tuningInput = {
     mismatches: evaluationOutput.mismatches,
     ruleScores,
     ...(priorEvidence ? { priorEvidence } : {}),
+    ...(elasticityProfiles ? { elasticityProfiles } : {}),
   };
   const tuningOutput = runTuningAgent(tuningInput);
 
@@ -328,6 +341,7 @@ export function runCalibrationEvaluate(
     validatedRules: evaluationOutput.validatedRules,
     adjustments: tuningOutput.adjustments,
     newRuleProposals: tuningOutput.newRuleProposals,
+    elasticityProfiles,
   });
 
   return {

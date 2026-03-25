@@ -100,11 +100,43 @@ function proposeSeverity(
  * Deterministic aggregation algorithm. No LLM required.
  * Aggregates mismatch cases into score adjustment proposals.
  */
+/**
+ * Build a lookup from ruleId → ElasticityProfile
+ */
+function buildElasticityLookup(
+  profiles?: import("./contracts/evidence.js").ElasticityProfile[]
+): Map<string, import("./contracts/evidence.js").ElasticityProfile> {
+  const map = new Map<string, import("./contracts/evidence.js").ElasticityProfile>();
+  if (!profiles) return map;
+  for (const p of profiles) {
+    map.set(p.ruleId, p);
+  }
+  return map;
+}
+
+/**
+ * Format elasticity note for reasoning string
+ */
+function elasticityNote(
+  profile: import("./contracts/evidence.js").ElasticityProfile | undefined
+): string {
+  if (!profile) return "";
+  const sign = profile.meanDelta >= 0 ? "+" : "";
+  return ` Elasticity: ${sign}${profile.meanDelta}% similarity delta (${profile.measurements} measurement(s), ${profile.confidence} confidence).`;
+}
+
+/**
+ * Tuning Agent - Step 4 of calibration pipeline
+ *
+ * Deterministic aggregation algorithm. No LLM required.
+ * Aggregates mismatch cases into score adjustment proposals.
+ */
 export function runTuningAgent(
   input: TuningAgentInput
 ): TuningAgentOutput {
   const adjustments: ScoreAdjustment[] = [];
   const newRuleProposals: NewRuleProposal[] = [];
+  const elasticityLookup = buildElasticityLookup(input.elasticityProfiles);
 
   // Group mismatches by ruleId for overscored and underscored
   const overscoredByRule = new Map<string, typeof input.mismatches>();
@@ -169,15 +201,17 @@ export function runTuningAgent(
       ? ` (+ ${priorData.overscoredCount} case(s) from prior runs)`
       : "";
 
+    const eProfile = elasticityLookup.get(ruleId);
     adjustments.push({
       ruleId,
       currentScore: ruleInfo.score,
       proposedScore,
       currentSeverity,
       proposedSeverity: newSeverity,
-      reasoning: `Overscored in ${cases.length} case(s)${priorNote}. Actual difficulties: [${allDifficulties.join(", ")}]. Current score ${ruleInfo.score} is too harsh.`,
+      reasoning: `Overscored in ${cases.length} case(s)${priorNote}. Actual difficulties: [${allDifficulties.join(", ")}]. Current score ${ruleInfo.score} is too harsh.${elasticityNote(eProfile)}`,
       confidence: getConfidence(totalCases),
       supportingCases: totalCases,
+      ...(eProfile ? { elasticity: { meanDelta: eProfile.meanDelta, measurements: eProfile.measurements, confidence: eProfile.confidence } } : {}),
     });
   }
 
@@ -209,15 +243,17 @@ export function runTuningAgent(
       ? ` (+ ${priorData.underscoredCount} case(s) from prior runs)`
       : "";
 
+    const eProfile = elasticityLookup.get(ruleId);
     adjustments.push({
       ruleId,
       currentScore: ruleInfo.score,
       proposedScore,
       currentSeverity,
       proposedSeverity: newSeverity,
-      reasoning: `Underscored in ${cases.length} case(s)${priorNote}. Actual difficulties: [${allDifficulties.join(", ")}]. Current score ${ruleInfo.score} is too lenient.`,
+      reasoning: `Underscored in ${cases.length} case(s)${priorNote}. Actual difficulties: [${allDifficulties.join(", ")}]. Current score ${ruleInfo.score} is too lenient.${elasticityNote(eProfile)}`,
       confidence: getConfidence(totalCases),
       supportingCases: totalCases,
+      ...(eProfile ? { elasticity: { meanDelta: eProfile.meanDelta, measurements: eProfile.measurements, confidence: eProfile.confidence } } : {}),
     });
   }
 

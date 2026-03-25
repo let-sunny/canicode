@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { SeveritySchema } from "@/core/contracts/severity.js";
-import type { CrossRunEvidence } from "./evidence.js";
+import type { CrossRunEvidence, ElasticityProfile } from "./evidence.js";
 
 export const ConfidenceSchema = z.enum(["high", "medium", "low"]);
 export type Confidence = z.infer<typeof ConfidenceSchema>;
@@ -14,6 +14,11 @@ export const ScoreAdjustmentSchema = z.object({
   reasoning: z.string(),
   confidence: ConfidenceSchema,
   supportingCases: z.number(),
+  elasticity: z.object({
+    meanDelta: z.number(),
+    measurements: z.number(),
+    confidence: ConfidenceSchema,
+  }).optional(),
 });
 
 export type ScoreAdjustment = z.infer<typeof ScoreAdjustmentSchema>;
@@ -45,6 +50,7 @@ export interface TuningAgentInput {
   }>;
   ruleScores: Record<string, { score: number; severity: string }>;
   priorEvidence?: CrossRunEvidence;
+  elasticityProfiles?: ElasticityProfile[];
 }
 
 export interface TuningAgentOutput {

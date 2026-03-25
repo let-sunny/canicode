@@ -3,14 +3,17 @@ import { dirname, resolve } from "node:path";
 import {
   CalibrationEvidenceEntrySchema,
   DiscoveryEvidenceEntrySchema,
+  ElasticityEvidenceEntrySchema,
 } from "./contracts/evidence.js";
 import type {
   CalibrationEvidenceEntry,
   CrossRunEvidence,
   DiscoveryEvidenceEntry,
+  ElasticityEvidenceEntry,
+  ElasticityProfile,
 } from "./contracts/evidence.js";
 
-export type { CalibrationEvidenceEntry, CrossRunEvidence, DiscoveryEvidenceEntry };
+export type { CalibrationEvidenceEntry, CrossRunEvidence, DiscoveryEvidenceEntry, ElasticityEvidenceEntry, ElasticityProfile };
 
 const DEFAULT_CALIBRATION_PATH = resolve("data/calibration-evidence.json");
 
@@ -154,4 +157,105 @@ export function pruneDiscoveryEvidence(
   const existing = readValidatedArray(evidencePath, DiscoveryEvidenceEntrySchema);
   const pruned = existing.filter((e) => !catSet.has(e.category.toLowerCase()));
   writeJsonArray(evidencePath, pruned);
+}
+
+// --- Elasticity evidence ---
+
+const DEFAULT_ELASTICITY_PATH = resolve("data/elasticity-evidence.json");
+
+/**
+ * Load all elasticity evidence entries.
+ */
+export function loadElasticityEvidence(
+  evidencePath: string = DEFAULT_ELASTICITY_PATH
+): ElasticityEvidenceEntry[] {
+  return readValidatedArray(evidencePath, ElasticityEvidenceEntrySchema);
+}
+
+/**
+ * Append new elasticity evidence entries.
+ * Deduplicates by (ruleId, fixture) — latest entry wins.
+ */
+export function appendElasticityEvidence(
+  entries: ElasticityEvidenceEntry[],
+  evidencePath: string = DEFAULT_ELASTICITY_PATH
+): void {
+  if (entries.length === 0) return;
+  const existing = readValidatedArray(evidencePath, ElasticityEvidenceEntrySchema);
+  const incomingByKey = new Map<string, ElasticityEvidenceEntry>();
+  for (const e of entries) {
+    const k = `${e.ruleId.trim()}\0${e.fixture.trim()}`;
+    incomingByKey.set(k, e);
+  }
+  const keys = new Set(incomingByKey.keys());
+  const withoutDupes = existing.filter(
+    (e) => !keys.has(`${e.ruleId.trim()}\0${e.fixture.trim()}`),
+  );
+  withoutDupes.push(...incomingByKey.values());
+  writeJsonArray(evidencePath, withoutDupes);
+}
+
+/**
+ * Remove elasticity entries for rules whose scores were revised.
+ */
+export function pruneElasticityEvidence(
+  ruleIds: string[],
+  evidencePath: string = DEFAULT_ELASTICITY_PATH
+): void {
+  if (ruleIds.length === 0) return;
+  const ruleSet = new Set(ruleIds.map((id) => id.trim()));
+  const existing = readValidatedArray(evidencePath, ElasticityEvidenceEntrySchema);
+  const pruned = existing.filter((e) => !ruleSet.has(e.ruleId.trim()));
+  writeJsonArray(evidencePath, pruned);
+}
+
+/**
+ * Aggregate elasticity entries into per-rule profiles.
+ * Positive delta means the rule improves similarity (rule helps implementation).
+ * Negative delta means the rule hurts or has no effect.
+ */
+export function aggregateElasticity(
+  entries: ElasticityEvidenceEntry[]
+): ElasticityProfile[] {
+  const byRule = new Map<string, ElasticityEvidenceEntry[]>();
+  for (const e of entries) {
+    const existing = byRule.get(e.ruleId);
+    if (existing) {
+      existing.push(e);
+    } else {
+      byRule.set(e.ruleId, [e]);
+    }
+  }
+
+  const profiles: ElasticityProfile[] = [];
+  for (const [ruleId, ruleEntries] of byRule) {
+    const deltas = ruleEntries.map((e) => e.delta);
+    const sum = deltas.reduce((a, b) => a + b, 0);
+    const meanDelta = Math.round((sum / deltas.length) * 100) / 100;
+    const minDelta = Math.min(...deltas);
+    const maxDelta = Math.max(...deltas);
+    const fixtures = [...new Set(ruleEntries.map((e) => e.fixture))];
+    const measurements = ruleEntries.length;
+
+    let confidence: "high" | "medium" | "low";
+    if (measurements >= 3 && fixtures.length >= 2) {
+      confidence = "high";
+    } else if (measurements >= 2) {
+      confidence = "medium";
+    } else {
+      confidence = "low";
+    }
+
+    profiles.push({
+      ruleId,
+      measurements,
+      meanDelta,
+      minDelta,
+      maxDelta,
+      confidence,
+      fixtures,
+    });
+  }
+
+  return profiles.sort((a, b) => b.meanDelta - a.meanDelta);
 }

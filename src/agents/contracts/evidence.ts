@@ -35,3 +35,28 @@ export const DiscoveryEvidenceEntrySchema = z.object({
 });
 
 export type DiscoveryEvidenceEntry = z.infer<typeof DiscoveryEvidenceEntrySchema>;
+
+// --- Elasticity evidence ---
+
+export const ElasticityEvidenceEntrySchema = z.object({
+  ruleId: z.string(),
+  fixture: z.string(),
+  similarityWith: z.number().min(0).max(100),
+  similarityWithout: z.number().min(0).max(100),
+  delta: z.number(),
+  timestamp: z.string(),
+});
+
+export type ElasticityEvidenceEntry = z.infer<typeof ElasticityEvidenceEntrySchema>;
+
+export const ElasticityProfileSchema = z.object({
+  ruleId: z.string(),
+  measurements: z.number().int().min(0),
+  meanDelta: z.number(),
+  minDelta: z.number(),
+  maxDelta: z.number(),
+  confidence: z.enum(["high", "medium", "low"]),
+  fixtures: z.array(z.string()),
+});
+
+export type ElasticityProfile = z.infer<typeof ElasticityProfileSchema>;

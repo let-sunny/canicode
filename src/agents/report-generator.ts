@@ -1,6 +1,7 @@
 import type { ScoreReport } from "@/core/engine/scoring.js";
 import type { MismatchCase } from "./contracts/evaluation-agent.js";
 import type { ScoreAdjustment, NewRuleProposal } from "./contracts/tuning-agent.js";
+import type { ElasticityProfile } from "./contracts/evidence.js";
 
 /** Data structure for generating calibration report markdown. */
 export interface CalibrationReportData {
@@ -22,6 +23,8 @@ export interface CalibrationReportData {
     designTreeBytes: number;
     tokensPerNode: number;
   } | undefined;
+  /** Per-rule elasticity profiles (optional — present when elasticity data is available) */
+  elasticityProfiles?: ElasticityProfile[] | undefined;
 }
 
 /**
@@ -35,6 +38,9 @@ export function generateCalibrationReport(data: CalibrationReportData): string {
   lines.push(renderOverview(data));
   lines.push(renderCurrentScores(data));
   lines.push(renderAdjustmentProposals(data.adjustments));
+  if (data.elasticityProfiles && data.elasticityProfiles.length > 0) {
+    lines.push(renderElasticityProfiles(data.elasticityProfiles));
+  }
   lines.push(renderNewRuleProposals(data.newRuleProposals));
   lines.push(renderValidatedRules(data.validatedRules));
   lines.push(renderMismatchDetails(data.mismatches));
@@ -85,16 +91,41 @@ function renderAdjustmentProposals(adjustments: ScoreAdjustment[]): string {
   const lines: string[] = [];
   lines.push("## Score Adjustment Proposals");
   lines.push("");
-  lines.push("| Rule | Current Score | Proposed Score | Severity Change | Confidence | Cases | Reasoning |");
-  lines.push("|------|--------------|----------------|-----------------|------------|-------|-----------|");
+  lines.push("| Rule | Current Score | Proposed Score | Severity Change | Confidence | Cases | Elasticity | Reasoning |");
+  lines.push("|------|--------------|----------------|-----------------|------------|-------|------------|-----------|");
 
   for (const adj of adjustments) {
     const severityChange = adj.proposedSeverity
       ? `${adj.currentSeverity} -> ${adj.proposedSeverity}`
       : adj.currentSeverity;
+    const elasticityCell = adj.elasticity
+      ? `${adj.elasticity.meanDelta >= 0 ? "+" : ""}${adj.elasticity.meanDelta}% (${adj.elasticity.confidence})`
+      : "—";
 
     lines.push(
-      `| ${adj.ruleId} | ${adj.currentScore} | ${adj.proposedScore} | ${severityChange} | ${adj.confidence} | ${adj.supportingCases} | ${adj.reasoning} |`
+      `| ${adj.ruleId} | ${adj.currentScore} | ${adj.proposedScore} | ${severityChange} | ${adj.confidence} | ${adj.supportingCases} | ${elasticityCell} | ${adj.reasoning} |`
+    );
+  }
+
+  lines.push("");
+  return lines.join("\n");
+}
+
+function renderElasticityProfiles(profiles: ElasticityProfile[]): string {
+  const lines: string[] = [];
+  lines.push("## Rule Elasticity (Similarity Delta)");
+  lines.push("");
+  lines.push("Per-rule impact on visual similarity. Positive delta = rule improves pixel accuracy.");
+  lines.push("");
+  lines.push("| Rule | Mean Δ | Min Δ | Max Δ | Measurements | Confidence | Fixtures |");
+  lines.push("|------|--------|-------|-------|--------------|------------|----------|");
+
+  for (const p of profiles) {
+    const sign = p.meanDelta >= 0 ? "+" : "";
+    const minSign = p.minDelta >= 0 ? "+" : "";
+    const maxSign = p.maxDelta >= 0 ? "+" : "";
+    lines.push(
+      `| ${p.ruleId} | ${sign}${p.meanDelta}% | ${minSign}${p.minDelta}% | ${maxSign}${p.maxDelta}% | ${p.measurements} | ${p.confidence} | ${p.fixtures.join(", ")} |`
     );
   }
 

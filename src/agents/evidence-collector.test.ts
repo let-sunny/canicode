@@ -8,10 +8,15 @@ import {
   loadDiscoveryEvidence,
   appendDiscoveryEvidence,
   pruneDiscoveryEvidence,
+  loadElasticityEvidence,
+  appendElasticityEvidence,
+  pruneElasticityEvidence,
+  aggregateElasticity,
 } from "./evidence-collector.js";
 import type {
   CalibrationEvidenceEntry,
   DiscoveryEvidenceEntry,
+  ElasticityEvidenceEntry,
 } from "./evidence-collector.js";
 
 describe("evidence-collector", () => {
@@ -250,6 +255,121 @@ describe("evidence-collector", () => {
 
       const raw = JSON.parse(readFileSync(disPath, "utf-8")) as DiscoveryEvidenceEntry[];
       expect(raw).toHaveLength(1);
+    });
+  });
+
+  // --- Elasticity evidence ---
+
+  const elaPath = join(tmpDir, "elasticity-evidence.json");
+
+  describe("loadElasticityEvidence", () => {
+    it("returns empty array when file does not exist", () => {
+      expect(loadElasticityEvidence(elaPath)).toEqual([]);
+    });
+
+    it("returns entries from file", () => {
+      const entries: ElasticityEvidenceEntry[] = [
+        { ruleId: "rule-a", fixture: "fx1", similarityWith: 85, similarityWithout: 78, delta: 7, timestamp: "t1" },
+      ];
+      writeFileSync(elaPath, JSON.stringify(entries), "utf-8");
+      const result = loadElasticityEvidence(elaPath);
+      expect(result).toHaveLength(1);
+      expect(result[0]!.delta).toBe(7);
+    });
+  });
+
+  describe("appendElasticityEvidence", () => {
+    it("creates file and appends entries", () => {
+      appendElasticityEvidence([
+        { ruleId: "rule-a", fixture: "fx1", similarityWith: 85, similarityWithout: 78, delta: 7, timestamp: "t1" },
+      ], elaPath);
+
+      const raw = JSON.parse(readFileSync(elaPath, "utf-8")) as ElasticityEvidenceEntry[];
+      expect(raw).toHaveLength(1);
+    });
+
+    it("deduplicates by ruleId + fixture (latest wins)", () => {
+      writeFileSync(elaPath, JSON.stringify([
+        { ruleId: "rule-a", fixture: "fx1", similarityWith: 85, similarityWithout: 78, delta: 7, timestamp: "t1" },
+      ]), "utf-8");
+
+      appendElasticityEvidence([
+        { ruleId: "rule-a", fixture: "fx1", similarityWith: 90, similarityWithout: 80, delta: 10, timestamp: "t2" },
+      ], elaPath);
+
+      const raw = JSON.parse(readFileSync(elaPath, "utf-8")) as ElasticityEvidenceEntry[];
+      expect(raw).toHaveLength(1);
+      expect(raw[0]!.delta).toBe(10);
+    });
+
+    it("keeps different fixtures separate", () => {
+      appendElasticityEvidence([
+        { ruleId: "rule-a", fixture: "fx1", similarityWith: 85, similarityWithout: 78, delta: 7, timestamp: "t1" },
+        { ruleId: "rule-a", fixture: "fx2", similarityWith: 90, similarityWithout: 82, delta: 8, timestamp: "t1" },
+      ], elaPath);
+
+      const raw = JSON.parse(readFileSync(elaPath, "utf-8")) as ElasticityEvidenceEntry[];
+      expect(raw).toHaveLength(2);
+    });
+  });
+
+  describe("pruneElasticityEvidence", () => {
+    it("removes entries for specified ruleIds", () => {
+      const entries: ElasticityEvidenceEntry[] = [
+        { ruleId: "rule-a", fixture: "fx1", similarityWith: 85, similarityWithout: 78, delta: 7, timestamp: "t1" },
+        { ruleId: "rule-b", fixture: "fx1", similarityWith: 90, similarityWithout: 85, delta: 5, timestamp: "t1" },
+      ];
+      writeFileSync(elaPath, JSON.stringify(entries), "utf-8");
+
+      pruneElasticityEvidence(["rule-a"], elaPath);
+
+      const raw = JSON.parse(readFileSync(elaPath, "utf-8")) as ElasticityEvidenceEntry[];
+      expect(raw).toHaveLength(1);
+      expect(raw[0]!.ruleId).toBe("rule-b");
+    });
+  });
+
+  describe("aggregateElasticity", () => {
+    it("computes per-rule profiles with correct stats", () => {
+      const entries: ElasticityEvidenceEntry[] = [
+        { ruleId: "rule-a", fixture: "fx1", similarityWith: 85, similarityWithout: 78, delta: 7, timestamp: "t1" },
+        { ruleId: "rule-a", fixture: "fx2", similarityWith: 90, similarityWithout: 87, delta: 3, timestamp: "t2" },
+        { ruleId: "rule-a", fixture: "fx3", similarityWith: 80, similarityWithout: 75, delta: 5, timestamp: "t3" },
+        { ruleId: "rule-b", fixture: "fx1", similarityWith: 70, similarityWithout: 72, delta: -2, timestamp: "t1" },
+      ];
+
+      const profiles = aggregateElasticity(entries);
+      expect(profiles).toHaveLength(2);
+
+      const ruleA = profiles.find((p) => p.ruleId === "rule-a");
+      expect(ruleA).toBeDefined();
+      expect(ruleA!.measurements).toBe(3);
+      expect(ruleA!.meanDelta).toBe(5);
+      expect(ruleA!.minDelta).toBe(3);
+      expect(ruleA!.maxDelta).toBe(7);
+      expect(ruleA!.confidence).toBe("high");
+      expect(ruleA!.fixtures).toEqual(["fx1", "fx2", "fx3"]);
+
+      const ruleB = profiles.find((p) => p.ruleId === "rule-b");
+      expect(ruleB).toBeDefined();
+      expect(ruleB!.measurements).toBe(1);
+      expect(ruleB!.meanDelta).toBe(-2);
+      expect(ruleB!.confidence).toBe("low");
+    });
+
+    it("returns empty array for empty input", () => {
+      expect(aggregateElasticity([])).toEqual([]);
+    });
+
+    it("sorts profiles by meanDelta descending", () => {
+      const entries: ElasticityEvidenceEntry[] = [
+        { ruleId: "low", fixture: "fx1", similarityWith: 80, similarityWithout: 79, delta: 1, timestamp: "t1" },
+        { ruleId: "high", fixture: "fx1", similarityWith: 90, similarityWithout: 80, delta: 10, timestamp: "t1" },
+      ];
+
+      const profiles = aggregateElasticity(entries);
+      expect(profiles[0]!.ruleId).toBe("high");
+      expect(profiles[1]!.ruleId).toBe("low");
     });
   });
 });
