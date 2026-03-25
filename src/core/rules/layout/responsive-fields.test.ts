@@ -123,7 +123,7 @@ describe("missing-min-width", () => {
       (i) => i.rule.definition.id === "missing-min-width",
     );
     expect(issues.length).toBeGreaterThanOrEqual(1);
-    expect(issues[0]!.violation.message).toContain("Content");
+    expect(issues.at(0)?.violation.message).toContain("Content");
   });
 
   it("does not flag FILL container that has minWidth set", () => {
@@ -199,7 +199,7 @@ describe("missing-max-width", () => {
       (i) => i.rule.definition.id === "missing-max-width",
     );
     expect(issues.length).toBeGreaterThanOrEqual(1);
-    expect(issues[0]!.violation.message).toContain("TextBlock");
+    expect(issues.at(0)?.violation.message).toContain("TextBlock");
   });
 
   it("does not flag FILL container that has maxWidth set", () => {

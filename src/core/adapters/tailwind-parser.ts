@@ -61,6 +61,9 @@ export function extractStylesFromClasses(classes: string): ExtractedStyles {
   const tokens = classes.split(/\s+/);
   let gapX: number | undefined;
   let gapY: number | undefined;
+  let gap: number | undefined;
+  let overflowX = false;
+  let overflowY = false;
 
   for (const token of tokens) {
     // Layout direction
@@ -100,7 +103,7 @@ export function extractStylesFromClasses(classes: string): ExtractedStyles {
     } else if (token.startsWith("gap-")) {
       const val = token.slice(4);
       const px = resolveSpacing(val);
-      if (px !== undefined) styles.itemSpacing = px;
+      if (px !== undefined) gap = px;
     }
 
     // Padding
@@ -168,11 +171,12 @@ export function extractStylesFromClasses(classes: string): ExtractedStyles {
     else if (token === "overflow-hidden") {
       styles.clipsContent = true;
     } else if (token === "overflow-x-auto" || token === "overflow-x-scroll") {
-      styles.overflowDirection = "HORIZONTAL_SCROLLING";
+      overflowX = true;
     } else if (token === "overflow-y-auto" || token === "overflow-y-scroll") {
-      styles.overflowDirection = "VERTICAL_SCROLLING";
+      overflowY = true;
     } else if (token === "overflow-auto" || token === "overflow-scroll") {
-      styles.overflowDirection = "HORIZONTAL_AND_VERTICAL_SCROLLING";
+      overflowX = true;
+      overflowY = true;
     }
 
     // Background color → fills
@@ -198,10 +202,21 @@ export function extractStylesFromClasses(classes: string): ExtractedStyles {
     }
   }
 
-  // Resolve gap-x/gap-y based on final layout direction
+  // Resolve gap based on final layout direction
+  // Generic gap-* applies to both axes, directional gap-x-*/gap-y-* override specific axes
   // In flex-row (HORIZONTAL): gap-x → itemSpacing (main), gap-y → counterAxisSpacing (cross)
   // In flex-col (VERTICAL): gap-y → itemSpacing (main), gap-x → counterAxisSpacing (cross)
   const isColumn = styles.layoutMode === "VERTICAL";
+  if (gap !== undefined) {
+    if (gapX === undefined) {
+      if (isColumn) styles.counterAxisSpacing = gap;
+      else styles.itemSpacing = gap;
+    }
+    if (gapY === undefined) {
+      if (isColumn) styles.itemSpacing = gap;
+      else styles.counterAxisSpacing = gap;
+    }
+  }
   if (gapX !== undefined) {
     if (isColumn) styles.counterAxisSpacing = gapX;
     else styles.itemSpacing = gapX;
@@ -209,6 +224,15 @@ export function extractStylesFromClasses(classes: string): ExtractedStyles {
   if (gapY !== undefined) {
     if (isColumn) styles.itemSpacing = gapY;
     else styles.counterAxisSpacing = gapY;
+  }
+
+  // Resolve overflow direction from collected flags
+  if (overflowX && overflowY) {
+    styles.overflowDirection = "HORIZONTAL_AND_VERTICAL_SCROLLING";
+  } else if (overflowX) {
+    styles.overflowDirection = "HORIZONTAL_SCROLLING";
+  } else if (overflowY) {
+    styles.overflowDirection = "VERTICAL_SCROLLING";
   }
 
   return styles;

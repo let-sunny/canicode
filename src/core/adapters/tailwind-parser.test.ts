@@ -199,4 +199,21 @@ describe("extractStylesFromClasses — responsive fields", () => {
     expect(extractStylesFromClasses("overflow-y-scroll").overflowDirection).toBe("VERTICAL_SCROLLING");
     expect(extractStylesFromClasses("overflow-auto").overflowDirection).toBe("HORIZONTAL_AND_VERTICAL_SCROLLING");
   });
+
+  it("combines overflow-x and overflow-y into HORIZONTAL_AND_VERTICAL_SCROLLING", () => {
+    expect(extractStylesFromClasses("overflow-x-auto overflow-y-auto").overflowDirection).toBe("HORIZONTAL_AND_VERTICAL_SCROLLING");
+    expect(extractStylesFromClasses("overflow-y-scroll overflow-x-scroll").overflowDirection).toBe("HORIZONTAL_AND_VERTICAL_SCROLLING");
+  });
+
+  it("applies generic gap to both axes", () => {
+    const styles = extractStylesFromClasses("flex-row gap-4");
+    expect(styles.itemSpacing).toBe(16);
+    expect(styles.counterAxisSpacing).toBe(16);
+  });
+
+  it("allows directional gap to override generic gap", () => {
+    const styles = extractStylesFromClasses("flex-row gap-4 gap-x-2");
+    expect(styles.itemSpacing).toBe(8);
+    expect(styles.counterAxisSpacing).toBe(16);
+  });
 });
