@@ -317,62 +317,20 @@ IMAGE SCALE
 `.trimStart());
 }
 
-/** Print the scoring model explanation. */
+/** Print the scoring model summary with pointer to full docs. */
 export function printDocsScoring(): void {
   console.log(`
 SCORING MODEL
 
-canicode scores designs on a 0-100% scale across 6 categories:
-layout, token, component, naming, ai-readability, handoff-risk.
+  Score = density (70%) + diversity (30%), averaged across 6 categories.
 
-HOW SCORES ARE CALCULATED
+  Severity weights:
+    blocking 3.0x | risk 2.0x | missing-info 1.0x | suggestion 0.5x
 
-  Each category score combines two signals:
+  Grades: S(95) A+(90) A(85) B+(80) B(75) C+(70) C(65) D(50) F(<50)
+  Floor: 5% minimum.
 
-  1. Density (70% weight)
-     Measures issue volume relative to design size.
-     Formula: 100 - (weighted_issues / node_count) * 100
-     A design with many issues per node scores lower.
-
-  2. Diversity (30% weight)
-     Measures how many different rule types triggered.
-     Formula: (1 - unique_rules / total_category_rules) * 100
-     Issues concentrated in one rule are easier to fix than scattered issues.
-
-  Final category score = density * 0.7 + diversity * 0.3
-  Overall score = average of all 6 category scores (equal weight).
-
-SEVERITY WEIGHTS
-
-  Issues are weighted by severity when computing density:
-
-    blocking      3.0x    Cannot implement correctly without fixing
-    risk          2.0x    Will break or increase cost later
-    missing-info  1.0x    Forces developers to guess
-    suggestion    0.5x    Nice-to-have improvement
-
-  A single blocking issue counts as much as 6 suggestions.
-
-GRADE THRESHOLDS
-
-    S   >= 95%      A+  >= 90%      A   >= 85%
-    B+  >= 80%      B   >= 75%      C+  >= 70%
-    C   >= 65%      D   >= 50%      F   <  50%
-
-SCORE FLOOR
-
-  Minimum score is 5%. Any Figma file with visible nodes provides some
-  structural information, so 0% ("completely unimplementable") is avoided.
-
-CALIBRATION STATUS
-
-  Severity weights and density/diversity ratio are initial estimates.
-  The /calibrate-loop pipeline validates these against pixel-level
-  visual comparison (visual-compare similarity). Calibration evidence
-  accumulates in data/calibration-evidence.json across runs.
-
-  Individual rule scores are managed in src/core/rules/rule-config.ts
-  and can be overridden via --config (see: canicode docs config).
+  Full documentation: https://github.com/let-sunny/canicode/blob/main/docs/SCORING.md
 `.trimStart());
 }
 
