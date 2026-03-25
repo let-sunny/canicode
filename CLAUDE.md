@@ -267,4 +267,3 @@ Rule logic and score config are intentionally separated so scores can be tuned w
 Configurable thresholds:
 - `gridBase` (default: 4) — spacing grid unit for inconsistent-spacing and magic-number-spacing
 - `tolerance` (default: 10) — color difference tolerance for multiple-fill-colors
-- `no-dev-status` — disabled by default

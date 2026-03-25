@@ -130,8 +130,7 @@ export type RuleId =
   | "hardcode-risk"
   | "text-truncation-unhandled"
   | "image-no-placeholder"
-  | "prototype-link-in-design"
-  | "no-dev-status";
+  | "prototype-link-in-design";
 
 /**
  * Categories that support depthWeight

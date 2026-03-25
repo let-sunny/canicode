@@ -78,7 +78,7 @@ const TOTAL_RULES_PER_CATEGORY: Record<Category, number> = {
   component: 4,
   naming: 5,
   "ai-readability": 5,
-  "handoff-risk": 5,
+  "handoff-risk": 4,
 };
 
 /**

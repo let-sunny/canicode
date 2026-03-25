@@ -279,7 +279,7 @@ describe("calculateGrade (via calculateScores)", () => {
       component: ["missing-component", "detached-instance", "variant-not-used"],
       naming: ["default-name", "non-semantic-name", "inconsistent-naming-convention", "numeric-suffix-name", "too-long-name"],
       "ai-readability": ["ambiguous-structure", "z-index-dependent-layout", "missing-layout-hint", "invisible-layer", "empty-frame"],
-      "handoff-risk": ["hardcode-risk", "text-truncation-unhandled", "image-no-placeholder", "prototype-link-in-design", "no-dev-status"],
+      "handoff-risk": ["hardcode-risk", "text-truncation-unhandled", "image-no-placeholder", "prototype-link-in-design"],
     };
 
     for (const cat of categories) {

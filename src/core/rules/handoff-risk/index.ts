@@ -224,36 +224,3 @@ export const prototypeLinkInDesign = defineRule({
   check: prototypeLinkInDesignCheck,
 });
 
-// ============================================
-// no-dev-status
-// ============================================
-
-const noDevStatusDef: RuleDefinition = {
-  id: "no-dev-status",
-  name: "No Dev Status",
-  category: "handoff-risk",
-  why: "Without dev status, developers cannot know if a design is ready",
-  impact: "May implement designs that are still in progress",
-  fix: "Mark frames as 'Ready for Dev' or 'Completed' when appropriate",
-};
-
-const noDevStatusCheck: RuleCheckFn = (node, context) => {
-  // Only check top-level frames (likely screens/pages)
-  if (node.type !== "FRAME") return null;
-  if (context.depth > 1) return null;
-
-  // Check for devStatus
-  if (node.devStatus) return null;
-
-  return {
-    ruleId: noDevStatusDef.id,
-    nodeId: node.id,
-    nodePath: context.path.join(" > "),
-    message: `"${node.name}" has no dev status set`,
-  };
-};
-
-export const noDevStatus = defineRule({
-  definition: noDevStatusDef,
-  check: noDevStatusCheck,
-});

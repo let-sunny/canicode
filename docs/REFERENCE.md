@@ -147,7 +147,7 @@ Override score, severity, or enable/disable individual rules:
 | `invisible-layer` | -1 | suggestion |
 | `empty-frame` | -2 | missing-info |
 
-**Handoff Risk (5 rules)**
+**Handoff Risk (4 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
@@ -155,8 +155,6 @@ Override score, severity, or enable/disable individual rules:
 | `text-truncation-unhandled` | -5 | risk |
 | `image-no-placeholder` | -4 | risk |
 | `prototype-link-in-design` | -2 | suggestion |
-| `no-dev-status` | -2 | suggestion |
-| `deep-nesting` | -4 | risk |
 
 ### Example Configs
 

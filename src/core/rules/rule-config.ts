@@ -234,11 +234,6 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     score: -2,
     enabled: true,
   },
-  "no-dev-status": {
-    severity: "missing-info",
-    score: -2,
-    enabled: false, // Disabled by default
-  },
 };
 
 /**
