@@ -336,7 +336,7 @@ export function buildResultJson(
     issuesByRule[id] = (issuesByRule[id] ?? 0) + 1;
   }
 
-  return {
+  const json: Record<string, unknown> = {
     version: VERSION,
     fileName,
     nodeCount: result.nodeCount,
@@ -349,4 +349,10 @@ export function buildResultJson(
     issuesByRule,
     summary: formatScoreSummary(scores),
   };
+
+  if (result.failedRules.length > 0) {
+    json["failedRules"] = result.failedRules;
+  }
+
+  return json;
 }

@@ -23,11 +23,22 @@ export interface AnalysisIssue {
 }
 
 /**
+ * Information about a rule that threw during analysis
+ */
+export interface RuleFailure {
+  ruleId: string;
+  nodeName: string;
+  nodeId: string;
+  error: string;
+}
+
+/**
  * Analysis result from the rule engine
  */
 export interface AnalysisResult {
   file: AnalysisFile;
   issues: AnalysisIssue[];
+  failedRules: RuleFailure[];
   maxDepth: number;
   nodeCount: number;
   analyzedAt: string;
@@ -163,6 +174,7 @@ export class RuleEngine {
     const nodeCount = countNodes(rootNode);
 
     const issues: AnalysisIssue[] = [];
+    const failedRules: RuleFailure[] = [];
     const enabledRules = this.getEnabledRules();
 
     // Traverse the tree and run rules on each node
@@ -172,6 +184,7 @@ export class RuleEngine {
       enabledRules,
       maxDepth,
       issues,
+      failedRules,
       0,
       [],
       0,
@@ -183,6 +196,7 @@ export class RuleEngine {
     return {
       file,
       issues,
+      failedRules,
       maxDepth,
       nodeCount,
       analyzedAt: new Date().toISOString(),
@@ -217,6 +231,7 @@ export class RuleEngine {
     rules: Rule[],
     maxDepth: number,
     issues: AnalysisIssue[],
+    failedRules: RuleFailure[],
     depth: number,
     path: string[],
     componentDepth: number,
@@ -281,8 +296,13 @@ export class RuleEngine {
           });
         }
       } catch (error) {
-        // Log but don't fail on rule errors
-        console.error(`Rule "${ruleId}" threw error on node "${node.name}":`, error);
+        // Track failure and continue — never let one rule break the whole analysis
+        failedRules.push({
+          ruleId,
+          nodeName: node.name,
+          nodeId: node.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
@@ -295,6 +315,7 @@ export class RuleEngine {
           rules,
           maxDepth,
           issues,
+          failedRules,
           depth + 1,
           nodePath,
           currentComponentDepth + 1,
