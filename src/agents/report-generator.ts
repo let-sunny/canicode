@@ -202,6 +202,7 @@ function renderApplicationGuide(adjustments: ScoreAdjustment[]): string {
     for (const adj of adjustments) {
       if (adj.proposedDisable) {
         lines.push(`// ${adj.ruleId}: DISABLE (${adj.confidence} confidence, ${adj.supportingCases} cases)`);
+        lines.push(`//   enabled: false`);
       } else {
         lines.push(`// ${adj.ruleId}: ${adj.currentScore} -> ${adj.proposedScore} (${adj.confidence} confidence)`);
       }

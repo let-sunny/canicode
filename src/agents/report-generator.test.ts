@@ -166,8 +166,9 @@ describe("generateCalibrationReport", () => {
 
     // Table should show disable indicator
     expect(report).toContain("⛔ YES");
-    // Application guide should show DISABLE instead of score change
+    // Application guide should show DISABLE with enabled: false hint
     expect(report).toContain("// raw-color: DISABLE (high confidence, 3 cases)");
+    expect(report).toContain("//   enabled: false");
   });
 
   it("does not show disable indicator when proposedDisable is absent", () => {
