@@ -592,9 +592,11 @@ import {
   listActiveFixtures,
   listDoneFixtures,
   moveFixtureToDone,
-  isConverged,
   parseDebateResult,
   extractAppliedRuleIds,
+  extractFixtureName,
+  resolveLatestRunDir,
+  checkConvergence,
 } from "../agents/run-directory.js";
 import {
   pruneCalibrationEvidence,
@@ -633,7 +635,8 @@ cli
   )
   .option("--fixtures-dir <path>", "Fixtures root directory", { default: "fixtures" })
   .option("--force", "Skip convergence check")
-  .option("--run-dir <path>", "Run directory to check for convergence")
+  .option("--run-dir <path>", "Run directory to check for convergence (auto-resolves latest if omitted)")
+  .option("--dry-run", "Show convergence judgment without moving files")
   .option(
     "--lenient-convergence",
     "Converged when no applied/revised decisions (ignore rejected; see calibration issue #14)"
@@ -643,24 +646,50 @@ cli
       fixturesDir?: string;
       force?: boolean;
       runDir?: string;
+      dryRun?: boolean;
       lenientConvergence?: boolean;
     }) => {
+    const fixtureName = extractFixtureName(fixturePath);
+
+    // Resolve run directory: explicit --run-dir or auto-resolve latest
+    let runDir = options.runDir ? resolve(options.runDir) : null;
+    if (!runDir && !options.force) {
+      const latest = resolveLatestRunDir(fixtureName);
+      if (latest) {
+        runDir = latest;
+        console.log(`Auto-resolved latest run: ${runDir}`);
+      }
+    }
+
     if (!options.force) {
-      if (!options.runDir) {
-        console.error("Error: --run-dir required to check convergence (or use --force to skip check)");
+      if (!runDir) {
+        console.error("Error: no run directory found. Specify --run-dir, or use --force to skip check.");
         process.exit(1);
       }
-      if (!isConverged(resolve(options.runDir), { lenient: options.lenientConvergence })) {
-        const debate = parseDebateResult(resolve(options.runDir));
-        const summary = debate?.arbitrator?.summary ?? debate?.skipped ?? "no debate.json found";
-        console.error(`Error: fixture has not converged (${summary}). Use --force to override.`);
+      const summary = checkConvergence(runDir, { lenient: options.lenientConvergence });
+      console.log(`\nConvergence check (${summary.mode}):`);
+      console.log(`  ${summary.reason}`);
+      if (summary.total > 0) {
+        console.log(`  applied=${summary.applied} revised=${summary.revised} rejected=${summary.rejected} kept=${summary.kept}`);
+      }
+
+      if (options.dryRun) {
+        console.log(`\n[dry-run] Would ${summary.converged ? "move" : "NOT move"} fixture: ${fixturePath}`);
+        return;
+      }
+
+      if (!summary.converged) {
+        console.error(`\nError: fixture has not converged. Use --force to override or --lenient-convergence.`);
         process.exit(1);
       }
+    } else if (options.dryRun) {
+      console.log(`[dry-run] --force: would move fixture without convergence check: ${fixturePath}`);
+      return;
     }
 
     const dest = moveFixtureToDone(fixturePath, options.fixturesDir ?? "fixtures");
     if (dest) {
-      console.log(`Moved to: ${dest}`);
+      console.log(`\nMoved to: ${dest}`);
     } else {
       console.error(`Error: fixture not found: ${fixturePath}`);
       process.exit(1);

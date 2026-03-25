@@ -10,6 +10,8 @@ import {
   listCalibrationRuns,
   extractAppliedRuleIds,
   isConverged,
+  resolveLatestRunDir,
+  checkConvergence,
 } from "./run-directory.js";
 
 describe("extractFixtureName", () => {
@@ -199,6 +201,137 @@ describe("isConverged", () => {
     // Zod rejects null in decisions array → parseDebateResult returns null
     expect(isConverged(tempDir)).toBe(false);
     expect(isConverged(tempDir, { lenient: true })).toBe(false);
+  });
+});
+
+describe("resolveLatestRunDir", () => {
+  const origCwd = process.cwd();
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), "run-dir-test-"));
+    process.chdir(tempDir);
+  });
+
+  afterEach(async () => {
+    process.chdir(origCwd);
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it("returns latest run directory for a fixture", () => {
+    createCalibrationRunDir("my-fixture");
+    const dir2 = createCalibrationRunDir("my-fixture");
+    createCalibrationRunDir("other-fixture");
+
+    const latest = resolveLatestRunDir("my-fixture");
+    expect(latest).toBe(dir2);
+  });
+
+  it("returns null when no matching runs exist", () => {
+    createCalibrationRunDir("other-fixture");
+    expect(resolveLatestRunDir("nonexistent")).toBeNull();
+  });
+
+  it("returns null when no runs at all", () => {
+    expect(resolveLatestRunDir("anything")).toBeNull();
+  });
+});
+
+describe("checkConvergence", () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), "converge-test-"));
+  });
+
+  afterEach(async () => {
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it("returns detailed summary with decision counts", () => {
+    writeFileSync(
+      join(tempDir, "debate.json"),
+      JSON.stringify({
+        arbitrator: {
+          summary: "test",
+          decisions: [
+            { ruleId: "a", decision: "applied" },
+            { ruleId: "b", decision: "revised" },
+            { ruleId: "c", decision: "rejected" },
+            { ruleId: "d", decision: "kept" },
+          ],
+        },
+      }),
+    );
+    const summary = checkConvergence(tempDir);
+    expect(summary.converged).toBe(false);
+    expect(summary.mode).toBe("strict");
+    expect(summary.applied).toBe(1);
+    expect(summary.revised).toBe(1);
+    expect(summary.rejected).toBe(1);
+    expect(summary.kept).toBe(1);
+    expect(summary.total).toBe(4);
+    expect(summary.reason).toContain("not converged");
+    expect(summary.reason).toContain("1 applied");
+    expect(summary.reason).toContain("1 revised");
+  });
+
+  it("strict: not converged with rejections only", () => {
+    writeFileSync(
+      join(tempDir, "debate.json"),
+      JSON.stringify({
+        arbitrator: {
+          summary: "test",
+          decisions: [{ ruleId: "x", decision: "rejected" }],
+        },
+      }),
+    );
+    const summary = checkConvergence(tempDir);
+    expect(summary.converged).toBe(false);
+    expect(summary.mode).toBe("strict");
+  });
+
+  it("lenient: converged with rejections only", () => {
+    writeFileSync(
+      join(tempDir, "debate.json"),
+      JSON.stringify({
+        arbitrator: {
+          summary: "test",
+          decisions: [{ ruleId: "x", decision: "rejected" }],
+        },
+      }),
+    );
+    const summary = checkConvergence(tempDir, { lenient: true });
+    expect(summary.converged).toBe(true);
+    expect(summary.mode).toBe("lenient");
+    expect(summary.reason).toContain("converged");
+    expect(summary.reason).toContain("lenient");
+  });
+
+  it("converged when skipped", () => {
+    writeFileSync(
+      join(tempDir, "debate.json"),
+      JSON.stringify({ skipped: "zero proposals" }),
+    );
+    const summary = checkConvergence(tempDir);
+    expect(summary.converged).toBe(true);
+    expect(summary.reason).toBe("zero proposals");
+  });
+
+  it("not converged when no debate.json", () => {
+    const summary = checkConvergence(tempDir);
+    expect(summary.converged).toBe(false);
+    expect(summary.reason).toBe("no debate.json found");
+  });
+
+  it("not converged when no arbitrator", () => {
+    writeFileSync(
+      join(tempDir, "debate.json"),
+      JSON.stringify({ critic: null }),
+    );
+    const summary = checkConvergence(tempDir);
+    expect(summary.converged).toBe(false);
+    expect(summary.reason).toBe("no arbitrator result");
   });
 });
 

@@ -231,6 +231,73 @@ export function extractAppliedRuleIds(debate: DebateResult): string[] {
     .filter((id) => id.length > 0);
 }
 
+/**
+ * Resolve the latest calibration run directory for a given fixture name.
+ * Searches `logs/calibration/<name>--*` and returns the most recent (last sorted).
+ * Returns null if no matching run exists.
+ */
+export function resolveLatestRunDir(fixtureName: string): string | null {
+  const runs = listCalibrationRuns();
+  const matching = runs.filter((runPath) => {
+    const dirName = basename(runPath);
+    const parsed = parseRunDirName(dirName);
+    return parsed.name === fixtureName;
+  });
+  return matching.length > 0 ? matching[matching.length - 1]! : null;
+}
+
+/** Convergence summary with decision counts. */
+export interface ConvergenceSummary {
+  converged: boolean;
+  mode: "strict" | "lenient";
+  applied: number;
+  revised: number;
+  rejected: number;
+  kept: number;
+  total: number;
+  reason: string;
+}
+
+/**
+ * Check convergence and return a detailed summary with decision counts.
+ */
+export function checkConvergence(runDir: string, options?: ConvergenceOptions): ConvergenceSummary {
+  const mode = options?.lenient ? "lenient" : "strict";
+  const debate = parseDebateResult(runDir);
+
+  if (!debate) {
+    return { converged: false, mode, applied: 0, revised: 0, rejected: 0, kept: 0, total: 0, reason: "no debate.json found" };
+  }
+  if (debate.skipped) {
+    return { converged: true, mode, applied: 0, revised: 0, rejected: 0, kept: 0, total: 0, reason: debate.skipped };
+  }
+  if (!debate.arbitrator) {
+    return { converged: false, mode, applied: 0, revised: 0, rejected: 0, kept: 0, total: 0, reason: "no arbitrator result" };
+  }
+
+  const decisions = debate.arbitrator.decisions;
+  const applied = decisions.filter((d) => d.decision.trim().toLowerCase() === "applied").length;
+  const revised = decisions.filter((d) => d.decision.trim().toLowerCase() === "revised").length;
+  const rejected = decisions.filter((d) => d.decision.trim().toLowerCase() === "rejected").length;
+  const kept = decisions.length - applied - revised - rejected;
+  const total = decisions.length;
+
+  const converged = options?.lenient
+    ? (applied + revised) === 0
+    : (applied + revised) === 0 && rejected === 0;
+
+  const parts: string[] = [];
+  if (applied > 0) parts.push(`${applied} applied`);
+  if (revised > 0) parts.push(`${revised} revised`);
+  if (rejected > 0) parts.push(`${rejected} rejected`);
+  if (kept > 0) parts.push(`${kept} kept`);
+  const countsStr = parts.length > 0 ? parts.join(", ") : "no decisions";
+  const verdict = converged ? "converged" : "not converged";
+  const reason = `${verdict} (${mode}) — ${countsStr} (${total} total)`;
+
+  return { converged, mode, applied, revised, rejected, kept, total, reason };
+}
+
 /** Options for convergence checking. */
 export interface ConvergenceOptions {
   /**
