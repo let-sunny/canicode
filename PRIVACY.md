@@ -43,7 +43,7 @@ Telemetry uses **pseudonymous identifiers** that vary by channel. These allow us
 
 **What this means:**
 - For CLI/MCP: we can see that "the same device" ran multiple analyses, but we cannot link this to a person, email, or account. Deleting `~/.canicode/config.json` resets the identifier.
-- For Figma Plugin: we can see that "the same hashed ID" used the plugin across sessions. The hash is not reversible to the original Figma user ID.
+- For Figma Plugin: we can see that "the same hashed ID" used the plugin across sessions. FNV-1a is a non-cryptographic hash, but Figma user IDs have sufficient entropy to make practical reversal infeasible.
 - For Web App: all users share the same identifier — we see only aggregate counts.
 
 ## How to Opt Out
