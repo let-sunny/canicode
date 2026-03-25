@@ -92,7 +92,7 @@ Override score, severity, or enable/disable individual rules:
 
 ### All Rule IDs
 
-**Layout (11 rules)**
+**Layout (10 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
@@ -104,7 +104,6 @@ Override score, severity, or enable/disable individual rules:
 | `fixed-size-in-auto-layout` | -5 | risk |
 | `missing-min-width` | -5 | risk |
 | `missing-max-width` | -4 | risk |
-| `overflow-hidden-abuse` | -3 | missing-info |
 | `inconsistent-sibling-layout-direction` | -2 | missing-info |
 
 **Token (7 rules)**
@@ -119,14 +118,13 @@ Override score, severity, or enable/disable individual rules:
 | `raw-opacity` | -5 | risk |
 | `multiple-fill-colors` | -3 | missing-info |
 
-**Component (6 rules)**
+**Component (5 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
 | `missing-component` | -7 | risk |
 | `detached-instance` | -5 | risk |
 | `variant-not-used` | -3 | suggestion |
-| `component-property-unused` | -2 | suggestion |
 | `single-use-component` | -2 | suggestion |
 | `missing-component-description` | -2 | missing-info |
 

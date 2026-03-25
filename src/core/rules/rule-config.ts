@@ -61,11 +61,6 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
       maxDepth: 5,
     },
   },
-  "overflow-hidden-abuse": {
-    severity: "missing-info",
-    score: -3,
-    enabled: true,
-  },
   "inconsistent-sibling-layout-direction": {
     severity: "missing-info",
     score: -2,
@@ -141,11 +136,6 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   "variant-not-used": {
     severity: "missing-info",
     score: -3,
-    enabled: true,
-  },
-  "component-property-unused": {
-    severity: "missing-info",
-    score: -2,
     enabled: true,
   },
   "single-use-component": {

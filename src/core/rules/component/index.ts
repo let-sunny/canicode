@@ -343,54 +343,6 @@ export const variantNotUsed = defineRule({
 });
 
 // ============================================
-// component-property-unused
-// ============================================
-
-const componentPropertyUnusedDef: RuleDefinition = {
-  id: "component-property-unused",
-  name: "Component Property Unused",
-  category: "component",
-  why: "Component properties should be utilized to expose customization",
-  impact: "Hardcoded values that should be configurable",
-  fix: "Connect the value to a component property",
-};
-
-const componentPropertyUnusedCheck: RuleCheckFn = (node, context) => {
-  // Check instances: does this instance override any component properties?
-  if (node.type !== "INSTANCE") return null;
-  if (!node.componentId) return null;
-
-  // Look up the component's property definitions from componentDefinitions
-  const compDefs = context.file.componentDefinitions;
-  if (!compDefs) return null;
-
-  const masterDef = compDefs[node.componentId];
-  if (!masterDef) return null;
-  if (!masterDef.componentPropertyDefinitions) return null;
-
-  const definedProps = Object.keys(masterDef.componentPropertyDefinitions);
-  if (definedProps.length === 0) return null;
-
-  // Check if the instance has any property overrides
-  const instanceProps = node.componentProperties;
-  if (!instanceProps || Object.keys(instanceProps).length === 0) {
-    return {
-      ruleId: componentPropertyUnusedDef.id,
-      nodeId: node.id,
-      nodePath: context.path.join(" > "),
-      message: `Instance "${node.name}" does not customize any of ${definedProps.length} available component properties`,
-    };
-  }
-
-  return null;
-};
-
-export const componentPropertyUnused = defineRule({
-  definition: componentPropertyUnusedDef,
-  check: componentPropertyUnusedCheck,
-});
-
-// ============================================
 // single-use-component
 // ============================================
 
