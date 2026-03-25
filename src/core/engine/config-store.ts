@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -15,10 +15,17 @@ interface AireadyConfig {
   deviceId?: string;
 }
 
+function hardenPermissions(path: string, mode: number): void {
+  if (process.platform !== "win32") {
+    chmodSync(path, mode);
+  }
+}
+
 function ensureDir(dir: string): void {
   if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
+    mkdirSync(dir, { recursive: true, mode: 0o700 });
   }
+  hardenPermissions(dir, 0o700);
 }
 
 export function readConfig(): AireadyConfig {
@@ -35,7 +42,11 @@ export function readConfig(): AireadyConfig {
 
 export function writeConfig(config: AireadyConfig): void {
   ensureDir(AIREADY_DIR);
-  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n", "utf-8");
+  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n", {
+    encoding: "utf-8",
+    mode: 0o600,
+  });
+  hardenPermissions(CONFIG_PATH, 0o600);
 }
 
 export function getFigmaToken(): string | undefined {
@@ -62,6 +73,7 @@ export function getReportsDir(): string {
 }
 
 export function ensureReportsDir(): void {
+  ensureDir(AIREADY_DIR);
   ensureDir(REPORTS_DIR);
 }
 
