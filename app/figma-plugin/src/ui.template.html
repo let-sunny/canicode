@@ -157,7 +157,7 @@
       gridEl.innerHTML = categories.map(function(cat) {
         var cs = scores.byCategory[cat];
         var barColor = cs.percentage >= 80 ? 'var(--green)' : cs.percentage >= 60 ? 'var(--amber)' : 'var(--red)';
-        return '<div class="cat-card" data-cat="' + cat + '" onclick="filterCategory(\'' + cat + '\')" title="' + (catTips[cat] || '') + '">' +
+        return '<div class="cat-row" title="' + (catTips[cat] || '') + '">' +
           '<div class="cat-score ' + scoreClass(cs.percentage) + '">' + cs.percentage + '</div>' +
           '<div class="cat-label">' + (CATEGORY_LABELS[cat] || cat) + '</div>' +
           '<div class="cat-bar"><div class="cat-bar-fill" style="width:' + cs.percentage + '%;background:' + barColor + '"></div></div>' +
