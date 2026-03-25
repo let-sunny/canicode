@@ -215,7 +215,7 @@ function renderSummaryDot(dotClass: string, count: number, label: string): strin
           <span class="w-2.5 h-2.5 rounded-full ${dotClass}"></span>
           <span class="text-lg font-bold tracking-tight">${count}</span>
           <span class="text-sm text-muted-foreground">${label}</span>
-          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-zinc-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">${escapeHtml(tooltip)}</div>
+          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-zinc-900 text-white text-xs px-3 py-2 rounded-md max-w-[220px] w-max z-10 shadow-lg pointer-events-none">${escapeHtml(tooltip)}<div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900"></div></div>
         </div>`;
 }
 

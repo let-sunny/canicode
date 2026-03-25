@@ -167,7 +167,7 @@
 
       // Summary bar
       var s = scores.summary;
-      var sevTips = { blocking: 'Cannot implement correctly without fixing.', risk: 'Implementable now but will break later.', missing: 'Information absent, AI must guess.', suggestion: 'Not problematic, but improves systemization.' };
+      var sevTips = { blocking: 'Cannot implement correctly without fixing. Direct impact on screen reproduction.', risk: 'Implementable now but will break or increase cost later.', missing: 'Information is absent, forcing AI to guess.', suggestion: 'Not immediately problematic, but improves systemization.' };
       document.getElementById('summary-bar').innerHTML =
         '<div class="summary-item" data-tip="' + sevTips.blocking + '"><span class="dot dot-blocking"></span><span class="summary-count">' + s.blocking + '</span> Blocking</div>' +
         '<div class="summary-item" data-tip="' + sevTips.risk + '"><span class="dot dot-risk"></span><span class="summary-count">' + s.risk + '</span> Risk</div>' +
