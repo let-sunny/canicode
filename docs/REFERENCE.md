@@ -172,6 +172,7 @@ Override score, severity, or enable/disable individual rules:
 ```
 
 **Mobile-first (focus on structure):**
+
 ```json
 {
   "rules": {
