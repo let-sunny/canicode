@@ -128,11 +128,6 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     score: -5,
     enabled: true,
   },
-  "variant-not-used": {
-    severity: "missing-info",
-    score: -3,
-    enabled: true,
-  },
   "missing-component-description": {
     severity: "missing-info",
     score: -2,

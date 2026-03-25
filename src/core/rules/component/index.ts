@@ -315,69 +315,6 @@ export const detachedInstance = defineRule({
 });
 
 // ============================================
-// variant-not-used
-// ============================================
-
-const variantNotUsedDef: RuleDefinition = {
-  id: "variant-not-used",
-  name: "Variant Not Used",
-  category: "component",
-  why: "Available variants exist but aren't used — AI doesn't know which state the design intends to show",
-  impact: "AI may generate the wrong variant or hardcode overrides instead of using the variant system",
-  fix: "Use the appropriate variant so AI can reference the correct state directly",
-};
-
-const variantNotUsedCheck: RuleCheckFn = (node, context) => {
-  if (node.type !== "INSTANCE") return null;
-  if (!node.componentId) return null;
-
-  // Check if the master component has VARIANT properties with multiple options
-  const compDefs = context.file.componentDefinitions;
-  if (!compDefs) return null;
-
-  const master = compDefs[node.componentId];
-  if (!master?.componentPropertyDefinitions) return null;
-
-  const variantProps = Object.entries(master.componentPropertyDefinitions).filter(([, prop]) => {
-    const p = prop as Record<string, unknown>;
-    return p["type"] === "VARIANT" && Array.isArray(p["variantOptions"]) && (p["variantOptions"] as unknown[]).length > 1;
-  });
-
-  if (variantProps.length === 0) return null;
-
-  // Check if instance overrides any variant property
-  const instanceProps = node.componentProperties;
-  if (!instanceProps) {
-    return {
-      ruleId: variantNotUsedDef.id,
-      nodeId: node.id,
-      nodePath: context.path.join(" > "),
-      message: `Instance "${node.name}" uses default variant — ${variantProps.length} variant properties available but none selected`,
-    };
-  }
-
-  // Check if any variant property is actually overridden
-  const variantPropNames = new Set(variantProps.map(([name]) => name));
-  const hasVariantOverride = Object.keys(instanceProps).some((key) => variantPropNames.has(key));
-
-  if (!hasVariantOverride) {
-    return {
-      ruleId: variantNotUsedDef.id,
-      nodeId: node.id,
-      nodePath: context.path.join(" > "),
-      message: `Instance "${node.name}" uses default variant — ${variantProps.length} variant properties available but none selected`,
-    };
-  }
-
-  return null;
-};
-
-export const variantNotUsed = defineRule({
-  definition: variantNotUsedDef,
-  check: variantNotUsedCheck,
-});
-
-// ============================================
 // missing-component-description
 // ============================================
 

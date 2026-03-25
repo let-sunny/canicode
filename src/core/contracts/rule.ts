@@ -111,7 +111,6 @@ export type RuleId =
   // Component (4)
   | "missing-component"
   | "detached-instance"
-  | "variant-not-used"
   | "missing-component-description"
   // Naming (5)
   | "default-name"
