@@ -44,7 +44,7 @@ reviews:
         - Do not assign explicit undefined to optional properties
         - Use Zod schemas for external input validation (schemas in contracts/ directory)
         - Use ESM imports with .js extension for relative imports
-        - Use @/* path alias for src/ references
+        - Use relative paths for imports (not @/* alias)
 
     - path: "src/core/rules/**"
       instructions: |
