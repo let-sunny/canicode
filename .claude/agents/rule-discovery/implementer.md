@@ -45,7 +45,7 @@ Return a summary of what you did, including:
 ## Rules
 
 - Follow existing code patterns exactly. Read similar rules before writing.
-- Use `@/*` path alias for imports.
+- Use relative paths for imports (not `@/*` alias).
 - Use `.js` extension for relative imports.
 - Do NOT modify existing rules or scores.
 - Do NOT commit. The Evaluator runs next.
