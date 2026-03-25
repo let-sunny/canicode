@@ -54,4 +54,37 @@ describe("text-truncation-unhandled", () => {
     });
     expect(textTruncationUnhandled.check(node, makeContext())).toBeNull();
   });
+
+  it("returns null at width boundary (300px)", () => {
+    const parent = makeNode({ layoutMode: "HORIZONTAL" });
+    const node = makeNode({
+      type: "TEXT",
+      characters: "A".repeat(60),
+      absoluteBoundingBox: { x: 0, y: 0, width: 300, height: 20 },
+    });
+    expect(textTruncationUnhandled.check(node, makeContext({ parent }))).toBeNull();
+  });
+
+  it("returns null at length boundary (50 chars)", () => {
+    const parent = makeNode({ layoutMode: "HORIZONTAL" });
+    const node = makeNode({
+      type: "TEXT",
+      characters: "A".repeat(50),
+      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 20 },
+    });
+    expect(textTruncationUnhandled.check(node, makeContext({ parent }))).toBeNull();
+  });
+
+  it("flags when length is 51 chars in constrained width", () => {
+    const parent = makeNode({ layoutMode: "HORIZONTAL" });
+    const node = makeNode({
+      type: "TEXT",
+      name: "Description",
+      characters: "A".repeat(51),
+      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 20 },
+    });
+    const result = textTruncationUnhandled.check(node, makeContext({ parent }));
+    expect(result).not.toBeNull();
+    expect(result!.ruleId).toBe("text-truncation-unhandled");
+  });
 });

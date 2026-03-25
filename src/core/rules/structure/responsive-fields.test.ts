@@ -126,7 +126,7 @@ describe("missing-size-constraint", () => {
     expect(issues.at(0)?.violation.message).toContain("Content");
   });
 
-  it("does not flag FILL container that has minWidth set", () => {
+  it("flags missing maxWidth when minWidth is set and container is wide", () => {
     const file = makeFile(
       makeNode({
         name: "Root",
@@ -147,11 +147,8 @@ describe("missing-size-constraint", () => {
     const issues = result.issues.filter(
       (i) => i.rule.definition.id === "missing-size-constraint",
     );
-    // Only maxWidth missing, but width=300 > 200 threshold so still flagged
-    // Check message mentions max-width specifically
-    if (issues.length > 0) {
-      expect(issues.at(0)?.violation.message).toContain("max-width");
-    }
+    expect(issues.length).toBeGreaterThanOrEqual(1);
+    expect(issues.at(0)?.violation.message).toContain("max-width");
   });
 
   it("does not flag FIXED container", () => {
