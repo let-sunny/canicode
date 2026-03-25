@@ -17,7 +17,7 @@ interface AireadyConfig {
 
 function ensureDir(dir: string): void {
   if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
+    mkdirSync(dir, { recursive: true, mode: 0o700 });
   }
 }
 
@@ -35,7 +35,10 @@ export function readConfig(): AireadyConfig {
 
 export function writeConfig(config: AireadyConfig): void {
   ensureDir(AIREADY_DIR);
-  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n", "utf-8");
+  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n", {
+    encoding: "utf-8",
+    mode: 0o600,
+  });
 }
 
 export function getFigmaToken(): string | undefined {
