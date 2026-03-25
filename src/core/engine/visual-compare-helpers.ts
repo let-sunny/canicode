@@ -3,7 +3,7 @@
  * These have no side effects beyond file I/O and can be tested directly.
  */
 
-import { writeFileSync, readFileSync, mkdirSync, existsSync, statSync } from "node:fs";
+import { writeFileSync, readFileSync, mkdirSync, statSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
@@ -39,9 +39,13 @@ export function getFigmaCachePath(fileKey: string, nodeId: string, scale: number
  * Check if a cached Figma screenshot exists and is still fresh (within TTL).
  */
 export function isCacheFresh(cachePath: string): boolean {
-  if (!existsSync(cachePath)) return false;
-  const stats = statSync(cachePath);
-  return Date.now() - stats.mtimeMs < FIGMA_CACHE_TTL_MS;
+  try {
+    const stats = statSync(cachePath);
+    return Date.now() - stats.mtimeMs < FIGMA_CACHE_TTL_MS;
+  } catch {
+    // File doesn't exist or was removed between check and stat (TOCTOU safe)
+    return false;
+  }
 }
 
 /**
@@ -66,9 +70,12 @@ export function inferDeviceScaleFactor(
 }
 
 /**
- * Pad a PNG to target dimensions with a high-contrast fill color (magenta).
+ * Pad a PNG to target dimensions with a high-contrast fill color (magenta #FF00FF).
  * Unlike resize, padding preserves original pixels 1:1 and guarantees that
  * any size difference is counted as mismatched pixels by pixelmatch.
+ *
+ * Note: If both images contain magenta in the padded area, those pixels
+ * will match — extremely rare in real designs but theoretically possible.
  */
 export function padPng(png: PNG, targetWidth: number, targetHeight: number): PNG {
   const padded = new PNG({ width: targetWidth, height: targetHeight });
@@ -116,7 +123,7 @@ export function compareScreenshots(
     writeFileSync(diffOutputPath, PNG.sync.write(diff));
 
     const totalPixels = width * height;
-    const similarity = Math.round((1 - diffPixels / totalPixels) * 100);
+    const similarity = diffPixels === 0 ? 100 : Math.floor((1 - diffPixels / totalPixels) * 100);
 
     return { similarity, diffPixels, totalPixels, width, height };
   }
@@ -131,7 +138,7 @@ export function compareScreenshots(
   writeFileSync(diffOutputPath, PNG.sync.write(diff));
 
   const totalPixels = width * height;
-  const similarity = Math.round((1 - diffPixels / totalPixels) * 100);
+  const similarity = diffPixels === 0 ? 100 : Math.floor((1 - diffPixels / totalPixels) * 100);
 
   return { similarity, diffPixels, totalPixels, width, height };
 }
