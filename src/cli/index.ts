@@ -663,7 +663,7 @@ cli
 
     if (!options.force) {
       if (!runDir) {
-        console.error("Error: no run directory found. Specify --run-dir, or use --force to skip check.");
+        console.error(`Error: no run directory found for fixture "${fixtureName}". Specify --run-dir, or use --force to skip check.`);
         process.exit(1);
       }
       const summary = checkConvergence(runDir, { lenient: options.lenientConvergence });
