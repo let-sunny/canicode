@@ -48,7 +48,7 @@ const noAutoLayoutDef: RuleDefinition = {
 };
 
 const noAutoLayoutCheck: RuleCheckFn = (node, context) => {
-  if (node.type !== "FRAME" && !isContainerNode(node)) return null;
+  if (!isContainerNode(node)) return null;
   if (hasAutoLayout(node)) return null;
   if (!node.children || node.children.length === 0) return null;
 
@@ -141,7 +141,7 @@ const absolutePositionInAutoLayoutCheck: RuleCheckFn = (node, context) => {
   if (!hasAutoLayout(context.parent)) return null;
   if (node.layoutPositioning !== "ABSOLUTE") return null;
 
-  if (isAbsolutePositionExempt(node)) return null;
+  if (isAbsolutePositionExempt(node, context.parent)) return null;
 
   return {
     ruleId: absolutePositionInAutoLayoutDef.id,
@@ -207,8 +207,6 @@ const fixedSizeInAutoLayoutCheck: RuleCheckFn = (node, context) => {
       if (node.layoutAlign === "STRETCH") return null;
       if (node.layoutAlign !== "INHERIT") return null;
     }
-
-    if (isFixedSizeExempt(node)) return null;
 
     return {
       ruleId: fixedSizeInAutoLayoutDef.id,

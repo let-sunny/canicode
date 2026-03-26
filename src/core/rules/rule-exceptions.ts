@@ -53,11 +53,22 @@ export function isAutoLayoutExempt(node: AnalysisNode): boolean {
 // ============================================
 
 /** Nodes that are allowed to use absolute positioning inside auto-layout */
-export function isAbsolutePositionExempt(node: AnalysisNode): boolean {
+export function isAbsolutePositionExempt(node: AnalysisNode, parent?: AnalysisNode | undefined): boolean {
   if (isVisualOnlyNode(node)) return true;
 
   // Intentional name patterns (badge, close, overlay, etc.)
   if (isExcludedName(node.name)) return true;
+
+  // Small elements relative to parent (badges, decorations) — absolute positioning is expected
+  if (parent?.absoluteBoundingBox && node.absoluteBoundingBox) {
+    const parentBB = parent.absoluteBoundingBox;
+    const nodeBB = node.absoluteBoundingBox;
+    if (parentBB.width > 0 && parentBB.height > 0) {
+      const widthRatio = nodeBB.width / parentBB.width;
+      const heightRatio = nodeBB.height / parentBB.height;
+      if (widthRatio < 0.25 && heightRatio < 0.25) return true;
+    }
+  }
 
   return false;
 }
@@ -80,7 +91,7 @@ export function isSizeConstraintExempt(node: AnalysisNode, context: RuleContext)
   // Root-level frames — they represent the screen itself
   if (context.depth <= 1) return true;
 
-  // All siblings are FILL (e.g. list view) — parent controls the width
+  // All siblings are FILL (e.g. single item or list view) — parent controls the width
   if (context.siblings && context.siblings.length > 0) {
     if (context.siblings.every((s) => s.layoutSizingHorizontal === "FILL")) return true;
   }
