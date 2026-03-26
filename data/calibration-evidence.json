@@ -1,1 +1,107 @@
-[]
+[
+  {
+    "ruleId": "missing-component",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-4333-9262",
+    "timestamp": "2026-03-26T00:23:55.813Z"
+  },
+  {
+    "ruleId": "no-auto-layout",
+    "type": "underscored",
+    "actualDifficulty": "hard",
+    "fixture": "material3-52949-27916",
+    "timestamp": "2026-03-26T00:47:29.368Z"
+  },
+  {
+    "ruleId": "magic-number-spacing",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-52949-27916",
+    "timestamp": "2026-03-26T00:47:29.368Z"
+  },
+  {
+    "ruleId": "raw-font",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-52949-27916",
+    "timestamp": "2026-03-26T00:47:29.368Z"
+  },
+  {
+    "ruleId": "missing-component",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-52949-27916",
+    "timestamp": "2026-03-26T00:47:29.368Z"
+  },
+  {
+    "ruleId": "variant-structure-mismatch",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-52949-27916",
+    "timestamp": "2026-03-26T00:47:29.368Z"
+  },
+  {
+    "ruleId": "no-auto-layout",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-562-9518",
+    "timestamp": "2026-03-26T00:50:06.823Z"
+  },
+  {
+    "ruleId": "missing-component",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-562-9518",
+    "timestamp": "2026-03-26T00:50:06.823Z"
+  },
+  {
+    "ruleId": "detached-instance",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-562-9518",
+    "timestamp": "2026-03-26T00:50:06.823Z"
+  },
+  {
+    "ruleId": "text-truncation-unhandled",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-562-9518",
+    "timestamp": "2026-03-26T00:50:06.823Z"
+  },
+  {
+    "ruleId": "wrap-behavior-unknown",
+    "type": "underscored",
+    "actualDifficulty": "moderate",
+    "fixture": "simple-ds-562-9518",
+    "timestamp": "2026-03-26T00:50:06.823Z"
+  },
+  {
+    "ruleId": "no-auto-layout",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-175-9106",
+    "timestamp": "2026-03-26T00:58:41.395Z"
+  },
+  {
+    "ruleId": "missing-component",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-175-9106",
+    "timestamp": "2026-03-26T00:58:41.395Z"
+  },
+  {
+    "ruleId": "detached-instance",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-175-9106",
+    "timestamp": "2026-03-26T00:58:41.395Z"
+  },
+  {
+    "ruleId": "text-truncation-unhandled",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-175-9106",
+    "timestamp": "2026-03-26T00:58:41.395Z"
+  }
+]

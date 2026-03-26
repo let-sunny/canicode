@@ -22,12 +22,12 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "fixed-size-in-auto-layout": {
     severity: "risk",
-    score: -5,
+    score: -3,
     enabled: true,
   },
   "missing-size-constraint": {
     severity: "risk",
-    score: -5,
+    score: -3,
     enabled: true,
   },
   "missing-responsive-behavior": {
