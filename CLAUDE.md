@@ -232,12 +232,12 @@ pnpm lint           # Type check
 
 ### PR Workflow
 
-1. PR은 **draft**로 먼저 생성 → 유저 확인 후 ready로 전환
-2. 수정 필요 시 다시 **draft로 전환** 후 작업 → 완료되면 다시 ready
-3. PR 생성 후 `subscribe_pr_activity`로 **구독** 걸어서 리뷰/CI 실시간 감시
-4. CodeRabbit 리뷰 대기 — 첫 코멘트 달리고 rate limit 걸리면 본문의 대기 시간만큼 기다린 후 empty commit으로 재트리거
-5. 리뷰 코멘트 오면 즉시 대응/수정
-6. 머지는 반드시 **유저 확인** 후 진행 — squash merge, 머지 후 브랜치 삭제
+1. Always create PRs as **draft** first — wait for user approval before marking ready
+2. When changes are needed, convert back to **draft** — mark ready again when done
+3. After creating a PR, **subscribe** with `subscribe_pr_activity` to monitor reviews and CI in real-time
+4. Wait for CodeRabbit review — if rate-limited, wait the specified duration then push an empty commit to re-trigger
+5. Address review comments immediately as they arrive
+6. Never merge without **explicit user approval** — always use squash merge and delete the branch after
 
 ## Severity Levels
 
