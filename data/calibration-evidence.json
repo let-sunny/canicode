@@ -334,5 +334,110 @@
     "actualDifficulty": "easy",
     "fixture": "simple-ds-175-8591",
     "timestamp": "2026-03-26T01:07:12.089Z"
+  },
+  {
+    "ruleId": "no-auto-layout",
+    "type": "overscored",
+    "actualDifficulty": "moderate",
+    "fixture": "material3-56615-45927",
+    "timestamp": "2026-03-26T01:10:42.533Z"
+  },
+  {
+    "ruleId": "missing-responsive-behavior",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-45927",
+    "timestamp": "2026-03-26T01:10:42.533Z"
+  },
+  {
+    "ruleId": "group-usage",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-45927",
+    "timestamp": "2026-03-26T01:10:42.533Z"
+  },
+  {
+    "ruleId": "z-index-dependent-layout",
+    "type": "underscored",
+    "actualDifficulty": "hard",
+    "fixture": "material3-56615-45927",
+    "timestamp": "2026-03-26T01:10:42.533Z"
+  },
+  {
+    "ruleId": "missing-size-constraint",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-45927",
+    "timestamp": "2026-03-26T01:10:42.533Z"
+  },
+  {
+    "ruleId": "missing-component",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-45927",
+    "timestamp": "2026-03-26T01:10:42.533Z"
+  },
+  {
+    "ruleId": "deep-nesting",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-45927",
+    "timestamp": "2026-03-26T01:10:42.533Z"
+  },
+  {
+    "ruleId": "detached-instance",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-45927",
+    "timestamp": "2026-03-26T01:10:42.533Z"
+  },
+  {
+    "ruleId": "fixed-size-in-auto-layout",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-45927",
+    "timestamp": "2026-03-26T01:10:42.533Z"
+  },
+  {
+    "ruleId": "raw-font",
+    "type": "overscored",
+    "actualDifficulty": "moderate",
+    "fixture": "material3-56615-45927",
+    "timestamp": "2026-03-26T01:10:42.533Z"
+  },
+  {
+    "ruleId": "text-truncation-unhandled",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-45927",
+    "timestamp": "2026-03-26T01:10:42.533Z"
+  },
+  {
+    "ruleId": "no-auto-layout",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-175-7790",
+    "timestamp": "2026-03-26T01:11:14.093Z"
+  },
+  {
+    "ruleId": "missing-component",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-175-7790",
+    "timestamp": "2026-03-26T01:11:14.093Z"
+  },
+  {
+    "ruleId": "detached-instance",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-175-7790",
+    "timestamp": "2026-03-26T01:11:14.093Z"
+  },
+  {
+    "ruleId": "fixed-size-in-auto-layout",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "simple-ds-175-7790",
+    "timestamp": "2026-03-26T01:11:14.093Z"
   }
 ]
