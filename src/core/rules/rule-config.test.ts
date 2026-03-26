@@ -18,7 +18,9 @@ describe("rule-config sync", () => {
     // Parse rule tables from REFERENCE.md
     const tableRows = [...content.matchAll(/\| `([^`]+)` \| (-?\d+) \| ([a-z-]+) \|/g)];
     const docRules = new Map(
-      tableRows.map((m) => [m[1]!, { score: Number(m[2]), severity: m[3]! }])
+      tableRows
+        .filter((m) => m[1] !== undefined && m[2] !== undefined && m[3] !== undefined)
+        .map((m) => [m[1], { score: Number(m[2]), severity: m[3] }])
     );
 
     for (const [id, config] of Object.entries(RULE_CONFIGS)) {
@@ -63,26 +65,15 @@ describe("rule-config sync", () => {
     });
   });
 
-  describe("rules/index.ts comments match actual counts", () => {
+  describe("rules/index.ts has no stale count comments", () => {
     const indexContent = readFileSync(
       resolve(import.meta.dirname, "./index.ts"),
       "utf-8"
     );
 
-    for (const category of CATEGORIES) {
-      it(`${category} rule count is correct`, () => {
-        const rules = ruleRegistry.getByCategory(category as Category);
-        const match = indexContent.match(
-          new RegExp(`// .+rules.+\\(${rules.length}\\).*\\n.*${category}`)
-        );
-        // If there's a count comment, it must match actual count
-        const countMatch = indexContent.match(
-          new RegExp(`${category}.*rules.*\\((\\d+)\\)`, "i")
-        );
-        if (countMatch) {
-          expect(Number(countMatch[1])).toBe(rules.length);
-        }
-      });
-    }
+    it("no hardcoded rule count comments exist", () => {
+      const countPattern = /rules.*\(\d+\)/i;
+      expect(countPattern.test(indexContent)).toBe(false);
+    });
   });
 });

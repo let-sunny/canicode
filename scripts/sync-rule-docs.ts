@@ -26,10 +26,14 @@ function generateTables(): string {
   for (const category of CATEGORIES) {
     const rules = ruleRegistry
       .getByCategory(category as Category)
-      .map((r) => ({
-        id: r.definition.id as RuleId,
-        config: RULE_CONFIGS[r.definition.id as RuleId],
-      }));
+      .map((r) => {
+        const id = r.definition.id as RuleId;
+        const config = RULE_CONFIGS[id];
+        if (!config) {
+          throw new Error(`Missing RULE_CONFIGS entry for rule "${id}"`);
+        }
+        return { id, config };
+      });
 
     const label = category.charAt(0).toUpperCase() + category.slice(1);
     lines.push(`**${label} (${rules.length} rules)**`);
