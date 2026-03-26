@@ -186,12 +186,11 @@ export function calculateScores(
     ruleScorePerCategory.set(category, new Map());
   }
 
-  // Compute totals from the config map
-  // If configs provided: use preset-adjusted totals
-  // If not: fall back to static RULE_CONFIGS for denominator consistency
-  const totalScorePerCategory = configs
-    ? computeTotalScorePerCategory(configs)
-    : computeTotalScorePerCategory(RULE_CONFIGS);
+  // Compute totals from the config map.
+  // If configs provided: use preset-adjusted totals (recommended when using presets).
+  // If not: fall back to static RULE_CONFIGS — only correct when issues were
+  // produced with default RULE_CONFIGS, otherwise diversity ratios will be skewed.
+  const totalScorePerCategory = computeTotalScorePerCategory(configs ?? RULE_CONFIGS);
 
   // Count issues by severity per category and track unique rules with scores
   for (const issue of result.issues) {
@@ -231,7 +230,7 @@ export function calculateScores(
       const ruleScores = ruleScorePerCategory.get(category)!;
       const weightedTriggered = Array.from(ruleScores.values()).reduce((sum, s) => sum + s, 0);
       const weightedTotal = totalScorePerCategory[category];
-      const diversityRatio = weightedTriggered / weightedTotal;
+      const diversityRatio = weightedTotal > 0 ? weightedTriggered / weightedTotal : 0;
       diversityScore = clamp(Math.round((1 - diversityRatio) * 100), 0, 100);
     }
     catScore.diversityScore = diversityScore;

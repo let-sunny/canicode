@@ -177,9 +177,8 @@ describe("calculateScores", () => {
   });
 
   it("low-severity rules have minimal diversity impact (intentional)", () => {
-    // Within structure (total score = 42):
-    // 1 suggestion rule (score -2): ratio = 2/42 ≈ 5% → diversity ≈ 95%
-    // 1 blocking rule (score -10): ratio = 10/42 ≈ 24% → diversity ≈ 76%
+    // 1 suggestion rule (score -2) vs 1 blocking rule (score -10).
+    // Weighted ratio for the suggestion is much smaller, so diversity stays high.
     // Low-severity rules correctly penalize diversity less.
     const lowSeverity = calculateScores(makeResult([
       makeIssue({ ruleId: "unnecessary-node", category: "structure", severity: "suggestion", score: -2 }),
