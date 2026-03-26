@@ -417,6 +417,7 @@
       var commentBody = '[CanICode] ' + btn.dataset.message;
       btn.disabled = true;
       btn.textContent = 'Sending...';
+      btn.title = '';
       try {
         var res = await fetch('https://api.figma.com/v1/files/' + fileKey + '/comments', {
           method: 'POST',

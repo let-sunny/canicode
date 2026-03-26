@@ -171,6 +171,7 @@ ${figmaToken ? `  <script>
 
       btn.disabled = true;
       btn.textContent = 'Sending...';
+      btn.title = '';
 
       try {
         const res = await fetch('https://api.figma.com/v1/files/' + fileKey + '/comments', {
