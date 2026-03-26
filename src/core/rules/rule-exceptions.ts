@@ -13,12 +13,24 @@ export function isVisualLeafType(type: string): boolean {
   return VISUAL_LEAF_TYPES.has(type);
 }
 
-function hasImageFill(node: AnalysisNode): boolean {
+/** Node has an IMAGE type fill */
+export function hasImageFill(node: AnalysisNode): boolean {
   if (!node.fills || !Array.isArray(node.fills)) return false;
   return node.fills.some((f) => {
     const fill = f as Record<string, unknown>;
     return fill["type"] === "IMAGE";
   });
+}
+
+/**
+ * Node is purely visual — not a layout container.
+ * True when: vector/shape type, has image fill, or frame with only visual leaf children.
+ */
+export function isVisualOnlyNode(node: AnalysisNode): boolean {
+  if (VISUAL_LEAF_TYPES.has(node.type)) return true;
+  if (hasImageFill(node)) return true;
+  if (node.children && node.children.length > 0 && node.children.every((c) => VISUAL_LEAF_TYPES.has(c.type))) return true;
+  return false;
 }
 
 function isSmallRelativeToParent(node: AnalysisNode, parent: AnalysisNode): boolean {
@@ -39,10 +51,7 @@ function isSmallRelativeToParent(node: AnalysisNode, parent: AnalysisNode): bool
 
 /** Frames that don't need auto-layout */
 export function isAutoLayoutExempt(node: AnalysisNode): boolean {
-  // All children are visual leaf types (icons, shapes)
-  if (node.children && node.children.length > 0 && node.children.every((c) => VISUAL_LEAF_TYPES.has(c.type))) {
-    return true;
-  }
+  if (isVisualOnlyNode(node)) return true;
 
   // Instance nodes — internal layout is managed by the component master
   if (node.type === "INSTANCE") return true;
@@ -56,11 +65,7 @@ export function isAutoLayoutExempt(node: AnalysisNode): boolean {
 
 /** Nodes that are allowed to use absolute positioning inside auto-layout */
 export function isAbsolutePositionExempt(node: AnalysisNode, context: RuleContext): boolean {
-  // Vector/graphic nodes — absolute positioning is expected
-  if (VISUAL_LEAF_TYPES.has(node.type)) return true;
-
-  // Image nodes — positioned freely for visual composition
-  if (hasImageFill(node)) return true;
+  if (isVisualOnlyNode(node)) return true;
 
   // Small decoration relative to parent (< 25% size)
   if (context.parent && isSmallRelativeToParent(node, context.parent)) return true;
@@ -119,8 +124,7 @@ export function isFixedSizeExempt(node: AnalysisNode): boolean {
     if (width <= 48 && height <= 48) return true;
   }
 
-  // Image fills — fixed size is intentional for thumbnails/avatars
-  if (hasImageFill(node)) return true;
+  if (isVisualOnlyNode(node)) return true;
 
   return false;
 }

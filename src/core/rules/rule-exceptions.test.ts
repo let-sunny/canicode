@@ -5,6 +5,7 @@ import {
   isAbsolutePositionExempt,
   isSizeConstraintExempt,
   isFixedSizeExempt,
+  isVisualOnlyNode,
 } from "./rule-exceptions.js";
 
 function makeNode(overrides: Partial<AnalysisNode> = {}): AnalysisNode {
@@ -29,6 +30,37 @@ function makeContext(overrides: Partial<RuleContext> = {}): RuleContext {
   };
 }
 
+describe("isVisualOnlyNode", () => {
+  it("true for vector/shape types", () => {
+    expect(isVisualOnlyNode(makeNode({ type: "VECTOR" as any }))).toBe(true);
+    expect(isVisualOnlyNode(makeNode({ type: "ELLIPSE" as any }))).toBe(true);
+  });
+
+  it("true for nodes with image fills", () => {
+    const node = makeNode({ fills: [{ type: "IMAGE" }] });
+    expect(isVisualOnlyNode(node)).toBe(true);
+  });
+
+  it("true for frame with only visual leaf children", () => {
+    const node = makeNode({
+      children: [makeNode({ type: "VECTOR" as any }), makeNode({ type: "RECTANGLE" as any })],
+    });
+    expect(isVisualOnlyNode(node)).toBe(true);
+  });
+
+  it("false for frame with mixed children", () => {
+    const node = makeNode({
+      children: [makeNode({ type: "VECTOR" as any }), makeNode({ type: "TEXT" as any })],
+    });
+    expect(isVisualOnlyNode(node)).toBe(false);
+  });
+
+  it("false for plain frame without image fills", () => {
+    const node = makeNode({ fills: [{ type: "SOLID" }] });
+    expect(isVisualOnlyNode(node)).toBe(false);
+  });
+});
+
 describe("isAutoLayoutExempt", () => {
   it("exempts frames with only visual leaf children", () => {
     const node = makeNode({
@@ -37,6 +69,11 @@ describe("isAutoLayoutExempt", () => {
         makeNode({ type: "ELLIPSE" as any }),
       ],
     });
+    expect(isAutoLayoutExempt(node)).toBe(true);
+  });
+
+  it("exempts frames with image fills", () => {
+    const node = makeNode({ fills: [{ type: "IMAGE" }], children: [makeNode()] });
     expect(isAutoLayoutExempt(node)).toBe(true);
   });
 
