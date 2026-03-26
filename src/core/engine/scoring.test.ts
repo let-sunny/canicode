@@ -87,33 +87,41 @@ describe("calculateScores", () => {
   });
 
   it("uses calculatedScore for density: higher score = more density impact", () => {
-    const heavy = calculateScores(makeResult([
-      makeIssue({ ruleId: "no-auto-layout", category: "structure", severity: "blocking", score: -10 }),
-    ], 100));
+    // Create issue where calculatedScore differs from config.score
+    const heavyIssue = makeIssue({ ruleId: "no-auto-layout", category: "structure", severity: "blocking", score: -10 });
+    heavyIssue.calculatedScore = -15; // Simulate depthWeight effect
 
-    const light = calculateScores(makeResult([
-      makeIssue({ ruleId: "unnecessary-node", category: "structure", severity: "suggestion", score: -2 }),
-    ], 100));
+    const lightIssue = makeIssue({ ruleId: "unnecessary-node", category: "structure", severity: "suggestion", score: -2 });
+    lightIssue.calculatedScore = -2; // No depthWeight
 
+    const heavy = calculateScores(makeResult([heavyIssue], 100));
+    const light = calculateScores(makeResult([lightIssue], 100));
+
+    // Density should use calculatedScore (-15 vs -2), not config.score
+    expect(heavy.byCategory.structure.weightedIssueCount).toBe(15);
+    expect(light.byCategory.structure.weightedIssueCount).toBe(2);
     expect(heavy.byCategory.structure.densityScore).toBeLessThan(
       light.byCategory.structure.densityScore
     );
   });
 
   it("differentiates rules within the same severity by score", () => {
-    const highScore = calculateScores(makeResult([
-      makeIssue({ ruleId: "no-auto-layout", category: "structure", severity: "blocking", score: -10 }),
-    ], 100));
+    // Create issues where calculatedScore differs from config.score
+    const highScoreIssue = makeIssue({ ruleId: "no-auto-layout", category: "structure", severity: "blocking", score: -10 });
+    highScoreIssue.calculatedScore = -15; // Simulate depthWeight effect
 
-    const lowScore = calculateScores(makeResult([
-      makeIssue({ ruleId: "absolute-position-in-auto-layout", category: "structure", severity: "blocking", score: -3 }),
-    ], 100));
+    const lowScoreIssue = makeIssue({ ruleId: "absolute-position-in-auto-layout", category: "structure", severity: "blocking", score: -3 });
+    lowScoreIssue.calculatedScore = -5; // Simulate different depthWeight
 
+    const highScore = calculateScores(makeResult([highScoreIssue], 100));
+    const lowScore = calculateScores(makeResult([lowScoreIssue], 100));
+
+    // weightedIssueCount should use calculatedScore, not config.score
     expect(highScore.byCategory.structure.densityScore).toBeLessThan(
       lowScore.byCategory.structure.densityScore
     );
-    expect(highScore.byCategory.structure.weightedIssueCount).toBe(10);
-    expect(lowScore.byCategory.structure.weightedIssueCount).toBe(3);
+    expect(highScore.byCategory.structure.weightedIssueCount).toBe(15);
+    expect(lowScore.byCategory.structure.weightedIssueCount).toBe(5);
   });
 
   it("density score decreases as weighted issue count increases relative to node count", () => {

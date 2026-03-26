@@ -1,6 +1,6 @@
 import type { Category } from "../contracts/category.js";
 import { CATEGORIES } from "../contracts/category.js";
-import type { RuleId } from "../contracts/rule.js";
+import type { RuleId, RuleConfig } from "../contracts/rule.js";
 import type { Severity } from "../contracts/severity.js";
 import type { AnalysisResult } from "./rule-engine.js";
 import { RULE_CONFIGS, RULE_ID_CATEGORY } from "../rules/rule-config.js";
@@ -62,24 +62,27 @@ export type Grade = "S" | "A+" | "A" | "B+" | "B" | "C+" | "C" | "D" | "F";
  */
 
 /**
- * Sum of |score| for all rules in each category — used as denominator for
- * severity-weighted diversity scoring. Computed from RULE_CONFIGS + RULE_ID_CATEGORY
- * so it stays in sync when rules are added/removed or scores change.
+ * Compute sum of |score| for all rules in each category from a given config map.
+ * Used as denominator for severity-weighted diversity scoring.
+ * Must use the same preset-adjusted config map that produced the analysis issues,
+ * otherwise diversity ratios will be incorrect.
  */
-const TOTAL_SCORE_PER_CATEGORY: Record<Category, number> = (() => {
+function computeTotalScorePerCategory(
+  configs: Record<RuleId, RuleConfig>
+): Record<Category, number> {
   const totals = Object.fromEntries(
     CATEGORIES.map(c => [c, 0])
   ) as Record<Category, number>;
 
-  for (const [id, config] of Object.entries(RULE_CONFIGS)) {
+  for (const [id, config] of Object.entries(configs)) {
     const category = RULE_ID_CATEGORY[id as RuleId];
-    if (category) {
+    if (category && config.enabled) {
       totals[category] += Math.abs(config.score);
     }
   }
 
   return totals;
-})();
+}
 
 /**
  * Category weights for overall score.
@@ -163,8 +166,15 @@ function clamp(value: number, min: number, max: number): number {
  * Density Score = 100 - (weighted issue count / node count) * 100
  * Diversity Score = (1 - weighted triggered rule scores / total category scores) * 100
  * Final Score = density * 0.7 + diversity * 0.3
+ *
+ * @param result Analysis result with issues
+ * @param configs Optional preset-adjusted config map used to produce the issues.
+ *                If not provided, diversity totals are reconstructed from issue.config values.
  */
-export function calculateScores(result: AnalysisResult): ScoreReport {
+export function calculateScores(
+  result: AnalysisResult,
+  configs?: Record<RuleId, RuleConfig>
+): ScoreReport {
   const categoryScores = initializeCategoryScores();
   const nodeCount = result.nodeCount;
 
@@ -175,6 +185,13 @@ export function calculateScores(result: AnalysisResult): ScoreReport {
     uniqueRulesPerCategory.set(category, new Set());
     ruleScorePerCategory.set(category, new Map());
   }
+
+  // Compute totals from the config map
+  // If configs provided: use preset-adjusted totals
+  // If not: fall back to static RULE_CONFIGS for denominator consistency
+  const totalScorePerCategory = configs
+    ? computeTotalScorePerCategory(configs)
+    : computeTotalScorePerCategory(RULE_CONFIGS);
 
   // Count issues by severity per category and track unique rules with scores
   for (const issue of result.issues) {
@@ -213,7 +230,7 @@ export function calculateScores(result: AnalysisResult): ScoreReport {
     if (catScore.issueCount > 0) {
       const ruleScores = ruleScorePerCategory.get(category)!;
       const weightedTriggered = Array.from(ruleScores.values()).reduce((sum, s) => sum + s, 0);
-      const weightedTotal = TOTAL_SCORE_PER_CATEGORY[category];
+      const weightedTotal = totalScorePerCategory[category];
       const diversityRatio = weightedTriggered / weightedTotal;
       diversityScore = clamp(Math.round((1 - diversityRatio) * 100), 0, 100);
     }
