@@ -88,7 +88,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "magic-number-spacing": {
     severity: "risk",
-    score: -4,
+    score: -3,
     enabled: true,
     options: {
       gridBase: 4,

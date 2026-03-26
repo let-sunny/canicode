@@ -103,5 +103,96 @@
     "actualDifficulty": "easy",
     "fixture": "simple-ds-175-9106",
     "timestamp": "2026-03-26T00:58:41.395Z"
+  },
+  {
+    "ruleId": "no-auto-layout",
+    "type": "overscored",
+    "actualDifficulty": "moderate",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
+  },
+  {
+    "ruleId": "absolute-position-in-auto-layout",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
+  },
+  {
+    "ruleId": "fixed-size-in-auto-layout",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
+  },
+  {
+    "ruleId": "missing-size-constraint",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
+  },
+  {
+    "ruleId": "missing-responsive-behavior",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
+  },
+  {
+    "ruleId": "deep-nesting",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
+  },
+  {
+    "ruleId": "raw-font",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
+  },
+  {
+    "ruleId": "magic-number-spacing",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
+  },
+  {
+    "ruleId": "missing-component",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
+  },
+  {
+    "ruleId": "detached-instance",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
+  },
+  {
+    "ruleId": "variant-structure-mismatch",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
+  },
+  {
+    "ruleId": "text-truncation-unhandled",
+    "type": "overscored",
+    "actualDifficulty": "easy",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
+  },
+  {
+    "ruleId": "overflow-behavior-unknown",
+    "type": "underscored",
+    "actualDifficulty": "moderate",
+    "fixture": "material3-56615-82356",
+    "timestamp": "2026-03-26T01:03:19.643Z"
   }
 ]
