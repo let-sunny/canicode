@@ -50,26 +50,17 @@ CANICODE SETUP GUIDE
     ~/.canicode/reports/report-YYYY-MM-DD-HH-mm-<filekey>.html
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 2. CLAUDE CODE SKILL (Figma MCP, no token needed)
+ 2. CLAUDE CODE SKILL (requires FIGMA_TOKEN)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Requires the official Figma MCP server at project level.
-
-  Setup (once):
-    claude mcp add -s project -t http figma https://mcp.figma.com/mcp
+  Setup:
+    cp -r .claude/skills/canicode /your-project/.claude/skills/
 
   Use (in Claude Code):
     /canicode https://www.figma.com/design/ABC123/MyDesign?node-id=1-234
 
-  Flow:
-    Claude Code
-      -> Figma MCP get_metadata(fileKey, nodeId) -> XML node tree (structure)
-      -> Figma MCP get_design_context(fileKey, nodeId) -> code (styles)
-      -> Merge into fixture JSON (structure + styles)
-      -> canicode analyze fixture.json -> report
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- TOKEN PRIORITY (CLI mode)
+ TOKEN PRIORITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   1. --token flag (one-time override)
@@ -81,26 +72,11 @@ CANICODE SETUP GUIDE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   CI/CD, automation        -> CLI + FIGMA_TOKEN env var
-  Claude Code (full)       -> canicode MCP + Figma MCP (no token needed)
-  Claude Code (light)      -> /canicode skill + Figma MCP (no token needed)
+  Claude Code (full)       -> canicode MCP server + FIGMA_TOKEN
+  Claude Code (light)      -> /canicode skill + FIGMA_TOKEN
   In Figma                 -> Figma Plugin
   Browser                  -> Web App (GitHub Pages)
   Quick trial, offline     -> CLI + JSON fixtures
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- DATA SOURCE DIFFERENCES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  CLI (REST API)    Reads raw Figma node data directly.
-                    Most accurate — all style properties available.
-
-  MCP / Skill       Uses Figma MCP's get_metadata (structure) and
-                    get_design_context (styles). Style data is extracted
-                    from Figma MCP's own generated code (React + Tailwind),
-                    not raw Figma node properties. Results may differ
-                    slightly from CLI due to this interpretation layer.
-
-  Details:          github.com/let-sunny/canicode/blob/main/docs/MCP-VS-CLI.md
 `.trimStart());
 }
 

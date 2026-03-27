@@ -7,150 +7,58 @@ description: Analyze Figma designs for development-friendliness and AI-friendlin
 
 Analyze Figma design files to score how development-friendly and AI-friendly they are. Produces actionable reports with specific issues and fix suggestions.
 
-## Prerequisites: Official Figma MCP Server
+## Prerequisites
 
-This skill requires the **official Figma MCP server** (`https://mcp.figma.com/mcp`) to be connected.
+This skill uses the CLI. Requires either:
+- A **saved fixture** (from `canicode save-fixture`)
+- A **FIGMA_TOKEN** for live Figma URLs
 
-**Before doing anything else**, check if `mcp__figma__get_metadata` and `mcp__figma__get_design_context` are available in this session:
-- If available → proceed with analysis
-- If NOT available → stop and show the user this setup guide:
+## How to Analyze
 
-```
-The official Figma MCP server is required but not connected.
+### From a Figma URL
 
-Set it up at the project level:
-
-  claude mcp add -s project -t http figma https://mcp.figma.com/mcp
-
-This creates a .mcp.json file in your project root.
-After adding, restart the Claude Code session to activate the connection.
-
-Note: The first time you connect, Figma OAuth will prompt you to authorize in the browser.
+```bash
+npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234" --token YOUR_TOKEN
 ```
 
-Do NOT proceed with analysis if Figma MCP is not available. Do NOT fall back to CLI `--mcp` mode.
-
-## CLI vs this skill (Figma MCP)
-
-This skill is the **MCP path** only. For some goals, `canicode analyze` with **FIGMA_TOKEN** (CLI) is a better fit:
-
-| Feature | CLI (REST API) | This skill (Figma MCP) |
-|---------|:-:|:-:|
-| Node structure | ✅ Full tree | ✅ XML metadata |
-| Style values | ✅ Raw Figma JSON | ✅ React+Tailwind from design context |
-| Component metadata (name, desc) | ✅ | ❌ |
-| Component master trees | ✅ `componentDefinitions` | ❌ |
-| Annotations (dev mode) | ❌ private beta | ✅ `data-annotations` in code |
-| Screenshots | ✅ via API | ✅ `get_screenshot` |
-| FIGMA_TOKEN | Required for live API | Not required when Figma MCP is connected |
-
-Use **CLI + token** when the user needs accurate component analysis. Use **this skill** for fast checks and workflows that rely on dev annotations.
-
-## How to Analyze a Figma URL
-
-When the user provides a Figma URL, follow these steps:
-
-### Step 1: Parse the URL
-Extract `fileKey` and `nodeId` from the URL:
-- `figma.com/design/:fileKey/:fileName?node-id=:nodeId` → convert `-` to `:` in nodeId
-
-### Step 2: Fetch design data via Figma MCP (two calls)
-
-**Call 1 — Structure:** Call `mcp__figma__get_metadata` to get the node tree (XML):
-```
-fileKey: (extracted from URL)
-nodeId: (extracted from URL, use ":" separator e.g. "127:2")
+Or if FIGMA_TOKEN is set in environment:
+```bash
+npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 ```
 
-**Call 2 — Style enrichment:** Call `mcp__figma__get_design_context` to get style data (code):
-```
-fileKey: (extracted from URL)
-nodeId: (extracted from URL, use ":" separator e.g. "127:2")
-excludeScreenshot: true
-```
-
-Both calls can be made in parallel.
-
-### Step 3: Convert to fixture JSON and analyze
-
-1. Parse the XML response from `mcp__figma__get_metadata`
-2. Convert to AnalysisFile JSON format:
-```json
-{
-  "fileKey": "<fileKey>",
-  "name": "<fileName>",
-  "lastModified": "<current ISO date>",
-  "version": "mcp",
-  "document": {
-    // Convert XML nodes to AnalysisNode format:
-    // <frame id="1:2" name="MyFrame" x="0" y="0" width="100" height="50">
-    // becomes:
-    // { "id": "1:2", "name": "MyFrame", "type": "FRAME", "visible": true,
-    //   "absoluteBoundingBox": { "x": 0, "y": 0, "width": 100, "height": 50 } }
-    //
-    // XML tag → type mapping:
-    //   frame → FRAME, group → GROUP, section → SECTION,
-    //   component → COMPONENT, component-set → COMPONENT_SET,
-    //   instance → INSTANCE, rectangle → RECTANGLE,
-    //   text → TEXT, vector → VECTOR, ellipse → ELLIPSE,
-    //   line → LINE, boolean-operation → BOOLEAN_OPERATION
-    //
-    // hidden="true" → visible: false
-  },
-  "components": {},
-  "styles": {}
-}
-```
-
-3. **Enrich with design context:** Parse the code from `get_design_context` to extract style properties and merge into the AnalysisFile nodes. Extract from Tailwind classes:
-   - `flex` / `flex-col` → `layoutMode: "HORIZONTAL" / "VERTICAL"`
-   - `absolute` → `layoutPositioning: "ABSOLUTE"`
-   - `gap-N` → `itemSpacing` (px)
-   - `p-N`, `px-N`, `py-N`, `pl-N`, `pr-N`, `pt-N`, `pb-N` → padding values
-   - `bg-[#hex]` → `fills` array with SOLID type
-   - `bg-[var(--token)]` → `fills` with bound variable reference
-   - `shadow-*` → `effects` array with DROP_SHADOW type
-   - `w-full` / `h-full` → `layoutSizingHorizontal/Vertical: "FILL"`
-   - `w-fit` / `h-fit` → `layoutSizingHorizontal/Vertical: "HUG"`
-   - `w-[Npx]` / `h-[Npx]` → `layoutSizingHorizontal/Vertical: "FIXED"`
-
-   Also check the code comment header (e.g. `/* NodeName — 905x680 COMPONENT, vertical auto-layout */`) for:
-   - Auto-layout presence and direction
-   - Node type confirmation
-
-4. Save to `fixtures/_mcp-temp/data.json` (create directory if needed)
-5. Run: `npx canicode analyze fixtures/_mcp-temp [options]`
-6. Clean up: delete `fixtures/_mcp-temp/` directory after analysis
-
-**IMPORTANT:** Do NOT use `npx canicode analyze <url> --mcp`. The `--mcp` CLI flag has been removed.
-
-## Analyzing a JSON fixture (no MCP needed)
+### From a saved fixture
 
 ```bash
 npx canicode analyze fixtures/my-design
 ```
 
+### Save a fixture for offline analysis
+
+```bash
+npx canicode save-fixture "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234" --output fixtures/my-design
+```
+
 ## Analysis Options
 
 ### Presets
-- `--preset relaxed` -- Downgrades blocking to risk, reduces scores by 50%
-- `--preset dev-friendly` -- Focuses on layout and handoff rules only
-- `--preset ai-ready` -- Boosts structure and naming rule weights by 150%
-- `--preset strict` -- Enables all rules, increases all scores by 150%
-
-### Custom rules
-```bash
-npx canicode analyze <input> --custom-rules ./my-rules.json
-```
+- `--preset relaxed` — Downgrades blocking to risk, reduces scores by 50%
+- `--preset dev-friendly` — Focuses on layout and handoff rules only
+- `--preset ai-ready` — Boosts structure and naming rule weights by 150%
+- `--preset strict` — Increases all scores by 150%
 
 ### Config overrides
 ```bash
 npx canicode analyze <input> --config ./my-config.json
 ```
 
+### JSON output
+```bash
+npx canicode analyze <input> --json
+```
+
 ## What It Reports
 
-39 rules across 6 categories: Layout, Design Token, Component, Naming, AI Readability, Handoff Risk.
+29 rules across 5 categories: Structure, Token, Component, Naming, Behavior.
 
 Each issue includes:
 - Rule ID and severity (blocking / risk / missing-info / suggestion)
