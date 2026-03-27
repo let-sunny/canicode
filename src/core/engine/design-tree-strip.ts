@@ -21,6 +21,14 @@ export type DesignTreeStripType =
   | "variable-references"
   | "style-references";
 
+/** All strip types (used for exhaustive testing). */
+export const ALL_STRIP_TYPES: readonly DesignTreeStripType[] = [
+  "layout-direction-spacing", "size-constraints", "position-stacking",
+  "color-values", "typography", "shadows-effects", "component-references",
+  "component-descriptions", "node-names-hierarchy", "overflow-text-behavior",
+  "hover-interaction-states", "variable-references", "style-references",
+] as const;
+
 /**
  * Experiment-relevant strip types only.
  * Excludes trivially obvious types (color, typography, shadows, overflow, hover)
