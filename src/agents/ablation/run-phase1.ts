@@ -55,6 +55,7 @@ interface CacheKey {
   maxTokens: number;
   promptHash: string;
   configVersion: string;
+  fixtureHash: string;
 }
 
 interface RunResult {
@@ -126,20 +127,44 @@ function computePromptHash(prompt: string): string {
   return createHash("sha256").update(prompt).digest("hex").slice(0, 16);
 }
 
-function buildCacheKey(prompt: string): CacheKey {
+function buildCacheKey(prompt: string, fixtureHash: string): CacheKey {
   return {
     model: MODEL,
     temperature: TEMPERATURE,
     maxTokens: MAX_TOKENS,
     promptHash: computePromptHash(prompt),
     configVersion: CONFIG_VERSION,
+    fixtureHash,
   };
 }
 
 /** Required artifacts for a valid cached run. */
 const REQUIRED_ARTIFACTS = ["result.json", "output.html", "code.png", "figma.png", "diff.png"];
 
-function isCacheValid(fixture: string, type: string, runIndex: number, currentKey: CacheKey): boolean {
+/** Compute hash of fixture inputs (data.json + screenshot). */
+function computeFixtureHash(fixture: string): string {
+  const hash = createHash("sha256");
+  const dataPath = resolve(`fixtures/${fixture}/data.json`);
+  if (existsSync(dataPath)) hash.update(readFileSync(dataPath));
+  const ssPath = getFixtureScreenshotPath(fixture);
+  if (existsSync(ssPath)) hash.update(readFileSync(ssPath));
+  return hash.digest("hex").slice(0, 12);
+}
+
+/** Validate that a parsed object has required RunResult numeric fields. */
+function isValidRunResult(obj: unknown): obj is RunResult {
+  if (!obj || typeof obj !== "object") return false;
+  const r = obj as Record<string, unknown>;
+  return (
+    typeof r["similarity"] === "number" && Number.isFinite(r["similarity"]) &&
+    typeof r["inputTokens"] === "number" && Number.isFinite(r["inputTokens"]) &&
+    typeof r["outputTokens"] === "number" && Number.isFinite(r["outputTokens"]) &&
+    typeof r["totalTokens"] === "number" && Number.isFinite(r["totalTokens"]) &&
+    r["cacheKey"] !== undefined && typeof r["cacheKey"] === "object"
+  );
+}
+
+function isCacheValid(fixture: string, type: string, runIndex: number, currentKey: CacheKey, fixtureHash: string): boolean {
   const runDir = getRunDir(fixture, type, runIndex);
   const resultPath = join(runDir, "result.json");
   if (!existsSync(resultPath)) return false;
@@ -150,14 +175,17 @@ function isCacheValid(fixture: string, type: string, runIndex: number, currentKe
   }
 
   try {
-    const result = JSON.parse(readFileSync(resultPath, "utf-8")) as RunResult;
-    if (!result.cacheKey) return false;
+    const parsed = JSON.parse(readFileSync(resultPath, "utf-8")) as unknown;
+    if (!isValidRunResult(parsed)) return false;
+    const result = parsed;
+    const ck = result.cacheKey as CacheKey & { fixtureHash?: string };
     return (
-      result.cacheKey.model === currentKey.model &&
-      result.cacheKey.temperature === currentKey.temperature &&
-      result.cacheKey.maxTokens === currentKey.maxTokens &&
-      result.cacheKey.promptHash === currentKey.promptHash &&
-      result.cacheKey.configVersion === currentKey.configVersion
+      ck.model === currentKey.model &&
+      ck.temperature === currentKey.temperature &&
+      ck.maxTokens === currentKey.maxTokens &&
+      ck.promptHash === currentKey.promptHash &&
+      ck.configVersion === currentKey.configVersion &&
+      ck.fixtureHash === fixtureHash
     );
   } catch {
     return false;
@@ -358,7 +386,7 @@ async function runSingle(
   writeFileSync(join(runDir, "result.json"), JSON.stringify(result, null, 2));
 
   const interpDisplay = interpretationsParseFailed ? "PARSE_FAIL" : String(interpretations.length);
-  console.log(`    ✓ similarity=${(comparison.similarity * 100).toFixed(1)}% interp=${interpDisplay} tokens=${result.totalTokens}`);
+  console.log(`    ✓ similarity=${comparison.similarity.toFixed(1)}% interp=${interpDisplay} tokens=${result.totalTokens}`);
 
   return result;
 }
@@ -420,7 +448,12 @@ function computeRankings(results: RunResult[]): RankingEntry[] {
     });
   }
 
-  rankings.sort((a, b) => b.avgDeltaV - a.avgDeltaV);
+  // Sort: primary=ΔV, tie-break=ΔI, then ΔT
+  rankings.sort((a, b) =>
+    b.avgDeltaV - a.avgDeltaV
+    || b.avgDeltaI - a.avgDeltaI
+    || b.avgDeltaT - a.avgDeltaT
+  );
   return rankings;
 }
 
@@ -430,7 +463,7 @@ function printRankings(rankings: RankingEntry[]): void {
   console.log("  ----  ----------------------------  ----------  --------  --------");
   let rank = 1;
   for (const r of rankings) {
-    const dv = (r.avgDeltaV * 100).toFixed(2).padStart(8) + "%";
+    const dv = r.avgDeltaV.toFixed(2).padStart(8) + "%";
     const di = (r.avgDeltaI > 0 ? "+" : "") + r.avgDeltaI.toFixed(1);
     const dt = (r.avgDeltaT > 0 ? "+" : "") + r.avgDeltaT.toFixed(0);
     console.log(`  ${String(rank).padStart(4)}  ${r.type.padEnd(28)}  ${dv}  ${di.padStart(8)}  ${dt.padStart(8)}`);
@@ -471,7 +504,7 @@ async function main(): Promise<void> {
   }
 
   const prompt = readFileSync(PROMPT_PATH, "utf-8");
-  const cacheKey = buildCacheKey(prompt);
+  const promptHash = computePromptHash(prompt);
   const client = new Anthropic({ apiKey });
 
   mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -479,8 +512,8 @@ async function main(): Promise<void> {
   console.log(`Model: ${MODEL}`);
   console.log(`Fixtures: ${fixtures.join(", ")}`);
   console.log(`Runs per condition: ${runsPerCondition}`);
-  console.log(`Prompt hash: ${cacheKey.promptHash}`);
-  console.log(`Config version: ${cacheKey.configVersion}`);
+  console.log(`Prompt hash: ${promptHash}`);
+  console.log(`Config version: ${CONFIG_VERSION}`);
   console.log("");
 
   const startedAt = new Date().toISOString();
@@ -507,6 +540,10 @@ async function main(): Promise<void> {
       continue;
     }
 
+    // Build per-fixture cache key (includes fixture data hash)
+    const fixtureHash = computeFixtureHash(fixture);
+    const cacheKey = buildCacheKey(prompt, fixtureHash);
+
     // Load fixture and generate design-tree
     const file = await loadFigmaFileFromJson(fixturePath);
     const options = getDesignTreeOptions(fixture);
@@ -532,11 +569,11 @@ async function main(): Promise<void> {
     for (const type of conditions) {
       for (let run = 0; run < runsPerCondition; run++) {
         // Check cache with key + artifact validation
-        if (isCacheValid(fixture, type, run, cacheKey)) {
+        if (isCacheValid(fixture, type, run, cacheKey, fixtureHash)) {
           const cached = JSON.parse(readFileSync(getResultPath(fixture, type, run), "utf-8")) as RunResult;
           allResults.push(cached);
           cacheHits++;
-          console.log(`  [cached] ${type} run ${run + 1} → similarity=${(cached.similarity * 100).toFixed(1)}%`);
+          console.log(`  [cached] ${type} run ${run + 1} → similarity=${cached.similarity.toFixed(1)}%`);
           continue;
         }
 
