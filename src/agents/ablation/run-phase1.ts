@@ -295,15 +295,32 @@ async function runSingle(
   // Save design-tree for reference
   writeFileSync(join(runDir, "design-tree.txt"), designTree);
 
-  // Call Claude API
+  // Call Claude API with retry on transient errors (429, 529)
   console.log(`    Calling Claude API (run ${runIndex + 1})...`);
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: MAX_TOKENS,
-    temperature: TEMPERATURE,
-    system: prompt,
-    messages: [{ role: "user", content: designTree }],
-  });
+  const MAX_RETRIES = 3;
+  let response: Anthropic.Message | undefined;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      response = await client.messages.create({
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        temperature: TEMPERATURE,
+        system: prompt,
+        messages: [{ role: "user", content: designTree }],
+      });
+      break;
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      if ((status === 429 || status === 529) && attempt < MAX_RETRIES) {
+        const delay = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s
+        console.warn(`    ⚠ ${status} error, retrying in ${delay / 1000}s (attempt ${attempt + 1}/${MAX_RETRIES})...`);
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
+  if (!response) throw new Error("API call failed after retries");
 
   const responseText = response.content
     .filter((block): block is Anthropic.TextBlock => block.type === "text")
