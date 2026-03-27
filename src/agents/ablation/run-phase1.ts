@@ -177,7 +177,7 @@ function parseResponse(text: string): { html: string; interpretations: string[];
   let html = "";
   const allBlocks = [...text.matchAll(/```(?:html|css|[a-z]*)?\s*\n([\s\S]*?)```/g)]
     .map((m) => m[1]?.trim() ?? "")
-    .filter((block) => block.includes("<") && block.length > 100);
+    .filter((block) => block.includes("<") && block.length > 50);
 
   if (allBlocks.length > 0) {
     // Priority 1: block starting with <!doctype or <html (full document)
@@ -434,11 +434,18 @@ async function main(): Promise<void> {
   const fixtures = process.env["ABLATION_FIXTURES"]
     ? process.env["ABLATION_FIXTURES"].split(",").map((s) => s.trim()).filter(Boolean)
     : DEFAULT_FIXTURES;
-  const rawRuns = process.env["ABLATION_RUNS"];
-  const runsPerCondition = rawRuns ? parseInt(rawRuns, 10) : 1;
-  if (!Number.isFinite(runsPerCondition) || runsPerCondition < 1) {
-    console.error(`Error: ABLATION_RUNS must be a positive integer (got: ${rawRuns})`);
+  if (fixtures.length === 0) {
+    console.error("Error: No fixtures specified. Set ABLATION_FIXTURES or use defaults.");
     process.exit(1);
+  }
+  const rawRuns = process.env["ABLATION_RUNS"];
+  let runsPerCondition = 1;
+  if (rawRuns) {
+    if (!/^\d+$/.test(rawRuns) || Number(rawRuns) < 1) {
+      console.error(`Error: ABLATION_RUNS must be a positive integer (got: "${rawRuns}")`);
+      process.exit(1);
+    }
+    runsPerCondition = Number(rawRuns);
   }
 
   const prompt = readFileSync(PROMPT_PATH, "utf-8");
