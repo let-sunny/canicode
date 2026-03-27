@@ -154,6 +154,17 @@ ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-condition.ts --type hov
 - API call with retry (429/529), HTML parsing/sanitization, local font injection
 - CSS metrics, render+compare+crop pipeline, fixture validation
 
+**Parallel execution across agents**
+- Results saved to `data/ablation/` (git-tracked) so multiple cloud agents can contribute
+- Same config-version → same directory. Split work by fixture or type:
+  ```
+  Agent A: ABLATION_BASELINE_ONLY=true                              # baseline only
+  Agent B: ABLATION_TYPES=layout-direction-spacing,component-references
+  Agent C: ABLATION_TYPES=node-names-hierarchy,variable-references,style-references
+  ```
+- **Do NOT assign the same fixture+type+run to multiple agents** — results will conflict
+- After all agents finish, re-run the script (cached results reused) to generate combined summary.json
+
 ### File Output Structure
 
 ```
