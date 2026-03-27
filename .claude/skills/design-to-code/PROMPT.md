@@ -26,7 +26,8 @@ Your job is to translate the Figma data to HTML+CSS — nothing more.
 Never sacrifice #1 for #2 or #3. Reuse and tokens are structural improvements only — they must not change the visual output.
 
 ### Rules
-- Do NOT add any value that isn't in the Figma data (no extra padding, margin, gap, transition, hover effect)
+- Do NOT add any value that isn't in the Figma data (no extra padding, margin, gap, transition)
+- Do NOT add hover effects unless `[hover]:` data is provided in the design tree
 - Do NOT change any value from the Figma data (if it says 160px padding, use 160px)
 - Do NOT "improve" the design — if something looks wrong, reproduce it anyway
 - Do NOT add responsive behavior unless the Figma data explicitly shows it
@@ -71,6 +72,26 @@ When a node's style includes `svg: <svg>...</svg>`, render it as an inline `<svg
 - Use the SVG markup exactly as provided — do not modify paths or attributes
 - Preserve the node's dimensions (`width` and `height` from the node header)
 - The `<svg>` replaces the node's HTML element (do not wrap it in an extra `<div>` unless the node has other styles like background or border)
+
+### Hover States
+
+When a node includes a `[hover]:` line, generate a `:hover` CSS rule with the provided style changes:
+
+```
+Button (INSTANCE, 120x40) [component: Button]
+  style: background: #2C2C2C
+  [hover]: background: #1E1E1E
+```
+
+→ generates:
+
+```css
+.button { background: #2C2C2C; }
+.button:hover { background: #1E1E1E; }
+```
+
+- Only use hover data that is explicitly provided in `[hover]:` — do not invent hover effects
+- If child styles are included (e.g., `[hover]: Icon: fill: #FFFFFF`), apply them to the child element's `:hover` rule via parent selector
 
 ### Image Assets
 - Always render images as `<img>` tags — do NOT use CSS `background-image`
