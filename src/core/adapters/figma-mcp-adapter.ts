@@ -2,7 +2,11 @@ import type { AnalysisFile, AnalysisNode, AnalysisNodeType } from "../contracts/
 import { parseDesignContextCode, parseCodeHeader, enrichNodeWithStyles } from "./tailwind-parser.js";
 
 /**
- * Map MCP XML tag names to Figma AnalysisNodeType
+ * Map MCP XML tag names to Figma AnalysisNodeType.
+ *
+ * Note: `symbol` and `instance` tags are typically self-closing in get_metadata
+ * output (e.g., `<symbol ... />`, `<instance ... />`), meaning their internal
+ * children are not available through the MCP path.
  */
 const TAG_TYPE_MAP: Record<string, AnalysisNodeType> = {
   canvas: "CANVAS",
@@ -109,7 +113,12 @@ function parseAttributes(attrString: string): Record<string, string> {
 }
 
 /**
- * Convert a parsed XML node to an AnalysisNode
+ * Convert a parsed XML node to an AnalysisNode.
+ *
+ * Note: Self-closing XML tags (e.g., `<instance ... />` or `<symbol ... />`)
+ * will produce AnalysisNodes with no children. This is expected — MCP
+ * get_metadata collapses component/instance internals. These leaf nodes still
+ * carry position, size, and name data useful for structure-level rules.
  */
 function toAnalysisNode(xmlNode: ParsedXmlNode): AnalysisNode {
   const type = TAG_TYPE_MAP[xmlNode.tag] ?? "FRAME";
@@ -142,6 +151,20 @@ function toAnalysisNode(xmlNode: ParsedXmlNode): AnalysisNode {
  *
  * The XML represents a subtree of the Figma file. We wrap it in a
  * DOCUMENT node and fill in minimal file metadata.
+ *
+ * **Known limitations (as of 2026-03):**
+ * - `get_metadata` returns collapsed (self-closing) `<symbol ... />` for COMPONENT
+ *   nodes and `<instance ... />` for some INSTANCE nodes. Internal children are NOT
+ *   expanded, so component/instance subtree analysis is incomplete compared to the
+ *   CLI/REST API path which provides full `componentDefinitions`.
+ * - This parser still produces valid AnalysisFile output for rule analysis (layout,
+ *   spacing, naming, etc.), but rules that depend on instance internals or component
+ *   master trees (e.g., style-override detection, missing-component) will have
+ *   reduced accuracy.
+ * - MCP-generated code (via get_design_context) embeds hardcoded widths in child
+ *   elements, making responsive behavior dependent on LLM post-processing to strip
+ *   fixed widths. The CLI/design-tree path is inherently responsive (only root width
+ *   needs removal).
  */
 export function parseMcpMetadataXml(
   xml: string,
@@ -186,6 +209,17 @@ export function parseMcpMetadataXml(
  * The design context code is React+Tailwind generated for a specific node.
  * We parse Tailwind classes to extract layout, color, spacing, and effect
  * properties, then merge them into matching AnalysisNodes in the tree.
+ *
+ * **Known limitations:**
+ * - Since get_metadata collapses instance/component internals, enrichment can
+ *   only apply styles to nodes that exist in the metadata tree. Child nodes
+ *   inside collapsed instances are never enriched.
+ * - The enrichChildrenFromCode heuristic matches children by name comments in
+ *   the generated code, which is fragile and only works for direct children
+ *   that Figma MCP chose to annotate with comments.
+ * - Despite these limitations, this function provides meaningful style data
+ *   for structure-level analysis (layout, spacing, colors) and is still used
+ *   by the MCP analysis path.
  *
  * @param file - AnalysisFile from parseMcpMetadataXml
  * @param designContextCode - Code string from get_design_context

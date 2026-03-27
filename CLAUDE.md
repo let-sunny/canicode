@@ -82,16 +82,24 @@ app/                          # Browser runtime
 
 | Feature | CLI (REST API) | MCP (Figma MCP) |
 |---------|:-:|:-:|
-| Node structure | ✅ Full tree | ✅ XML metadata |
+| Node structure | ✅ Full tree | ⚠️ XML metadata (instance internals collapsed) |
 | Style values | ✅ Raw Figma JSON | ✅ React+Tailwind code |
 | Component metadata (name, desc) | ✅ | ❌ |
 | Component master trees | ✅ `componentDefinitions` | ❌ |
+| Instance internals | ✅ Full subtree | ❌ `<instance ... />` collapsed |
+| Responsive behavior | ✅ Inherent (root-only width fix) | ⚠️ Depends on LLM post-processing |
 | Annotations (dev mode) | ❌ private beta | ✅ `data-annotations` |
 | Screenshots | ✅ via API | ✅ `get_screenshot` |
 | FIGMA_TOKEN required | ✅ | ❌ |
 
+**Known MCP limitations:**
+- `get_metadata` returns collapsed `<symbol ... />` for COMPONENT nodes and `<instance ... />` for INSTANCE nodes — internal children are not expanded, so component/instance subtree analysis is incomplete
+- MCP-generated code embeds hardcoded widths (e.g., `w-[375px]`) in child elements, requiring LLM post-processing to remove ALL fixed widths for responsive behavior
+- CLI/design-tree path is inherently responsive — only the ROOT element's fixed width needs to be removed
+
 **When to use which:**
 - Accurate component analysis (style overrides, missing-component) → **CLI with FIGMA_TOKEN**
+- Responsive design-to-code with minimal fixup → **CLI with FIGMA_TOKEN** (design-tree path)
 - Quick structure/style check, annotation-aware workflows → **MCP**
 - Offline/CI analysis → **CLI with saved fixtures**
 

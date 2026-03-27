@@ -7,7 +7,8 @@ import { transformFigmaResponse } from "../adapters/figma-transformer.js";
  * Parse design data passed directly from Figma MCP or other sources.
  *
  * Accepts:
- * - XML string from Figma MCP get_metadata
+ * - XML string from Figma MCP get_metadata (note: instance/component internals
+ *   are collapsed — see parseMcpMetadataXml for known limitations)
  * - JSON string of an AnalysisFile object
  * - JSON string of a Figma REST API GetFileResponse
  */
