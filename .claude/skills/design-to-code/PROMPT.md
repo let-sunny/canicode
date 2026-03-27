@@ -12,6 +12,7 @@ This prompt is used by all code generation pipelines:
 ## Conventions
 - Semantic HTML elements
 - Flexbox / Grid for layout
+- Always include `* { box-sizing: border-box; margin: 0; padding: 0; }` reset
 
 ## CRITICAL: Do NOT Interpret. Reproduce Exactly.
 
