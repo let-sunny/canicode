@@ -98,13 +98,14 @@ After the code block, list every value you had to guess or assume.
 Keep this list to **only genuine ambiguities** — do not list standard defaults (e.g., `body { margin: 0 }` is always expected, not an interpretation).
 **Maximum 10 items.** If you have more than 10, keep only the highest-impact ones.
 
-```
+```text
 // interpretations:
 - Used placeholder gray (#CCCCCC) for unavailable image asset
 - Chose "Inter" font weight 500 for ambiguous "Medium" style reference
 ```
 
 If you did not interpret anything, write:
-```
+
+```text
 // interpretations: none
 ```
