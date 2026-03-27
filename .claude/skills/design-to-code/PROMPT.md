@@ -30,7 +30,7 @@ Never sacrifice #1 for #2 or #3. Reuse and tokens are structural improvements on
 - Do NOT change any value from the Figma data (if it says 160px padding, use 160px)
 - Do NOT "improve" the design — if something looks wrong, reproduce it anyway
 - Do NOT add responsive behavior unless the Figma data explicitly shows it
-- Do NOT use min-height or min-width — use exact height and width from the data
+- Do NOT use min-height or min-width unless the design tree explicitly includes them — use exact height and width from the data
 - Do NOT add overflow: auto or scroll unless specified
 - Fonts: load via Google Fonts CDN (`<link>` tag). Do NOT use system font fallbacks as primary — the exact font from the data must render.
 
@@ -42,6 +42,7 @@ Nodes annotated with `[component: ComponentName]` are instances of the same desi
 - If the same component appears multiple times, define the shared styles once in the class, then apply it to each instance
 - `component-properties:` lines show variant overrides — use them to differentiate instances (e.g., different text content, sizes) while keeping shared styles in the class
 - Component name → class name: lowercase, spaces to hyphens (e.g., `Review Card` → `.review-card`)
+- Use CSS classes only — no Web Components, no JavaScript templates
 
 ### Design Tokens
 
@@ -72,6 +73,7 @@ When a node's style includes `svg: <svg>...</svg>`, render it as an inline `<svg
 - The `<svg>` replaces the node's HTML element (do not wrap it in an extra `<div>` unless the node has other styles like background or border)
 
 ### Image Assets
+- Always use CSS `background-image` — do NOT convert to `<img>` tags
 - If the design tree shows `background-image: url(images/...)`, use that path directly as a CSS `background-image` on the element
 - If it shows `background-image: [IMAGE]`, the image asset is unavailable — use a placeholder color matching the surrounding design
 - Preserve `background-size`, `background-position`, and `background-repeat` values exactly as shown
@@ -93,6 +95,7 @@ Output as a code block with filename:
 ### 2. Interpretations
 After the code block, list every value you had to guess or assume.
 Keep this list to **only genuine ambiguities** — do not list standard defaults (e.g., `body { margin: 0 }` is always expected, not an interpretation).
+**Maximum 10 items.** If you have more than 10, keep only the highest-impact ones.
 
 ```
 // interpretations:
