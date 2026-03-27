@@ -112,7 +112,7 @@ Setup: `canicode init --token figd_xxxxxxxxxxxxx`
 | View, Collab | 6 req/month | 6 req/month |
 | Dev, Full | 6 req/month | 10–20 req/min |
 
-Hitting 429 errors? Make sure the file is in a paid workspace. Or use MCP (no token, separate rate limit pool). Or `save-fixture` once and analyze locally. [Full details](https://developers.figma.com/docs/rest-api/rate-limits/)
+Hitting 429 errors? Make sure the file is in a paid workspace. Or `save-fixture` once and analyze locally. [Full details](https://developers.figma.com/docs/rest-api/rate-limits/)
 
 </details>
 
@@ -128,44 +128,15 @@ Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
 
 canicode's rule engine analyzes the design data — the AI assistant just orchestrates the calls.
 
-Or with a Figma API token (no Figma MCP needed):
+With a Figma API token:
 ```bash
 claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode canicode-mcp
 ```
 
 For Cursor / Claude Desktop config, see [`docs/REFERENCE.md`](docs/REFERENCE.md).
 
-**Figma MCP Rate Limits**
-
-| Plan | Limit |
-|------|-------|
-| Starter | 6 tool calls/month |
-| Pro / Org — Full or Dev seat | 200 tool calls/day |
-| Enterprise — Full or Dev seat | 600 tool calls/day |
-
-MCP and CLI use separate rate limit pools — switching to MCP won't affect your CLI quota. [Full details](https://developers.figma.com/docs/figma-mcp-server/plans-access-and-permissions/)
-
 </details>
 
-<details>
-<summary><strong>CLI vs MCP</strong> (feature comparison)</summary>
-
-| Feature | CLI (REST API) | MCP (Figma MCP) |
-|---------|:-:|:-:|
-| Node structure | Full tree | XML metadata |
-| Style values | Raw Figma JSON | React+Tailwind code |
-| Component metadata (name, desc) | Yes | No |
-| Component master trees | Yes | No |
-| Annotations (dev mode) | No (private beta) | Yes |
-| Screenshots | Yes | Yes |
-| FIGMA_TOKEN required | Yes | No |
-
-**When to use which:**
-- Accurate component analysis → **CLI with FIGMA_TOKEN**
-- Quick checks or annotation-aware flows → **MCP**
-- Offline/CI → **CLI with saved fixtures** (`save-fixture`)
-
-</details>
 
 <details>
 <summary><strong>Design to Code</strong> (prepare implementation package)</summary>
@@ -199,7 +170,7 @@ Feed `design-tree.txt` + `PROMPT.md` to your AI assistant (Claude, Cursor, etc.)
 cp -r .claude/skills/canicode /your-project/.claude/skills/
 ```
 
-Requires the official Figma MCP. Then use `/canicode` with a Figma URL.
+Requires FIGMA_TOKEN. Then use `/canicode` with a Figma URL.
 
 </details>
 

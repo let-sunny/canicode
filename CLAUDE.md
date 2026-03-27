@@ -77,33 +77,12 @@ app/                          # Browser runtime
 **2. MCP Server (`canicode-mcp`)**
 - Install: `claude mcp add canicode -- npx -y -p canicode canicode-mcp`
 - Tools: `analyze`, `list-rules`, `visual-compare`, `version`, `docs`
-- Works with Figma MCP: user installs official Figma MCP → Claude Code orchestrates both
-  - Figma MCP `get_metadata` → XML (structure) + `get_design_context` → code (styles)
-  - canicode MCP `analyze(designData: XML, designContext: code)` — hybrid enrichment
-  - No FIGMA_TOKEN needed when using Figma MCP
-- Also works standalone with FIGMA_TOKEN (REST API fallback via `input` param)
+- Data source: Figma REST API via `input` param (Figma URL or fixture path). Requires FIGMA_TOKEN for live URLs.
 
-**CLI vs MCP Feature Comparison**
-
-| Feature | CLI (REST API) | MCP (Figma MCP) |
-|---------|:-:|:-:|
-| Node structure | ✅ Full tree | ✅ XML metadata |
-| Style values | ✅ Raw Figma JSON | ✅ React+Tailwind code |
-| Component metadata (name, desc) | ✅ | ❌ |
-| Component master trees | ✅ `componentDefinitions` | ❌ |
-| Annotations (dev mode) | ❌ private beta | ✅ `data-annotations` |
-| Screenshots | ✅ via API | ✅ `get_screenshot` |
-| FIGMA_TOKEN required | ✅ | ❌ |
-
-**When to use which:**
-- Accurate component analysis (style overrides, missing-component) → **CLI with FIGMA_TOKEN**
-- Quick structure/style check, annotation-aware workflows → **MCP**
-- Offline/CI analysis → **CLI with saved fixtures**
 
 **3. Claude Code Skill (`/canicode`)**
 - Location: `.claude/skills/canicode/SKILL.md` (copy to any project)
-- Requires: Official Figma MCP (`https://mcp.figma.com/mcp`) at project level
-- Flow: Figma MCP `get_metadata` (structure) + `get_design_context` (styles) → enriched fixture JSON → `canicode analyze`
+- Uses CLI (`canicode analyze`) with FIGMA_TOKEN
 - Lightweight alternative to MCP server — no canicode MCP installation needed
 
 **4. Web App (GitHub Pages)**
@@ -129,13 +108,8 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 - Cross-run evidence: Evaluation appends overscored/underscored findings to `data/calibration-evidence.json`; Gap Analyzer appends uncovered gaps to `data/discovery-evidence.json` (environment/tooling noise is auto-filtered)
 - After Arbitrator applies changes, evidence for applied rules is pruned (`calibrate-prune-evidence`)
 - Each run creates a self-contained directory: `logs/calibration/<fixture>--<timestamp>/`
-- No Figma MCP or API keys needed — works fully offline
+- No API keys needed — works fully offline
 - Auto-commits agreed score changes
-
-**`/calibrate-loop-deep` (Claude Code command)**
-- Role: Deep calibration using Figma MCP for precise design context
-- Input: Figma URL (e.g. `https://www.figma.com/design/ABC123/MyDesign?node-id=1-234`)
-- Flow: Same as `/calibrate-loop` but Converter uses Figma MCP `get_design_context` for richer style data
 
 **`/calibrate-night` (Claude Code command)**
 - Role: Run calibration on multiple fixtures sequentially, then generate aggregate report

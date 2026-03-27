@@ -1,7 +1,7 @@
 ---
 name: calibration-converter
 description: Converts the entire scoped Figma design to a single HTML page and measures pixel-perfect accuracy via visual comparison.
-tools: Bash, Read, Write, Glob, mcp__figma__get_design_context
+tools: Bash, Read, Write, Glob
 model: claude-sonnet-4-6
 ---
 
@@ -38,8 +38,6 @@ Read the original fixture JSON directly when you need to verify a value from the
 > **Rule: If design tree and fixture disagree, trust the fixture.**
 > The design tree is a compressed representation. The fixture JSON contains the authoritative raw values from Figma.
 
-If the input is a Figma URL, call `get_design_context` MCP tool instead (no fixture JSON available in that case — use design context as the sole source).
-
 ## Code Generation Prompt
 
 Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generation rules. Key points:
@@ -50,7 +48,7 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
 ## Steps
 
 1. Read `docs/DESIGN-TO-CODE-PROMPT.md` for code generation rules
-2. Generate design tree (CLI) or get design context (MCP)
+2. Generate design tree (CLI)
 3. Convert the design tree to a single standalone HTML+CSS file
    - Each node in the tree maps 1:1 to an HTML element
    - Copy style values directly — they are already CSS-ready
