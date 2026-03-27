@@ -227,7 +227,17 @@ async function main(): Promise<void> {
   }
 
   const requestedTypes: DesignTreeInfoType[] | null = process.env["ABLATION_TYPES"]
-    ? process.env["ABLATION_TYPES"].split(",").map((s) => s.trim()).filter(Boolean) as DesignTreeInfoType[]
+    ? (() => {
+        const raw = process.env["ABLATION_TYPES"]!.split(",").map((s) => s.trim()).filter(Boolean);
+        const valid = new Set<string>(DESIGN_TREE_INFO_TYPES);
+        const invalid = raw.filter((t) => !valid.has(t));
+        if (invalid.length > 0) {
+          console.error(`Error: Invalid ABLATION_TYPES: ${invalid.join(", ")}`);
+          console.error(`Valid types: ${DESIGN_TREE_INFO_TYPES.join(", ")}`);
+          process.exit(1);
+        }
+        return raw as DesignTreeInfoType[];
+      })()
     : null;
 
   const prompt = readFileSync(PROMPT_PATH, "utf-8");
