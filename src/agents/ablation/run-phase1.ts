@@ -110,8 +110,19 @@ function buildCacheKey(prompt: string): CacheKey {
   };
 }
 
-function isCacheValid(resultPath: string, currentKey: CacheKey): boolean {
+/** Required artifacts for a valid cached run. */
+const REQUIRED_ARTIFACTS = ["result.json", "output.html", "code.png", "figma.png", "diff.png"];
+
+function isCacheValid(fixture: string, type: string, runIndex: number, currentKey: CacheKey): boolean {
+  const runDir = getRunDir(fixture, type, runIndex);
+  const resultPath = join(runDir, "result.json");
   if (!existsSync(resultPath)) return false;
+
+  // Check all required artifacts exist
+  for (const artifact of REQUIRED_ARTIFACTS) {
+    if (!existsSync(join(runDir, artifact))) return false;
+  }
+
   try {
     const result = JSON.parse(readFileSync(resultPath, "utf-8")) as RunResult;
     if (!result.cacheKey) return false;
@@ -144,22 +155,19 @@ function isStripNoOp(baselineTree: string, type: DesignTreeInfoType): boolean {
 }
 
 /** Extract HTML code block and interpretations from LLM response. */
-function parseResponse(text: string): { html: string; interpretations: string[]; parseWarnings: string[] } {
+function parseResponse(text: string): { html: string; interpretations: string[]; parseWarnings: string[]; interpretationsParseFailed?: boolean } {
   const warnings: string[] = [];
 
-  // Extract HTML from fenced code block — try multiple patterns
+  // Extract HTML from fenced code block — find the LARGEST block (skip small snippets)
   let html = "";
-  const htmlPatterns = [
-    /```html\s*\n([\s\S]*?)```/,                    // ```html ... ```
-    /```\s*\n(<!DOCTYPE[\s\S]*?)```/i,               // ``` <!DOCTYPE ... ```
-    /```\s*\n(<html[\s\S]*?)```/i,                   // ``` <html ... ```
-    /```[a-z]*\s*\n\/\/\s*filename:[\s\S]*?\n([\s\S]*?)```/i, // ``` // filename: ... ```
-  ];
-  for (const pattern of htmlPatterns) {
-    const match = text.match(pattern);
-    if (match?.[1]) {
-      html = match[1].trim();
-      break;
+  const allBlocks = [...text.matchAll(/```(?:html|css|[a-z]*)?\s*\n([\s\S]*?)```/g)];
+  if (allBlocks.length > 0) {
+    // Pick the largest block that looks like HTML (contains < tags)
+    const htmlBlocks = allBlocks
+      .map((m) => m[1]?.trim() ?? "")
+      .filter((block) => block.includes("<") && block.length > 100);
+    if (htmlBlocks.length > 0) {
+      html = htmlBlocks.reduce((a, b) => (a.length >= b.length ? a : b));
     }
   }
   if (!html) warnings.push("No HTML code block found in response");
@@ -181,8 +189,8 @@ function parseResponse(text: string): { html: string; interpretations: string[];
   }
 
   if (interpText === null) {
-    warnings.push("No interpretations section found — counting as 0");
-    return { html, interpretations: [], parseWarnings: warnings };
+    warnings.push("No interpretations section found — marking as parse failure (-1)");
+    return { html, interpretations: [], parseWarnings: warnings, interpretationsParseFailed: true };
   }
 
   if (interpText.trim().toLowerCase() === "none") {
@@ -250,7 +258,7 @@ async function runSingle(
   writeFileSync(join(runDir, "response.txt"), responseText);
 
   // Parse HTML and interpretations
-  const { html, interpretations, parseWarnings } = parseResponse(responseText);
+  const { html, interpretations, parseWarnings, interpretationsParseFailed } = parseResponse(responseText);
   if (parseWarnings.length > 0) {
     for (const w of parseWarnings) console.warn(`    WARNING: ${w}`);
   }
@@ -296,7 +304,7 @@ async function runSingle(
     type,
     runIndex,
     similarity: comparison.similarity,
-    interpretationsCount: interpretations.length,
+    interpretationsCount: interpretationsParseFailed ? -1 : interpretations.length,
     inputTokens: response.usage.input_tokens,
     outputTokens: response.usage.output_tokens,
     totalTokens: response.usage.input_tokens + response.usage.output_tokens,
@@ -315,65 +323,51 @@ async function runSingle(
 }
 
 function computeRankings(results: RunResult[]): RankingEntry[] {
-  // Average baselines per fixture (across runs)
-  const baselinesByFixture = new Map<string, { similarity: number; interp: number; tokens: number; count: number }>();
+  // Index baselines by fixture + runIndex for paired comparison
+  const baselineIndex = new Map<string, RunResult>(); // "fixture:runIndex" → result
   for (const r of results) {
-    if (r.type !== "baseline") continue;
-    const existing = baselinesByFixture.get(r.fixture) ?? { similarity: 0, interp: 0, tokens: 0, count: 0 };
-    existing.similarity += r.similarity;
-    existing.interp += r.interpretationsCount;
-    existing.tokens += r.totalTokens;
-    existing.count++;
-    baselinesByFixture.set(r.fixture, existing);
+    if (r.type === "baseline") {
+      baselineIndex.set(`${r.fixture}:${r.runIndex}`, r);
+    }
   }
 
-  // Average ablation results per type × fixture (across runs)
-  const ablationByTypeFixture = new Map<string, { similarity: number; interp: number; tokens: number; count: number }>();
+  // Compute paired deltas: same fixture + same runIndex
+  // This removes covariance (noise that affects both baseline and ablation in the same run)
+  const pairedDeltas = new Map<DesignTreeInfoType, Map<string, { deltaV: number[]; deltaI: number[]; deltaT: number[] }>>();
+
   for (const r of results) {
     if (r.type === "baseline") continue;
-    const key = `${r.type}:${r.fixture}`;
-    const existing = ablationByTypeFixture.get(key) ?? { similarity: 0, interp: 0, tokens: 0, count: 0 };
-    existing.similarity += r.similarity;
-    existing.interp += r.interpretationsCount;
-    existing.tokens += r.totalTokens;
-    existing.count++;
-    ablationByTypeFixture.set(key, existing);
+    const type = r.type as DesignTreeInfoType;
+    const baseline = baselineIndex.get(`${r.fixture}:${r.runIndex}`);
+    if (!baseline) continue;
+
+    if (!pairedDeltas.has(type)) pairedDeltas.set(type, new Map());
+    const fixtureDeltas = pairedDeltas.get(type)!;
+    if (!fixtureDeltas.has(r.fixture)) fixtureDeltas.set(r.fixture, { deltaV: [], deltaI: [], deltaT: [] });
+    const deltas = fixtureDeltas.get(r.fixture)!;
+
+    deltas.deltaV.push(baseline.similarity - r.similarity);
+    // Skip ΔI if either side had parse failure (-1)
+    if (baseline.interpretationsCount >= 0 && r.interpretationsCount >= 0) {
+      deltas.deltaI.push(r.interpretationsCount - baseline.interpretationsCount);
+    }
+    deltas.deltaT.push(r.totalTokens - baseline.totalTokens);
   }
 
-  // Compute deltas
-  const typeResults = new Map<DesignTreeInfoType, Map<string, { deltaV: number; deltaI: number; deltaT: number }>>();
-
-  for (const [key, abl] of ablationByTypeFixture) {
-    const [type, fixture] = key.split(":") as [DesignTreeInfoType, string];
-    const base = baselinesByFixture.get(fixture);
-    if (!base || base.count === 0) continue;
-
-    const avgBaseSim = base.similarity / base.count;
-    const avgBaseInterp = base.interp / base.count;
-    const avgBaseTokens = base.tokens / base.count;
-    const avgAblSim = abl.similarity / abl.count;
-    const avgAblInterp = abl.interp / abl.count;
-    const avgAblTokens = abl.tokens / abl.count;
-
-    if (!typeResults.has(type)) typeResults.set(type, new Map());
-    typeResults.get(type)!.set(fixture, {
-      deltaV: avgBaseSim - avgAblSim,
-      deltaI: avgAblInterp - avgBaseInterp,
-      deltaT: avgAblTokens - avgBaseTokens,
-    });
-  }
-
-  // Average across fixtures
+  // Average paired deltas per fixture, then across fixtures
   const rankings: RankingEntry[] = [];
-  for (const [type, fixtures] of typeResults) {
+  for (const [type, fixtures] of pairedDeltas) {
     const perFixture: Record<string, { deltaV: number; deltaI: number; deltaT: number }> = {};
     let sumDV = 0, sumDI = 0, sumDT = 0;
     let count = 0;
     for (const [fixtureName, deltas] of fixtures) {
-      perFixture[fixtureName] = deltas;
-      sumDV += deltas.deltaV;
-      sumDI += deltas.deltaI;
-      sumDT += deltas.deltaT;
+      const avgDV = deltas.deltaV.length > 0 ? deltas.deltaV.reduce((a, b) => a + b, 0) / deltas.deltaV.length : 0;
+      const avgDI = deltas.deltaI.length > 0 ? deltas.deltaI.reduce((a, b) => a + b, 0) / deltas.deltaI.length : 0;
+      const avgDT = deltas.deltaT.length > 0 ? deltas.deltaT.reduce((a, b) => a + b, 0) / deltas.deltaT.length : 0;
+      perFixture[fixtureName] = { deltaV: avgDV, deltaI: avgDI, deltaT: avgDT };
+      sumDV += avgDV;
+      sumDI += avgDI;
+      sumDT += avgDT;
       count++;
     }
     rankings.push({
@@ -419,7 +413,7 @@ async function main(): Promise<void> {
 
   // Configuration from environment
   const fixtures = process.env["ABLATION_FIXTURES"]
-    ? process.env["ABLATION_FIXTURES"].split(",").map((s) => s.trim())
+    ? process.env["ABLATION_FIXTURES"].split(",").map((s) => s.trim()).filter(Boolean)
     : DEFAULT_FIXTURES;
   const rawRuns = process.env["ABLATION_RUNS"];
   const runsPerCondition = rawRuns ? parseInt(rawRuns, 10) : 1;
@@ -485,11 +479,9 @@ async function main(): Promise<void> {
 
     for (const type of conditions) {
       for (let run = 0; run < runsPerCondition; run++) {
-        const resultPath = getResultPath(fixture, type, run);
-
-        // Check cache with key validation
-        if (isCacheValid(resultPath, cacheKey)) {
-          const cached = JSON.parse(readFileSync(resultPath, "utf-8")) as RunResult;
+        // Check cache with key + artifact validation
+        if (isCacheValid(fixture, type, run, cacheKey)) {
+          const cached = JSON.parse(readFileSync(getResultPath(fixture, type, run), "utf-8")) as RunResult;
           allResults.push(cached);
           console.log(`  [cached] ${type} run ${run + 1} → similarity=${(cached.similarity * 100).toFixed(1)}%`);
           continue;
