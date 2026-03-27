@@ -169,8 +169,8 @@ function stripLayoutSpacing(lines: string[]): string[] {
       const prop = getPropertyName(p);
       return !LAYOUT_PROPS.has(prop);
     });
-    return reassembleStyleLine(parsed) ?? "";
-  }).filter(Boolean);
+    return reassembleStyleLine(parsed);
+  }).filter((line): line is string => line !== null);
 }
 
 function stripSizeConstraints(lines: string[]): string[] {
@@ -183,8 +183,8 @@ function stripSizeConstraints(lines: string[]): string[] {
       if (isFillSize(p)) return false;
       return true;
     });
-    return reassembleStyleLine(parsed) ?? "";
-  }).filter(Boolean);
+    return reassembleStyleLine(parsed);
+  }).filter((line): line is string => line !== null);
 }
 
 function stripColorValues(lines: string[]): string[] {
@@ -215,8 +215,8 @@ function stripColorValues(lines: string[]): string[] {
       parsed.svgSegment = replaceColorsInSvg(parsed.svgSegment);
     }
 
-    return reassembleStyleLine(parsed) ?? "";
-  }).filter(Boolean);
+    return reassembleStyleLine(parsed);
+  }).filter((line): line is string => line !== null);
 }
 
 function stripTypography(lines: string[]): string[] {
@@ -230,8 +230,8 @@ function stripTypography(lines: string[]): string[] {
       if (p.trim().startsWith("/* text-style:")) return false;
       return true;
     });
-    return reassembleStyleLine(parsed) ?? "";
-  }).filter(Boolean);
+    return reassembleStyleLine(parsed);
+  }).filter((line): line is string => line !== null);
 }
 
 function stripShadowsEffects(lines: string[]): string[] {
@@ -242,8 +242,8 @@ function stripShadowsEffects(lines: string[]): string[] {
       const prop = getPropertyName(p);
       return !SHADOW_PROPS.has(prop);
     });
-    return reassembleStyleLine(parsed) ?? "";
-  }).filter(Boolean);
+    return reassembleStyleLine(parsed);
+  }).filter((line): line is string => line !== null);
 }
 
 function stripComponentReferences(lines: string[]): string[] {
@@ -260,8 +260,8 @@ function stripNodeNames(lines: string[]): string[] {
   return lines.map((line) => {
     // Skip comment headers
     if (line.startsWith("#")) return line;
-    // Match header lines: {indent}Name (TYPE, WxH)
-    const match = line.match(/^(\s*)(.+?)(\s*\((?:FRAME|TEXT|INSTANCE|COMPONENT|VECTOR|GROUP|RECTANGLE|ELLIPSE|LINE|SECTION|SLOT|BOOLEAN_OPERATION),\s*\d+x\d+\).*)$/);
+    // Match header lines: {indent}Name (TYPE, WxH) — accept any type token and ?x? dimensions
+    const match = line.match(/^(\s*)(.+?)(\s*\([A-Z_]+,\s*[\d?]+x[\d?]+\).*)$/);
     if (match) {
       counter++;
       return `${match[1]}Node${counter}${match[3]}`;
@@ -278,8 +278,8 @@ function stripOverflow(lines: string[]): string[] {
       const prop = getPropertyName(p);
       return prop !== "overflow";
     });
-    return reassembleStyleLine(parsed) ?? "";
-  }).filter(Boolean);
+    return reassembleStyleLine(parsed);
+  }).filter((line): line is string => line !== null);
 }
 
 function stripHoverStates(lines: string[]): string[] {
@@ -293,8 +293,8 @@ function stripTokenReferences(lines: string[]): string[] {
     parsed.properties = parsed.properties
       .map((p) => removeTokenRefs(p))
       .filter(Boolean);
-    return reassembleStyleLine(parsed) ?? "";
-  }).filter(Boolean);
+    return reassembleStyleLine(parsed);
+  }).filter((line): line is string => line !== null);
 }
 
 // --- Main API ---

@@ -261,8 +261,21 @@ describe("stripDesignTree", () => {
   });
 
   describe("general properties", () => {
-    it("exports all 12 info types", () => {
-      expect(DESIGN_TREE_INFO_TYPES).toHaveLength(12);
+    it("exports the exact 12 info types in order", () => {
+      expect(DESIGN_TREE_INFO_TYPES).toEqual([
+        "layout-direction-spacing",
+        "size-constraints",
+        "position-stacking",
+        "color-values",
+        "typography",
+        "shadows-effects",
+        "component-references",
+        "component-descriptions",
+        "node-names-hierarchy",
+        "overflow-text-behavior",
+        "hover-interaction-states",
+        "design-token-references",
+      ]);
     });
 
     it("is idempotent — applying same strip twice gives same result", () => {
