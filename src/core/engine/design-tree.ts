@@ -362,7 +362,7 @@ function renderNode(
 
   // Text content
   if (node.type === "TEXT" && node.characters) {
-    styles.push(`text: "${node.characters}"`);
+    styles.push(`text: "${node.characters.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
   }
 
   // Vector SVG inline (when vector dir with downloaded SVGs is available)
