@@ -73,10 +73,11 @@ When a node's style includes `svg: <svg>...</svg>`, render it as an inline `<svg
 - The `<svg>` replaces the node's HTML element (do not wrap it in an extra `<div>` unless the node has other styles like background or border)
 
 ### Image Assets
-- Always use CSS `background-image` — do NOT convert to `<img>` tags
-- If the design tree shows `background-image: url(images/...)`, use that path directly as a CSS `background-image` on the element
+- Always render images as `<img>` tags — do NOT use CSS `background-image`
+- If the design tree shows `background-image: url(images/...)`, convert to `<img src="images/..." />`
+- Map `background-size` to `object-fit`: `cover` → `object-fit: cover`, `contain` → `object-fit: contain`
+- If the node has children, position the `<img>` behind them (e.g., `position: absolute; z-index: 0` inside a `position: relative` container)
 - If it shows `background-image: [IMAGE]`, the image asset is unavailable — use a placeholder color matching the surrounding design
-- Preserve `background-size`, `background-position`, and `background-repeat` values exactly as shown
 
 ### If data is missing
 When the Figma data does not specify a value, you MUST list it as an interpretation.
