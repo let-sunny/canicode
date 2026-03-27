@@ -1,24 +1,25 @@
 /**
- * Ablation condition experiments: tests that change viewport or prompt, not just strip data.
+ * Ablation condition experiments: tests that change viewport or prompt context.
  *
  * Experiment 1: size-constraints
- *   - Reuse baseline HTML from run-phase1
- *   - Render at 1920px viewport instead of 1200px
- *   - Compare against screenshot-1920.png
- *   - No API call needed
+ *   - Strip size-constraints from design-tree
+ *   - Implement via API
+ *   - Remove root fixed width from generated HTML
+ *   - Render at expanded viewport (desktop: 1920px, mobile: 768px)
+ *   - Compare against expanded viewport screenshot
+ *   - Also render baseline (un-stripped) at expanded viewport for comparison
  *
  * Experiment 2: hover-interaction
  *   - Strip [hover]: data from design-tree
- *   - Send to Claude with same prompt
- *   - Compare: does AI invent hover states vs using provided data?
- *   - 1 API call needed
+ *   - Implement via API
+ *   - Compare hover CSS values with baseline (which had [hover]: data)
  *
  * Usage:
- *   npx tsx src/agents/ablation/run-condition.ts --type size-constraints
+ *   ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-condition.ts --type size-constraints
  *   ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-condition.ts --type hover-interaction
  *
  * Environment variables:
- *   ANTHROPIC_API_KEY  — required for hover-interaction only
+ *   ANTHROPIC_API_KEY  — required
  *   ABLATION_FIXTURES  — comma-separated (default: 3 desktop fixtures)
  *
  * Output: logs/ablation/conditions/{type}/{fixture}/
@@ -53,10 +54,6 @@ type ConditionType = "size-constraints" | "hover-interaction";
 
 // --- Helpers ---
 
-function getFixtureScreenshotPath(fixture: string, width: number): string {
-  return resolve(`fixtures/${fixture}/screenshot-${width}.png`);
-}
-
 function getDesignTreeOptions(fixture: string) {
   const fixtureDir = resolve(`fixtures/${fixture}`);
   const vectorDir = join(fixtureDir, "vectors");
@@ -67,23 +64,16 @@ function getDesignTreeOptions(fixture: string) {
   };
 }
 
-function countCssClasses(html: string): number {
-  const styleMatch = html.match(/<style[\s\S]*?<\/style>/i);
-  if (!styleMatch) return 0;
-  const classes = styleMatch[0].match(/\.[a-zA-Z][\w-]*\s*[{,:]/g);
-  return new Set(classes?.map((c) => c.replace(/\s*[{,:]$/, ""))).size;
-}
-
-function extractHtml(text: string): { html: string; method: string } {
+function extractHtml(text: string): string {
   const allBlocks = [...text.matchAll(/```(?:html|css|[a-z]*)?\s*\n([\s\S]*?)(?:```|$)/g)]
     .map((m) => m[1]?.trim() ?? "")
     .filter((block) => block.includes("<") && block.length > 50);
-  if (allBlocks.length === 0) return { html: "", method: "none" };
+  if (allBlocks.length === 0) return "";
   const fullDoc = allBlocks.find((b) => /^<!doctype|^<html/i.test(b));
-  if (fullDoc) return { html: fullDoc, method: "doctype" };
+  if (fullDoc) return fullDoc;
   const hasBody = allBlocks.find((b) => /<body/i.test(b));
-  if (hasBody) return { html: hasBody, method: "body" };
-  return { html: allBlocks.reduce((a, b) => (a.length >= b.length ? a : b)), method: "largest" };
+  if (hasBody) return hasBody;
+  return allBlocks.reduce((a, b) => (a.length >= b.length ? a : b));
 }
 
 function sanitizeAndInjectFont(html: string): string {
@@ -106,32 +96,18 @@ function sanitizeAndInjectFont(html: string): string {
   return result;
 }
 
-// --- Size-constraints experiment ---
+/** Remove root element's fixed width (e.g., width: 1200px or width: 375px) from CSS. */
+function removeRootFixedWidth(html: string): string {
+  // Replace width: NNNpx on the first element style or in CSS for root-like selectors
+  // Match patterns like: width: 1200px, width: 375px, min-width: 1200px
+  return html
+    .replace(/width:\s*1200px/g, "width: 100%")
+    .replace(/width:\s*375px/g, "width: 100%")
+    .replace(/min-width:\s*1200px/g, "min-width: 0")
+    .replace(/min-width:\s*375px/g, "min-width: 0");
+}
 
-async function runSizeConstraints(fixture: string): Promise<void> {
-  const runDir = resolve(OUTPUT_DIR, "size-constraints", fixture);
-  mkdirSync(runDir, { recursive: true });
-
-  // Find baseline HTML from the most recent phase1 run
-  const phase1Dir = resolve("logs/ablation/phase1");
-  if (!existsSync(phase1Dir)) {
-    console.error(`  ERROR: No phase1 results found at ${phase1Dir}`);
-    return;
-  }
-
-  // Find latest config version
-  const versions = readdirSync(phase1Dir).filter((d) => existsSync(join(phase1Dir, d, fixture, "baseline", "run-0", "output.html")));
-  if (versions.length === 0) {
-    console.error(`  ERROR: No baseline HTML found for ${fixture} in phase1 results`);
-    return;
-  }
-  const latestVersion = versions.sort().reverse()[0]!;
-  const baselineHtml = join(phase1Dir, latestVersion, fixture, "baseline", "run-0", "output.html");
-
-  console.log(`  Using baseline from: ${latestVersion}`);
-  copyFileSync(baselineHtml, join(runDir, "output.html"));
-
-  // Copy images
+function copyFixtureImages(fixture: string, runDir: string): void {
   const fixtureImagesDir = resolve(`fixtures/${fixture}/images`);
   if (existsSync(fixtureImagesDir)) {
     const runImagesDir = join(runDir, "images");
@@ -140,26 +116,52 @@ async function runSizeConstraints(fixture: string): Promise<void> {
       copyFileSync(join(fixtureImagesDir, f), join(runImagesDir, f));
     }
   }
+}
 
-  // Render at 1920px viewport
-  console.log(`  Rendering at 1920px viewport...`);
-  const codePngPath = join(runDir, "code-1920.png");
-  const figmaScreenshotPath = getFixtureScreenshotPath(fixture, 1920);
-  if (!existsSync(figmaScreenshotPath)) {
-    console.error(`  ERROR: screenshot-1920.png not found for ${fixture}`);
-    return;
+async function callApi(client: Anthropic, prompt: string, designTree: string): Promise<Anthropic.Message> {
+  const MAX_RETRIES = 3;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const stream = client.messages.stream({
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        temperature: TEMPERATURE,
+        system: prompt,
+        messages: [{ role: "user", content: designTree }],
+      });
+      return await stream.finalMessage();
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      if ((status === 429 || status === 529) && attempt < MAX_RETRIES) {
+        const delay = Math.pow(2, attempt + 1) * 1000;
+        console.warn(`    ⚠ ${status} error, retrying in ${delay / 1000}s (${attempt + 1}/${MAX_RETRIES})...`);
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      throw err;
+    }
   }
+  throw new Error("API call failed after retries");
+}
 
+async function renderAndCompare(
+  htmlPath: string,
+  figmaScreenshotPath: string,
+  runDir: string,
+  suffix: string,
+): Promise<{ similarity: number }> {
   const { PNG } = await import("pngjs");
   const figmaImage = PNG.sync.read(readFileSync(figmaScreenshotPath));
-  const exportScale = 1; // 1920px screenshots are @1x
-  const logicalW = Math.max(1, Math.round(figmaImage.width / exportScale));
+  // Detect scale: 1920/768 screenshots are @1x, 1200/375 are @2x
+  const figmaWidth = figmaImage.width;
+  const exportScale = figmaWidth > 1500 ? 1 : 2; // 1920px screenshot is @1x
+  const logicalW = Math.max(1, Math.round(figmaWidth / exportScale));
   const logicalH = Math.max(1, Math.round(figmaImage.height / exportScale));
 
-  await renderCodeScreenshot(join(runDir, "output.html"), codePngPath, { width: logicalW, height: logicalH }, exportScale);
+  const codePngPath = join(runDir, `code-${suffix}.png`);
+  await renderCodeScreenshot(htmlPath, codePngPath, { width: logicalW, height: logicalH }, exportScale);
 
-  // Copy figma screenshot
-  const figmaCopyPath = join(runDir, "figma-1920.png");
+  const figmaCopyPath = join(runDir, `figma-${suffix}.png`);
   copyFileSync(figmaScreenshotPath, figmaCopyPath);
 
   // Crop to matching dimensions
@@ -167,7 +169,6 @@ async function runSizeConstraints(fixture: string): Promise<void> {
   const figmaCopy = PNG.sync.read(readFileSync(figmaCopyPath));
   const cropW = Math.min(codeImage.width, figmaCopy.width);
   const cropH = Math.min(codeImage.height, figmaCopy.height);
-
   if (codeImage.width !== cropW || codeImage.height !== cropH) {
     const cropped = new PNG({ width: cropW, height: cropH });
     for (let y = 0; y < cropH; y++) {
@@ -183,166 +184,181 @@ async function runSizeConstraints(fixture: string): Promise<void> {
     writeFileSync(figmaCopyPath, PNG.sync.write(cropped));
   }
 
-  // Compare
-  const diffPath = join(runDir, "diff-1920.png");
-  const comparison = compareScreenshots(figmaCopyPath, codePngPath, diffPath);
+  const diffPath = join(runDir, `diff-${suffix}.png`);
+  return compareScreenshots(figmaCopyPath, codePngPath, diffPath);
+}
 
-  // Also get baseline similarity at 1200px for comparison
-  const baselineResultPath = join(phase1Dir, latestVersion, fixture, "baseline", "run-0", "result.json");
-  let baseSim = "?";
-  if (existsSync(baselineResultPath)) {
-    const br = JSON.parse(readFileSync(baselineResultPath, "utf-8")) as { similarity?: number };
-    if (br.similarity !== undefined) baseSim = br.similarity.toFixed(1);
+// --- Size-constraints experiment ---
+
+async function runSizeConstraints(fixture: string, client: Anthropic, prompt: string): Promise<void> {
+  const isMobile = fixture.startsWith("mobile-");
+  const baseWidth = isMobile ? 375 : 1200;
+  const expandedWidth = isMobile ? 768 : 1920;
+
+  const runDir = resolve(OUTPUT_DIR, "size-constraints", fixture);
+  mkdirSync(runDir, { recursive: true });
+
+  const expandedScreenshot = resolve(`fixtures/${fixture}/screenshot-${expandedWidth}.png`);
+  if (!existsSync(expandedScreenshot)) {
+    console.error(`  ERROR: screenshot-${expandedWidth}.png not found for ${fixture}`);
+    return;
   }
+
+  // Load fixture and generate design-trees
+  const file = await loadFigmaFileFromJson(resolve(`fixtures/${fixture}/data.json`));
+  const options = getDesignTreeOptions(fixture);
+  const baselineTree = generateDesignTree(file, options);
+  const strippedTree = stripDesignTree(baselineTree, "size-constraints");
+
+  copyFixtureImages(fixture, runDir);
+
+  // 1. Baseline: implement with full info → render at expanded viewport
+  console.log(`  [baseline] Calling API...`);
+  const baseResponse = await callApi(client, prompt, baselineTree);
+  const baseHtml = sanitizeAndInjectFont(extractHtml(
+    baseResponse.content.filter((b): b is Anthropic.TextBlock => b.type === "text").map((b) => b.text).join("\n")
+  ));
+  const baseHtmlExpanded = removeRootFixedWidth(baseHtml);
+  writeFileSync(join(runDir, "output-baseline.html"), baseHtml);
+  writeFileSync(join(runDir, "output-baseline-expanded.html"), baseHtmlExpanded);
+
+  console.log(`  [baseline] Rendering at ${expandedWidth}px...`);
+  const baseResult = await renderAndCompare(
+    join(runDir, "output-baseline-expanded.html"),
+    expandedScreenshot,
+    runDir,
+    `baseline-${expandedWidth}`,
+  );
+
+  // 2. Stripped: implement without size info → render at expanded viewport
+  console.log(`  [stripped] Calling API...`);
+  const stripResponse = await callApi(client, prompt, strippedTree);
+  const stripHtml = sanitizeAndInjectFont(extractHtml(
+    stripResponse.content.filter((b): b is Anthropic.TextBlock => b.type === "text").map((b) => b.text).join("\n")
+  ));
+  const stripHtmlExpanded = removeRootFixedWidth(stripHtml);
+  writeFileSync(join(runDir, "output-stripped.html"), stripHtml);
+  writeFileSync(join(runDir, "output-stripped-expanded.html"), stripHtmlExpanded);
+
+  console.log(`  [stripped] Rendering at ${expandedWidth}px...`);
+  const stripResult = await renderAndCompare(
+    join(runDir, "output-stripped-expanded.html"),
+    expandedScreenshot,
+    runDir,
+    `stripped-${expandedWidth}`,
+  );
+
+  const deltaV = baseResult.similarity - stripResult.similarity;
 
   const result = {
     fixture,
     type: "size-constraints",
-    baselineVersion: latestVersion,
-    similarity1200: baseSim,
-    similarity1920: comparison.similarity,
-    deltaResponsive: baseSim !== "?" ? Number(baseSim) - comparison.similarity : null,
-    viewport: { width: logicalW, height: logicalH },
+    baseWidth,
+    expandedWidth,
+    baselineSimilarity: baseResult.similarity,
+    strippedSimilarity: stripResult.similarity,
+    deltaV,
+    baselineTokens: { input: baseResponse.usage.input_tokens, output: baseResponse.usage.output_tokens },
+    strippedTokens: { input: stripResponse.usage.input_tokens, output: stripResponse.usage.output_tokens },
     timestamp: new Date().toISOString(),
   };
 
   writeFileSync(join(runDir, "result.json"), JSON.stringify(result, null, 2));
-  console.log(`  ✓ sim@1200=${baseSim}% sim@1920=${comparison.similarity.toFixed(1)}% delta=${result.deltaResponsive?.toFixed(1) ?? "?"}%`);
+  console.log(`  ✓ baseline@${expandedWidth}=${baseResult.similarity.toFixed(1)}% stripped@${expandedWidth}=${stripResult.similarity.toFixed(1)}% ΔV=${deltaV.toFixed(1)}%`);
 }
 
 // --- Hover-interaction experiment ---
 
-async function runHoverInteraction(fixture: string): Promise<void> {
-  const apiKey = process.env["ANTHROPIC_API_KEY"];
-  if (!apiKey) {
-    console.error("  ERROR: ANTHROPIC_API_KEY required for hover-interaction experiment");
-    return;
-  }
-
+async function runHoverInteraction(fixture: string, client: Anthropic, prompt: string): Promise<void> {
   const runDir = resolve(OUTPUT_DIR, "hover-interaction", fixture);
   mkdirSync(runDir, { recursive: true });
 
-  const prompt = readFileSync(PROMPT_PATH, "utf-8");
-  const client = new Anthropic({ apiKey });
-
-  // Generate design-tree WITHOUT [hover]: data
   const file = await loadFigmaFileFromJson(resolve(`fixtures/${fixture}/data.json`));
   const options = getDesignTreeOptions(fixture);
   const fullTree = generateDesignTree(file, options);
   const strippedTree = stripDesignTree(fullTree, "hover-interaction-states");
 
-  writeFileSync(join(runDir, "design-tree-no-hover.txt"), strippedTree);
-
-  // Check if hover data actually exists
   const hoverCount = (fullTree.match(/\[hover\]:/g) ?? []).length;
   if (hoverCount === 0) {
     console.log(`  No [hover]: data in this fixture — skipping`);
     return;
   }
-  console.log(`  ${hoverCount} [hover]: blocks in original, stripped for experiment`);
+  console.log(`  ${hoverCount} [hover]: blocks in original`);
 
-  // Call API with stripped tree
-  console.log(`  Calling Claude API (without hover data)...`);
-  const stream = client.messages.stream({
-    model: MODEL,
-    max_tokens: MAX_TOKENS,
-    temperature: TEMPERATURE,
-    system: prompt,
-    messages: [{ role: "user", content: strippedTree }],
-  });
-  const response = await stream.finalMessage();
+  writeFileSync(join(runDir, "design-tree-full.txt"), fullTree);
+  writeFileSync(join(runDir, "design-tree-no-hover.txt"), strippedTree);
 
-  const responseText = response.content
-    .filter((block): block is Anthropic.TextBlock => block.type === "text")
-    .map((block) => block.text)
-    .join("\n");
+  copyFixtureImages(fixture, runDir);
 
-  writeFileSync(join(runDir, "response.txt"), responseText);
+  // 1. Baseline: with hover data
+  console.log(`  [with hover] Calling API...`);
+  const baseResponse = await callApi(client, prompt, fullTree);
+  const baseText = baseResponse.content.filter((b): b is Anthropic.TextBlock => b.type === "text").map((b) => b.text).join("\n");
+  const baseHtml = sanitizeAndInjectFont(extractHtml(baseText));
+  writeFileSync(join(runDir, "output-with-hover.html"), baseHtml);
 
-  const { html } = extractHtml(responseText);
-  const finalHtml = sanitizeAndInjectFont(html);
-  writeFileSync(join(runDir, "output-no-hover.html"), finalHtml);
+  // 2. Stripped: without hover data
+  console.log(`  [without hover] Calling API...`);
+  const stripResponse = await callApi(client, prompt, strippedTree);
+  const stripText = stripResponse.content.filter((b): b is Anthropic.TextBlock => b.type === "text").map((b) => b.text).join("\n");
+  const stripHtml = sanitizeAndInjectFont(extractHtml(stripText));
+  writeFileSync(join(runDir, "output-without-hover.html"), stripHtml);
 
-  // Check: did AI invent hover CSS anyway?
-  const hoverCssCount = (finalHtml.match(/:hover\s*\{/g) ?? []).length;
-
-  // Compare with baseline (which had hover data)
-  const phase1Dir = resolve("logs/ablation/phase1");
-  const versions = readdirSync(phase1Dir).filter((d) => existsSync(join(phase1Dir, d, fixture, "baseline", "run-0", "output.html")));
-  const latestVersion = versions.sort().reverse()[0];
-  let baselineHoverCount = 0;
-  if (latestVersion) {
-    const baselineHtml = readFileSync(join(phase1Dir, latestVersion, fixture, "baseline", "run-0", "output.html"), "utf-8");
-    baselineHoverCount = (baselineHtml.match(/:hover\s*\{/g) ?? []).length;
-  }
-
-  // Render and compare
-  console.log(`  Rendering...`);
-  const codePngPath = join(runDir, "code.png");
-  const figmaScreenshotPath = getFixtureScreenshotPath(fixture, 1200);
-  const { PNG } = await import("pngjs");
-  const figmaImage = PNG.sync.read(readFileSync(figmaScreenshotPath));
-  const exportScale = 2;
-  const logicalW = Math.max(1, Math.round(figmaImage.width / exportScale));
-  const logicalH = Math.max(1, Math.round(figmaImage.height / exportScale));
-
-  // Copy images
-  const fixtureImagesDir = resolve(`fixtures/${fixture}/images`);
-  if (existsSync(fixtureImagesDir)) {
-    const runImagesDir = join(runDir, "images");
-    mkdirSync(runImagesDir, { recursive: true });
-    for (const f of readdirSync(fixtureImagesDir)) {
-      copyFileSync(join(fixtureImagesDir, f), join(runImagesDir, f));
-    }
-  }
-
-  await renderCodeScreenshot(join(runDir, "output-no-hover.html"), codePngPath, { width: logicalW, height: logicalH }, exportScale);
-
-  const figmaCopyPath = join(runDir, "figma.png");
-  copyFileSync(figmaScreenshotPath, figmaCopyPath);
-
-  // Crop
-  const codeImage = PNG.sync.read(readFileSync(codePngPath));
-  const figmaCopy = PNG.sync.read(readFileSync(figmaCopyPath));
-  const cropW = Math.min(codeImage.width, figmaCopy.width);
-  const cropH = Math.min(codeImage.height, figmaCopy.height);
-  if (codeImage.width !== cropW || codeImage.height !== cropH) {
-    const cropped = new PNG({ width: cropW, height: cropH });
-    for (let y = 0; y < cropH; y++) {
-      codeImage.data.copy(cropped.data, y * cropW * 4, y * codeImage.width * 4, y * codeImage.width * 4 + cropW * 4);
-    }
-    writeFileSync(codePngPath, PNG.sync.write(cropped));
-  }
-
-  const diffPath = join(runDir, "diff.png");
-  const comparison = compareScreenshots(figmaCopyPath, codePngPath, diffPath);
+  // Extract :hover rules from both
+  const baseHoverRules = baseHtml.match(/[^}]*:hover\s*\{[^}]*\}/g) ?? [];
+  const stripHoverRules = stripHtml.match(/[^}]*:hover\s*\{[^}]*\}/g) ?? [];
 
   const result = {
     fixture,
     type: "hover-interaction",
     hoverBlocksInDesignTree: hoverCount,
-    hoverCssWithData: baselineHoverCount,
-    hoverCssWithoutData: hoverCssCount,
-    similarity: comparison.similarity,
-    inputTokens: response.usage.input_tokens,
-    outputTokens: response.usage.output_tokens,
-    htmlBytes: Buffer.byteLength(finalHtml, "utf-8"),
-    cssClassCount: countCssClasses(finalHtml),
+    withHoverData: {
+      hoverCssRules: baseHoverRules.length,
+      hoverCssContent: baseHoverRules,
+      inputTokens: baseResponse.usage.input_tokens,
+      outputTokens: baseResponse.usage.output_tokens,
+      htmlBytes: Buffer.byteLength(baseHtml, "utf-8"),
+    },
+    withoutHoverData: {
+      hoverCssRules: stripHoverRules.length,
+      hoverCssContent: stripHoverRules,
+      inputTokens: stripResponse.usage.input_tokens,
+      outputTokens: stripResponse.usage.output_tokens,
+      htmlBytes: Buffer.byteLength(stripHtml, "utf-8"),
+    },
     timestamp: new Date().toISOString(),
   };
 
   writeFileSync(join(runDir, "result.json"), JSON.stringify(result, null, 2));
-  console.log(`  ✓ sim=${comparison.similarity.toFixed(1)}% hover_with=${baselineHoverCount} hover_without=${hoverCssCount}`);
+  console.log(`  ✓ with_hover: ${baseHoverRules.length} :hover rules, without_hover: ${stripHoverRules.length} :hover rules`);
+  if (baseHoverRules.length > 0) {
+    console.log(`  Hover rules with data:`);
+    for (const rule of baseHoverRules) console.log(`    ${rule.trim().slice(0, 80)}`);
+  }
+  if (stripHoverRules.length > 0) {
+    console.log(`  Hover rules WITHOUT data (AI invented):`);
+    for (const rule of stripHoverRules) console.log(`    ${rule.trim().slice(0, 80)}`);
+  }
 }
 
 // --- Main ---
 
 async function main(): Promise<void> {
-  const type = process.argv[2] === "--type" ? process.argv[3] as ConditionType : null;
+  const typeArg = process.argv.indexOf("--type");
+  const type = typeArg !== -1 ? process.argv[typeArg + 1] as ConditionType | undefined : undefined;
   if (!type || !["size-constraints", "hover-interaction"].includes(type)) {
     console.error("Usage: npx tsx run-condition.ts --type <size-constraints|hover-interaction>");
     process.exit(1);
   }
+
+  const apiKey = process.env["ANTHROPIC_API_KEY"];
+  if (!apiKey) {
+    console.error("Error: ANTHROPIC_API_KEY required");
+    process.exit(1);
+  }
+
+  const prompt = readFileSync(PROMPT_PATH, "utf-8");
+  const client = new Anthropic({ apiKey });
 
   const fixtures = process.env["ABLATION_FIXTURES"]
     ? process.env["ABLATION_FIXTURES"].split(",").map((s) => s.trim()).filter(Boolean)
@@ -356,9 +372,9 @@ async function main(): Promise<void> {
     console.log(`=== ${fixture} ===`);
     try {
       if (type === "size-constraints") {
-        await runSizeConstraints(fixture);
+        await runSizeConstraints(fixture, client, prompt);
       } else {
-        await runHoverInteraction(fixture);
+        await runHoverInteraction(fixture, client, prompt);
       }
     } catch (err) {
       console.error(`  ERROR: ${err instanceof Error ? err.message : String(err)}`);
