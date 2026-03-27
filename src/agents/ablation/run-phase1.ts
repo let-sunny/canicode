@@ -336,10 +336,12 @@ async function runSingle(
     for (const w of parseWarnings) console.warn(`    WARNING: ${w}`);
   }
 
-  // Replace Google Fonts CDN with local font to avoid network dependency
+  // Clean up HTML output
   const fontPath = resolve("assets/fonts/Inter.var.woff2");
   const localFontCSS = `@font-face { font-family: "Inter"; src: url("file://${fontPath}") format("woff2"); font-weight: 100 900; }`;
   let finalHtml = html;
+  // Remove "// filename: ..." line if present at the start
+  finalHtml = finalHtml.replace(/^\/\/\s*filename:.*\n/i, "");
   // Remove Google Fonts <link> tags
   finalHtml = finalHtml.replace(/<link[^>]*fonts\.googleapis\.com[^>]*>/gi, "");
   finalHtml = finalHtml.replace(/<link[^>]*fonts\.gstatic\.com[^>]*>/gi, "");
