@@ -11,13 +11,19 @@ This prompt is used by all code generation pipelines:
 
 ## Conventions
 - Semantic HTML elements
-- CSS variables for colors
 - Flexbox / Grid for layout
 
 ## CRITICAL: Do NOT Interpret. Reproduce Exactly.
 
 Every pixel in the Figma file is intentional. A designer made each decision deliberately.
 Your job is to translate the Figma data to HTML+CSS — nothing more.
+
+### Priority Order
+1. **Pixel-exact reproduction** — match every dimension, color, spacing, font exactly
+2. **Component reuse** — same component annotation → shared CSS class
+3. **Design tokens** — repeated values → CSS custom properties
+
+Never sacrifice #1 for #2 or #3. Reuse and tokens are structural improvements only — they must not change the visual output.
 
 ### Rules
 - Do NOT add any value that isn't in the Figma data (no extra padding, margin, gap, transition, hover effect)
@@ -28,9 +34,47 @@ Your job is to translate the Figma data to HTML+CSS — nothing more.
 - Do NOT add overflow: auto or scroll unless specified
 - Fonts: load via Google Fonts CDN (`<link>` tag). Do NOT use system font fallbacks as primary — the exact font from the data must render.
 
+### Component Reuse
+
+Nodes annotated with `[component: ComponentName]` are instances of the same design component.
+
+- Define a CSS class for each unique component name (e.g., `[component: Review Card]` → `.review-card { ... }`)
+- If the same component appears multiple times, define the shared styles once in the class, then apply it to each instance
+- `component-properties:` lines show variant overrides — use them to differentiate instances (e.g., different text content, sizes) while keeping shared styles in the class
+- Component name → class name: lowercase, spaces to hyphens (e.g., `Review Card` → `.review-card`)
+
+### Design Tokens
+
+Extract repeated values into CSS custom properties in `:root { }`.
+
+**Colors**: When the same hex color appears 3+ times, define it as a CSS variable:
+```css
+:root {
+  --color-2C2C2C: #2C2C2C;
+  --color-0066CC: #0066CC;
+}
+```
+Then use `var(--color-2C2C2C)` instead of inline `#2C2C2C`.
+
+Naming: if a `/* var:... */` comment is present next to a color value, it means the designer bound this color to a design token — always extract these as CSS variables.
+
+**Typography**: When `/* text-style: StyleName */` appears in a text node's styles, nodes sharing the same text style name should use a shared CSS class:
+```css
+.text-heading-large { font-family: "Inter"; font-weight: 700; font-size: 32px; line-height: 40px; }
+```
+Style name → class name: lowercase, spaces/slashes to hyphens, prefix with `text-` (e.g., `Heading / Large` → `.text-heading-large`).
+
+### SVG Vectors
+
+When a node's style includes `svg: <svg>...</svg>`, render it as an inline `<svg>` element:
+- Use the SVG markup exactly as provided — do not modify paths or attributes
+- Preserve the node's dimensions (`width` and `height` from the node header)
+- The `<svg>` replaces the node's HTML element (do not wrap it in an extra `<div>` unless the node has other styles like background or border)
+
 ### Image Assets
-- If the design tree shows `background-image: url(images/...)`, use that path directly
-- If it shows `background-image: [IMAGE]`, the image asset is unavailable — use a placeholder color
+- If the design tree shows `background-image: url(images/...)`, use that path directly as a CSS `background-image` on the element
+- If it shows `background-image: [IMAGE]`, the image asset is unavailable — use a placeholder color matching the surrounding design
+- Preserve `background-size`, `background-position`, and `background-repeat` values exactly as shown
 
 ### If data is missing
 When the Figma data does not specify a value, you MUST list it as an interpretation.
@@ -47,11 +91,13 @@ Output as a code block with filename:
 ```
 
 ### 2. Interpretations
-After the code block, output a section listing every value you had to guess or assume:
+After the code block, list every value you had to guess or assume.
+Keep this list to **only genuine ambiguities** — do not list standard defaults (e.g., `body { margin: 0 }` is always expected, not an interpretation).
+
 ```
 // interpretations:
-- Used system font "Inter" fallback: -apple-system, BlinkMacSystemFont (font not embedded in data)
-- Set body margin to 0 (not specified in Figma data)
+- Assumed hover state for buttons (not specified in design data)
+- Used placeholder gray (#CCCCCC) for unavailable image asset
 ```
 
 If you did not interpret anything, write:
