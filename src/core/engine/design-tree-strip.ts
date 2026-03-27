@@ -28,16 +28,14 @@ export type DesignTreeStripType =
  */
 export type DesignTreeInfoType =
   | "layout-direction-spacing"
-  | "size-constraints"
   | "component-references"
   | "node-names-hierarchy"
   | "variable-references"
   | "style-references";
 
-/** Experiment-relevant information types for ablation. */
+/** Strip experiment types (excludes size-constraints — tested via condition experiment at 1920px). */
 export const DESIGN_TREE_INFO_TYPES: readonly DesignTreeInfoType[] = [
   "layout-direction-spacing",
-  "size-constraints",
   "component-references",
   "node-names-hierarchy",
   "variable-references",
