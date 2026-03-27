@@ -229,6 +229,27 @@ describe("generateDesignTree", () => {
       expect(output).toContain('text: "C:\\\\Users\\\\file.txt"');
     });
 
+    it("TEXT nodes escape newlines in characters", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Multiline",
+          type: "TEXT",
+          characters: "Line 1\nLine 2\nLine 3",
+          absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 60 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      // Newlines should be escaped so text stays on one line
+      expect(output).toContain('text: "Line 1\\nLine 2\\nLine 3"');
+      // Should NOT split across lines
+      const lines = output.split("\n");
+      const textLine = lines.find((l) => l.includes("text:"));
+      expect(textLine).toContain("Line 1\\nLine 2\\nLine 3");
+    });
+
     it("TEXT nodes with no characters do not include text: property", () => {
       const file = makeFile(
         makeNode({
