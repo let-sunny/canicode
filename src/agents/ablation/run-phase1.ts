@@ -36,7 +36,7 @@ import { compareScreenshots } from "../../core/engine/visual-compare-helpers.js"
 
 const MODEL = "claude-sonnet-4-20250514";
 const TEMPERATURE = 0;
-const MAX_TOKENS = 16000;
+const MAX_TOKENS = 32000;
 
 const DEFAULT_FIXTURES = [
   "desktop-product-detail",
@@ -215,7 +215,8 @@ function parseResponse(text: string): { html: string; interpretations: string[];
 
   // Extract HTML from fenced code block — prioritize by content, not position
   let html = "";
-  const allBlocks = [...text.matchAll(/```(?:html|css|[a-z]*)?\s*\n([\s\S]*?)```/g)]
+  // Match both closed ```...``` and unclosed ``` (truncated by max_tokens)
+  const allBlocks = [...text.matchAll(/```(?:html|css|[a-z]*)?\s*\n([\s\S]*?)(?:```|$)/g)]
     .map((m) => m[1]?.trim() ?? "")
     .filter((block) => block.includes("<") && block.length > 50);
 
