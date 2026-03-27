@@ -210,6 +210,7 @@ function getResultPath(fixture: string, type: string, runIndex: number): string 
 const ALWAYS_SKIP: ReadonlySet<DesignTreeInfoType> = new Set([
   "color-values",      // Removing all colors → trivially different pixels
   "typography",        // Removing all fonts → trivially different pixels
+  "hover-interaction-states", // Hover data absent → can't produce hover CSS (obvious)
 ]);
 
 /** Detect no-op strip types by comparing output. */
