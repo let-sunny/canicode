@@ -372,8 +372,8 @@ function renderNode(
     styles.push(`padding: ${pt}px ${pr}px ${pb}px ${pl}px${padRef}`);
   }
 
-  // Sizing
-  if (node.layoutSizingHorizontal === "FILL") styles.push("width: 100%");
+  // Sizing — FILL = stretch to parent. If flex-grow is already set, skip width: 100% (redundant + breaks wrap layouts)
+  if (node.layoutSizingHorizontal === "FILL" && node.layoutGrow !== 1) styles.push("width: 100%");
   if (node.layoutSizingVertical === "FILL") styles.push("height: 100%");
 
   // Fill (not for TEXT — text fill is color)
