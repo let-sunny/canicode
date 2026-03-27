@@ -1,13 +1,4 @@
-import { stripDesignTree, DESIGN_TREE_INFO_TYPES } from "./design-tree-strip.js";
-import type { DesignTreeStripType } from "./design-tree-strip.js";
-
-/** All strip types for safety invariant tests (not just experiment-relevant ones). */
-const ALL_STRIP_TYPES: readonly DesignTreeStripType[] = [
-  "layout-direction-spacing", "size-constraints", "position-stacking",
-  "color-values", "typography", "shadows-effects", "component-references",
-  "component-descriptions", "node-names-hierarchy", "overflow-text-behavior",
-  "hover-interaction-states", "variable-references", "style-references",
-];
+import { stripDesignTree, DESIGN_TREE_INFO_TYPES, ALL_STRIP_TYPES } from "./design-tree-strip.js";
 
 /** Shared test fixture containing all information types. */
 const FIXTURE = [

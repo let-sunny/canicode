@@ -31,7 +31,6 @@ export const RULE_ID_CATEGORY: Record<RuleId, Category> = {
   "inconsistent-naming-convention": "naming",
   "numeric-suffix-name": "naming",
   "too-long-name": "naming",
-  // TODO: rename "behavior" → "interaction" (hover states, prototype links, component state changes)
   "text-truncation-unhandled": "behavior",
   "prototype-link-in-design": "behavior",
   "overflow-behavior-unknown": "behavior",
