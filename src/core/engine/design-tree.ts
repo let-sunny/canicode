@@ -101,6 +101,7 @@ function renderNode(
   vectorDir?: string,
   components?: AnalysisFile["components"],
   imageMapping?: Record<string, string>,
+  vectorMapping?: Record<string, string>,
 ): string {
   if (node.visible === false) return "";
 
@@ -237,8 +238,10 @@ function renderNode(
 
   // Vector SVG inline (when vector dir with downloaded SVGs is available)
   if (node.type === "VECTOR" && vectorDir) {
-    const safeId = node.id.replace(/:/g, "-");
-    const svgPath = join(vectorDir, `${safeId}.svg`);
+    const mappedFile = vectorMapping?.[node.id];
+    const svgPath = mappedFile
+      ? join(vectorDir, mappedFile)
+      : join(vectorDir, `${node.id.replace(/:/g, "-")}.svg`); // fallback to legacy ID-based naming
     if (existsSync(svgPath)) {
       const svg = readFileSync(svgPath, "utf-8").trim();
       styles.push(`svg: ${svg}`);
@@ -252,7 +255,7 @@ function renderNode(
   // Children
   if (node.children) {
     for (const child of node.children) {
-      const childOutput = renderNode(child, indent + 1, vectorDir, components, imageMapping);
+      const childOutput = renderNode(child, indent + 1, vectorDir, components, imageMapping, vectorMapping);
       if (childOutput) lines.push(childOutput);
     }
   }
@@ -307,7 +310,18 @@ export function generateDesignTreeWithStats(file: AnalysisFile, options?: Design
     }
   }
 
-  const tree = renderNode(root, 0, options?.vectorDir, file.components, imageMapping);
+  // Load vector mapping once if vectorDir is provided
+  let vectorMapping: Record<string, string> | undefined;
+  if (options?.vectorDir) {
+    const mappingPath = join(options.vectorDir, "mapping.json");
+    if (existsSync(mappingPath)) {
+      try {
+        vectorMapping = JSON.parse(readFileSync(mappingPath, "utf-8")) as Record<string, string>;
+      } catch { /* ignore malformed mapping */ }
+    }
+  }
+
+  const tree = renderNode(root, 0, options?.vectorDir, file.components, imageMapping, vectorMapping);
 
   const result = [
     "# Design Tree",
