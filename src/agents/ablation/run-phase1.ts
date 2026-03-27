@@ -336,12 +336,14 @@ async function runSingle(
     for (const w of parseWarnings) console.warn(`    WARNING: ${w}`);
   }
 
-  // Clean up HTML output
+  // Clean up and sanitize HTML output
   const fontPath = resolve("assets/fonts/Inter.var.woff2");
   const localFontCSS = `@font-face { font-family: "Inter"; src: url("file://${fontPath}") format("woff2"); font-weight: 100 900; }`;
   let finalHtml = html;
   // Remove "// filename: ..." line if present at the start
   finalHtml = finalHtml.replace(/^\/\/\s*filename:.*\n/i, "");
+  // Sanitize: remove <script> tags (untrusted model HTML rendered in Chromium)
+  finalHtml = finalHtml.replace(/<script[\s\S]*?<\/script>/gi, "");
   // Remove Google Fonts <link> tags
   finalHtml = finalHtml.replace(/<link[^>]*fonts\.googleapis\.com[^>]*>/gi, "");
   finalHtml = finalHtml.replace(/<link[^>]*fonts\.gstatic\.com[^>]*>/gi, "");
