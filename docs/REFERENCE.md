@@ -97,7 +97,7 @@ Override score, severity, or enable/disable individual rules:
 |---------|--------------|-----------------|
 | `no-auto-layout` | -10 | blocking |
 | `absolute-position-in-auto-layout` | -7 | blocking |
-| `group-usage` | -8 | blocking |
+| `non-layout-container` | -8 | blocking |
 
 **Responsive Critical (2 rules)** — size issues that break at different viewports (ΔV ≥ 15%)
 

@@ -14,7 +14,7 @@ export const RULE_ID_CATEGORY: Record<RuleId, Category> = {
   // Pixel Critical
   "no-auto-layout": "pixel-critical",
   "absolute-position-in-auto-layout": "pixel-critical",
-  "group-usage": "pixel-critical",
+  "non-layout-container": "pixel-critical",
   // Responsive Critical
   "fixed-size-in-auto-layout": "responsive-critical",
   "missing-size-constraint": "responsive-critical",
@@ -55,7 +55,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     depthWeight: 1.3,
     enabled: true,
   },
-  "group-usage": {
+  "non-layout-container": {
     severity: "blocking",
     score: -8,
     depthWeight: 1.2,

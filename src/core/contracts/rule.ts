@@ -94,7 +94,7 @@ export type RuleId =
   // Pixel Critical — layout issues that directly affect pixel accuracy (ΔV ≥ 5%)
   | "no-auto-layout"
   | "absolute-position-in-auto-layout"
-  | "group-usage"
+  | "non-layout-container"
   // Responsive Critical — size issues that break at different viewports (ΔV ≥ 15%)
   | "fixed-size-in-auto-layout"
   | "missing-size-constraint"

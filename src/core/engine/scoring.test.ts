@@ -73,7 +73,7 @@ describe("calculateScores", () => {
   it("counts issues by severity correctly", () => {
     const issues = [
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
-      makeIssue({ ruleId: "group-usage", category: "pixel-critical", severity: "risk" }),
+      makeIssue({ ruleId: "non-layout-container", category: "pixel-critical", severity: "risk" }),
       makeIssue({ ruleId: "raw-value", category: "token-management", severity: "missing-info" }),
       makeIssue({ ruleId: "default-name", category: "minor", severity: "suggestion" }),
     ];
@@ -144,7 +144,7 @@ describe("calculateScores", () => {
 
     const spread = calculateScores(makeResult([
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "risk", score: -5 }),
-      makeIssue({ ruleId: "group-usage", category: "pixel-critical", severity: "risk", score: -5 }),
+      makeIssue({ ruleId: "non-layout-container", category: "pixel-critical", severity: "risk", score: -5 }),
       makeIssue({ ruleId: "absolute-position-in-auto-layout", category: "pixel-critical", severity: "risk", score: -5 }),
     ], 100));
 
@@ -183,7 +183,7 @@ describe("calculateScores", () => {
   it("combined score = density * 0.7 + diversity * 0.3", () => {
     const issues = [
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
-      makeIssue({ ruleId: "group-usage", category: "pixel-critical", severity: "risk" }),
+      makeIssue({ ruleId: "non-layout-container", category: "pixel-critical", severity: "risk" }),
     ];
     const scores = calculateScores(makeResult(issues, 100));
     const pixelCritical = scores.byCategory["pixel-critical"];
@@ -195,7 +195,7 @@ describe("calculateScores", () => {
 
   it("score never goes below SCORE_FLOOR (5) when issues exist", () => {
     const pixelCriticalRules = [
-      "no-auto-layout", "group-usage", "absolute-position-in-auto-layout",
+      "no-auto-layout", "non-layout-container", "absolute-position-in-auto-layout",
     ] as const;
 
     const issues: AnalysisIssue[] = [];
@@ -262,7 +262,7 @@ describe("calculateScores", () => {
     const issues = [
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
-      makeIssue({ ruleId: "group-usage", category: "pixel-critical", severity: "risk" }),
+      makeIssue({ ruleId: "non-layout-container", category: "pixel-critical", severity: "risk" }),
     ];
     const scores = calculateScores(makeResult(issues));
 
@@ -273,8 +273,8 @@ describe("calculateScores", () => {
   it("bySeverity counts are accurate per category", () => {
     const issues = [
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
-      makeIssue({ ruleId: "group-usage", category: "pixel-critical", severity: "risk" }),
-      makeIssue({ ruleId: "group-usage", category: "pixel-critical", severity: "risk" }),
+      makeIssue({ ruleId: "non-layout-container", category: "pixel-critical", severity: "risk" }),
+      makeIssue({ ruleId: "non-layout-container", category: "pixel-critical", severity: "risk" }),
     ];
     const scores = calculateScores(makeResult(issues));
 
@@ -297,7 +297,7 @@ describe("calculateGrade (via calculateScores)", () => {
     const issues: AnalysisIssue[] = [];
     const categories: Category[] = ["pixel-critical", "responsive-critical", "code-quality", "token-management", "minor"];
     const rulesPerCat: Record<Category, string[]> = {
-      "pixel-critical": ["no-auto-layout", "group-usage", "absolute-position-in-auto-layout"],
+      "pixel-critical": ["no-auto-layout", "non-layout-container", "absolute-position-in-auto-layout"],
       "responsive-critical": ["fixed-size-in-auto-layout", "missing-size-constraint"],
       "code-quality": ["missing-component", "detached-instance", "variant-structure-mismatch", "deep-nesting"],
       "token-management": ["raw-value", "irregular-spacing"],

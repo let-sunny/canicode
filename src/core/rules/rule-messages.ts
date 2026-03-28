@@ -62,10 +62,16 @@ export const fixedSizeMsg = {
 export const missingSizeConstraintMsg = (name: string, currentWidth: string) =>
   `"${name}" uses FILL width (currently ${currentWidth}) without max-width — add maxWidth to prevent stretching on large screens`;
 
-// ── group-usage ──────────────────────────────────────────────────────────────
+// ── non-layout-container (was group-usage) ───────────────────────────────────
 
-export const groupUsageMsg = (name: string) =>
-  `"${name}" is a Group — convert to Frame and apply auto-layout`;
+export type NonLayoutContainerSubType = "group" | "section";
+
+export const nonLayoutContainerMsg = {
+  group: (name: string) =>
+    `"${name}" is a Group — convert to Frame and apply auto-layout`,
+  section: (name: string) =>
+    `"${name}" is a Section used as layout container — convert to Frame and apply auto-layout`,
+};
 
 // ── deep-nesting ─────────────────────────────────────────────────────────────
 

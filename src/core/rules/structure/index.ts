@@ -3,7 +3,7 @@ import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
 import { getRuleOption } from "../rule-config.js";
 import { isAutoLayoutExempt, isAbsolutePositionExempt, isSizeConstraintExempt, isFixedSizeExempt } from "../rule-exceptions.js";
-import { noAutoLayoutMsg, absolutePositionMsg, fixedSizeMsg, missingSizeConstraintMsg, groupUsageMsg, deepNestingMsg } from "../rule-messages.js";
+import { noAutoLayoutMsg, absolutePositionMsg, fixedSizeMsg, missingSizeConstraintMsg, nonLayoutContainerMsg, deepNestingMsg } from "../rule-messages.js";
 
 // ============================================
 // Helper functions
@@ -269,32 +269,47 @@ export const missingSizeConstraint = defineRule({
 });
 
 // ============================================
-// group-usage
+// non-layout-container (was group-usage — now also catches Section)
 // ============================================
 
-const groupUsageDef: RuleDefinition = {
-  id: "group-usage",
-  name: "Group Usage",
+const nonLayoutContainerDef: RuleDefinition = {
+  id: "non-layout-container",
+  name: "Non-Layout Container",
   category: "pixel-critical",
-  why: "Groups have no layout rules — AI sees children with absolute coordinates but no container logic",
-  impact: "AI wraps grouped elements in a plain div with no spacing/alignment, producing fragile layouts",
-  fix: "Convert Group to Frame with Auto Layout so AI can generate proper flex/grid containers",
+  why: "Groups and Sections lack proper layout rules — AI sees children with absolute coordinates but no container logic",
+  impact: "AI wraps elements in a plain div with no spacing/alignment, producing fragile layouts",
+  fix: "Convert to Frame with Auto Layout so AI can generate proper flex/grid containers",
 };
 
-const groupUsageCheck: RuleCheckFn = (node, context) => {
-  if (node.type !== "GROUP") return null;
+const nonLayoutContainerCheck: RuleCheckFn = (node, context) => {
+  if (node.type === "GROUP") {
+    return {
+      ruleId: nonLayoutContainerDef.id,
+      subType: "group" as const,
+      nodeId: node.id,
+      nodePath: context.path.join(" > "),
+      message: nonLayoutContainerMsg.group(node.name),
+    };
+  }
 
-  return {
-    ruleId: groupUsageDef.id,
-    nodeId: node.id,
-    nodePath: context.path.join(" > "),
-    message: groupUsageMsg(node.name),
-  };
+  if (node.type === "SECTION") {
+    // Only flag Sections that have children (used as layout container)
+    if (!node.children || node.children.length === 0) return null;
+    return {
+      ruleId: nonLayoutContainerDef.id,
+      subType: "section" as const,
+      nodeId: node.id,
+      nodePath: context.path.join(" > "),
+      message: nonLayoutContainerMsg.section(node.name),
+    };
+  }
+
+  return null;
 };
 
-export const groupUsage = defineRule({
-  definition: groupUsageDef,
-  check: groupUsageCheck,
+export const nonLayoutContainer = defineRule({
+  definition: nonLayoutContainerDef,
+  check: nonLayoutContainerCheck,
 });
 
 // ============================================
