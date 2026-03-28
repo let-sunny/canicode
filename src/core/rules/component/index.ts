@@ -3,6 +3,7 @@ import { getAnalysisState } from "../../contracts/rule.js";
 import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
 import { getRuleOption } from "../rule-config.js";
+import { missingComponentMsg, detachedInstanceMsg, variantStructureMismatchMsg } from "../rule-messages.js";
 
 // ============================================
 // Helper functions
@@ -141,9 +142,10 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
         if (firstFrame === node.id) {
           return {
             ruleId: missingComponentDef.id,
+            subType: "unused-component" as const,
             nodeId: node.id,
             nodePath: context.path.join(" > "),
-            message: `Component "${matchingComponent.name}" exists — use instances instead of repeated frames (${sameNameFrames.length} found) — replace frames with component instances`,
+            message: missingComponentMsg.unusedComponent(matchingComponent.name, sameNameFrames.length),
           };
         }
       }
@@ -158,9 +160,10 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
       if (firstFrame === node.id) {
         return {
           ruleId: missingComponentDef.id,
+          subType: "name-repetition" as const,
           nodeId: node.id,
           nodePath: context.path.join(" > "),
-          message: `"${node.name}" appears ${sameNameFrames.length} times — extract as a reusable component`,
+          message: missingComponentMsg.nameRepetition(node.name, sameNameFrames.length),
         };
       }
     }
@@ -219,9 +222,10 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
       if (firstMatchId === node.id) {
         return {
           ruleId: missingComponentDef.id,
+          subType: "structure-repetition" as const,
           nodeId: node.id,
           nodePath: context.path.join(" > "),
-          message: `"${node.name}" and ${count - 1} sibling frame(s) share the same internal structure — extract a shared component from the repeated structure`,
+          message: missingComponentMsg.structureRepetition(node.name, count - 1),
         };
       }
     }
@@ -255,9 +259,10 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
 
       return {
         ruleId: missingComponentDef.id,
+        subType: "style-override" as const,
         nodeId: node.id,
         nodePath: context.path.join(" > "),
-        message: `"${componentName}" instance has style overrides (${overrides.join(", ")}) — create a new variant for this style combination`,
+        message: missingComponentMsg.styleOverride(componentName, overrides),
       };
     }
     return null;
@@ -301,7 +306,7 @@ const detachedInstanceCheck: RuleCheckFn = (node, context) => {
         ruleId: detachedInstanceDef.id,
         nodeId: node.id,
         nodePath: context.path.join(" > "),
-        message: `"${node.name}" may be a detached instance of component "${component.name}" — restore as an instance of "${component.name}" or create a new variant`,
+        message: detachedInstanceMsg(node.name, component.name),
       };
     }
   }
@@ -352,7 +357,7 @@ const variantStructureMismatchCheck: RuleCheckFn = (node, context) => {
     ruleId: variantStructureMismatchDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" has ${mismatchCount}/${totalVariants} variants with different child structures — unify variant structures using visibility toggles for optional elements`,
+    message: variantStructureMismatchMsg(node.name, mismatchCount, totalVariants),
   };
 };
 

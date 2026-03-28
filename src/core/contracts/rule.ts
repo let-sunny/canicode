@@ -64,6 +64,7 @@ export function getAnalysisState<T>(context: RuleContext, key: string, init: () 
  */
 export interface RuleViolation {
   ruleId: string;
+  subType?: string;
   nodeId: string;
   nodePath: string;
   message: string;

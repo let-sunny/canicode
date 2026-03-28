@@ -1,6 +1,7 @@
 import type { RuleCheckFn, RuleDefinition } from "../../contracts/rule.js";
 import { defineRule } from "../rule-registry.js";
 import { isExcludedName } from "../excluded-names.js";
+import { defaultNameMsg, nonSemanticNameMsg, inconsistentNamingMsg } from "../rule-messages.js";
 
 // ============================================
 // Helper functions
@@ -74,7 +75,7 @@ const defaultNameCheck: RuleCheckFn = (node, context) => {
     ruleId: defaultNameDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `${node.type} "${node.name}" has a default name — rename to describe its purpose (e.g., "Header", "ProductCard")`,
+    message: defaultNameMsg(node.type, node.name),
   };
 };
 
@@ -111,7 +112,7 @@ const nonSemanticNameCheck: RuleCheckFn = (node, context) => {
     ruleId: nonSemanticNameDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `${node.type} "${node.name}" is a non-semantic name — rename to describe its role (e.g., "Divider", "Background")`,
+    message: nonSemanticNameMsg(node.type, node.name),
   };
 };
 
@@ -167,7 +168,7 @@ const inconsistentNamingConventionCheck: RuleCheckFn = (node, context) => {
       ruleId: inconsistentNamingConventionDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `"${node.name}" uses ${nodeConvention} while siblings use ${dominantConvention} — rename to match ${dominantConvention} convention`,
+      message: inconsistentNamingMsg(node.name, nodeConvention, dominantConvention),
     };
   }
 

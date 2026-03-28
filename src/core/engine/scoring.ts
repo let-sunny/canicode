@@ -391,6 +391,7 @@ export function buildResultJson(
 
   const issues = result.issues.map((issue) => ({
     ruleId: issue.violation.ruleId,
+    ...(issue.violation.subType && { subType: issue.violation.subType }),
     severity: issue.config.severity,
     nodeId: issue.violation.nodeId,
     nodePath: issue.violation.nodePath,

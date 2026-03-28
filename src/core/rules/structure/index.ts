@@ -3,6 +3,7 @@ import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
 import { getRuleOption } from "../rule-config.js";
 import { isAutoLayoutExempt, isAbsolutePositionExempt, isSizeConstraintExempt, isFixedSizeExempt } from "../rule-exceptions.js";
+import { noAutoLayoutMsg, absolutePositionMsg, fixedSizeMsg, missingSizeConstraintMsg, missingResponsiveBehaviorMsg, groupUsageMsg, deepNestingMsg } from "../rule-messages.js";
 
 // ============================================
 // Helper functions
@@ -66,9 +67,10 @@ const noAutoLayoutCheck: RuleCheckFn = (node, context) => {
           if (childA.visible !== false && childB.visible !== false) {
             return {
               ruleId: noAutoLayoutDef.id,
+              subType: "overlapping" as const,
               nodeId: node.id,
               nodePath: context.path.join(" > "),
-              message: `"${node.name}" has overlapping children without Auto Layout — apply auto-layout to separate overlapping children`,
+              message: noAutoLayoutMsg.overlapping(node.name),
             };
           }
         }
@@ -84,9 +86,10 @@ const noAutoLayoutCheck: RuleCheckFn = (node, context) => {
       if (withoutLayout.length >= 2) {
         return {
           ruleId: noAutoLayoutDef.id,
+          subType: "nested" as const,
           nodeId: node.id,
           nodePath: context.path.join(" > "),
-          message: `"${node.name}" has nested containers without layout hints — apply auto-layout to organize nested containers`,
+          message: noAutoLayoutMsg.nested(node.name),
         };
       }
     }
@@ -112,9 +115,10 @@ const noAutoLayoutCheck: RuleCheckFn = (node, context) => {
 
   return {
     ruleId: noAutoLayoutDef.id,
+    subType: "basic" as const,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `Frame "${node.name}" has no auto-layout${arrangement}${directionHint ? ` — apply ${directionHint} auto-layout` : " — apply auto-layout"}`,
+    message: noAutoLayoutMsg.basic(node.name, arrangement, directionHint),
   };
 };
 
@@ -147,7 +151,7 @@ const absolutePositionInAutoLayoutCheck: RuleCheckFn = (node, context) => {
     ruleId: absolutePositionInAutoLayoutDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" uses absolute positioning inside Auto Layout parent "${context.parent.name}" — remove absolute positioning or restructure outside the auto-layout parent`,
+    message: absolutePositionMsg(node.name, context.parent.name),
   };
 };
 
@@ -191,9 +195,10 @@ const fixedSizeInAutoLayoutCheck: RuleCheckFn = (node, context) => {
 
     return {
       ruleId: fixedSizeInAutoLayoutDef.id,
+      subType: "both-axes" as const,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `Container "${node.name}" (${width}×${height}) uses fixed size on both axes inside auto-layout — set at least one axis to HUG or FILL`,
+      message: fixedSizeMsg.bothAxes(node.name, width, height),
     };
   }
 
@@ -210,9 +215,10 @@ const fixedSizeInAutoLayoutCheck: RuleCheckFn = (node, context) => {
 
     return {
       ruleId: fixedSizeInAutoLayoutDef.id,
+      subType: "horizontal" as const,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `"${node.name}" has fixed width (${width}px) inside auto-layout — set horizontal sizing to FILL`,
+      message: fixedSizeMsg.horizontal(node.name, width),
     };
   }
 
@@ -253,7 +259,7 @@ const missingSizeConstraintCheck: RuleCheckFn = (node, context) => {
     ruleId: missingSizeConstraintDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" uses FILL width (currently ${currentWidth}) without max-width — add maxWidth to prevent stretching on large screens`,
+    message: missingSizeConstraintMsg(node.name, currentWidth),
   };
 };
 
@@ -288,7 +294,7 @@ const missingResponsiveBehaviorCheck: RuleCheckFn = (node, context) => {
       ruleId: missingResponsiveBehaviorDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `"${node.name}" has no responsive behavior configured — apply auto-layout or set constraints`,
+      message: missingResponsiveBehaviorMsg(node.name),
     };
   }
 
@@ -320,7 +326,7 @@ const groupUsageCheck: RuleCheckFn = (node, context) => {
     ruleId: groupUsageDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" is a Group — convert to Frame and apply auto-layout`,
+    message: groupUsageMsg(node.name),
   };
 };
 
@@ -352,7 +358,7 @@ const deepNestingCheck: RuleCheckFn = (node, context, options) => {
     ruleId: deepNestingDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" is nested ${context.componentDepth} levels deep within its component (max: ${maxDepth}) — extract into a sub-component to reduce depth`,
+    message: deepNestingMsg(node.name, context.componentDepth, maxDepth),
   };
 };
 

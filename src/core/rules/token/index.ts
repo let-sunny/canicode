@@ -2,6 +2,7 @@ import type { RuleCheckFn, RuleDefinition } from "../../contracts/rule.js";
 import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
 import { getRuleOption } from "../rule-config.js";
+import { rawValueMsg, irregularSpacingMsg } from "../rule-messages.js";
 
 // ============================================
 // Helper functions
@@ -20,7 +21,7 @@ function isOnGrid(value: number, gridBase: number): boolean {
 }
 
 // ============================================
-// raw-value (merged: raw-color + raw-font + raw-shadow + raw-opacity)
+// raw-value (merged: raw-color + raw-font + raw-shadow + raw-opacity + raw-spacing)
 // ============================================
 
 const rawValueDef: RuleDefinition = {
@@ -33,6 +34,8 @@ const rawValueDef: RuleDefinition = {
 };
 
 const rawValueCheck: RuleCheckFn = (node, context) => {
+  const nodePath = context.path.join(" > ");
+
   // Check 1: Raw fill color
   if (node.fills && Array.isArray(node.fills) && node.fills.length > 0) {
     if (!hasStyleReference(node, "fill") && !hasBoundVariable(node, "fills")) {
@@ -43,9 +46,10 @@ const rawValueCheck: RuleCheckFn = (node, context) => {
           const hex = `#${Math.round((c["r"] ?? 0) * 255).toString(16).padStart(2, "0")}${Math.round((c["g"] ?? 0) * 255).toString(16).padStart(2, "0")}${Math.round((c["b"] ?? 0) * 255).toString(16).padStart(2, "0")}`.toUpperCase();
           return {
             ruleId: rawValueDef.id,
+            subType: "color" as const,
             nodeId: node.id,
-            nodePath: context.path.join(" > "),
-            message: `"${node.name}" uses raw fill color ${hex} without style or variable — bind to a color token`,
+            nodePath,
+            message: rawValueMsg.color(node.name, hex),
           };
         }
       }
@@ -68,9 +72,10 @@ const rawValueCheck: RuleCheckFn = (node, context) => {
       const fontDesc = fontParts.length > 0 ? ` (${fontParts.join(" ")})` : "";
       return {
         ruleId: rawValueDef.id,
+        subType: "font" as const,
         nodeId: node.id,
-        nodePath: context.path.join(" > "),
-        message: `"${node.name}" uses raw font${fontDesc} without text style — apply a text style`,
+        nodePath,
+        message: rawValueMsg.font(node.name, fontDesc),
       };
     }
   }
@@ -90,9 +95,10 @@ const rawValueCheck: RuleCheckFn = (node, context) => {
           const details = detailParts.length > 0 ? ` (${detailParts.join(" ")})` : "";
           return {
             ruleId: rawValueDef.id,
+            subType: "shadow" as const,
             nodeId: node.id,
-            nodePath: context.path.join(" > "),
-            message: `"${node.name}" has ${shadowType}${details} without effect style — apply an effect style`,
+            nodePath,
+            message: rawValueMsg.shadow(node.name, shadowType, details),
           };
         }
       }
@@ -103,9 +109,10 @@ const rawValueCheck: RuleCheckFn = (node, context) => {
   if (node.opacity !== undefined && !hasBoundVariable(node, "opacity")) {
     return {
       ruleId: rawValueDef.id,
+      subType: "opacity" as const,
       nodeId: node.id,
-      nodePath: context.path.join(" > "),
-      message: `"${node.name}" uses raw opacity (${Math.round(node.opacity * 100)}%) without a variable binding — bind opacity to a variable`,
+      nodePath,
+      message: rawValueMsg.opacity(node.name, Math.round(node.opacity * 100)),
     };
   }
 
@@ -117,9 +124,10 @@ const rawValueCheck: RuleCheckFn = (node, context) => {
       const label = key === "itemSpacing" ? "gap" : key.replace("padding", "padding-").toLowerCase();
       return {
         ruleId: rawValueDef.id,
+        subType: "spacing" as const,
         nodeId: node.id,
-        nodePath: context.path.join(" > "),
-        message: `"${node.name}" uses raw ${label} (${value}px) without a variable binding — bind spacing to a variable`,
+        nodePath,
+        message: rawValueMsg.spacing(node.name, label, value),
       };
     }
   }
@@ -167,7 +175,7 @@ const irregularSpacingCheck: RuleCheckFn = (node, context, options) => {
         ruleId: irregularSpacingDef.id,
         nodeId: node.id,
         nodePath: context.path.join(" > "),
-        message: `"${node.name}" has spacing ${spacing}px not on ${gridBase}pt grid — round to nearest ${gridBase}pt multiple (${Math.round(spacing / gridBase) * gridBase}px)`,
+        message: irregularSpacingMsg(node.name, spacing, gridBase, Math.round(spacing / gridBase) * gridBase),
       };
     }
   }
