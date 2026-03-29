@@ -2,8 +2,6 @@ import {
   gaugeColor,
   scoreClass,
   escapeHtml,
-  severityDotClass,
-  severityScoreClass,
   severityDot,
   severityBadge,
   scoreBadgeStyle,
@@ -57,37 +55,7 @@ describe("escapeHtml", () => {
   });
 });
 
-// ---- severityDotClass (plugin legacy) ----
-
-describe("severityDotClass", () => {
-  it("maps each severity to a dot class", () => {
-    expect(severityDotClass("blocking")).toBe("dot-blocking");
-    expect(severityDotClass("risk")).toBe("dot-risk");
-    expect(severityDotClass("missing-info")).toBe("dot-missing");
-    expect(severityDotClass("suggestion")).toBe("dot-suggestion");
-  });
-
-  it("returns dot-missing for unknown", () => {
-    expect(severityDotClass("unknown")).toBe("dot-missing");
-  });
-});
-
-// ---- severityScoreClass (plugin legacy) ----
-
-describe("severityScoreClass", () => {
-  it("maps each severity to a score class", () => {
-    expect(severityScoreClass("blocking")).toBe("score-blocking");
-    expect(severityScoreClass("risk")).toBe("score-risk");
-    expect(severityScoreClass("missing-info")).toBe("score-missing");
-    expect(severityScoreClass("suggestion")).toBe("score-suggestion");
-  });
-
-  it("returns score-missing for unknown", () => {
-    expect(severityScoreClass("unknown")).toBe("score-missing");
-  });
-});
-
-// ---- severityDot (report semantic) ----
+// ---- severityDot ----
 
 describe("severityDot", () => {
   it("maps each severity to a semantic class", () => {

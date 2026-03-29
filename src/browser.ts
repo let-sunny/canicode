@@ -27,8 +27,6 @@ export {
   gaugeColor,
   scoreClass,
   escapeHtml,
-  severityDotClass,
-  severityScoreClass,
   severityDot,
   severityBadge,
   scoreBadgeStyle,

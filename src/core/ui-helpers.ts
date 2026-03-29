@@ -28,27 +28,6 @@ export function escapeHtml(text: string): string {
     .replace(/'/g, "&#039;");
 }
 
-/** Severity to CSS dot class (for plugin UI) */
-export function severityDotClass(sev: string): string {
-  const map: Record<string, string> = {
-    blocking: "dot-blocking",
-    risk: "dot-risk",
-    "missing-info": "dot-missing",
-    suggestion: "dot-suggestion",
-  };
-  return map[sev] ?? "dot-missing";
-}
-
-/** Severity to CSS score class (for plugin UI) */
-export function severityScoreClass(sev: string): string {
-  const map: Record<string, string> = {
-    blocking: "score-blocking",
-    risk: "score-risk",
-    "missing-info": "score-missing",
-    suggestion: "score-suggestion",
-  };
-  return map[sev] ?? "score-missing";
-}
 
 /** Severity to CSS modifier class (used with .rpt-dot, .rpt-issue-score) */
 export function severityDot(sev: Severity): string {
