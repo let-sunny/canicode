@@ -61,8 +61,10 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
    This saves `figma.png`, `code.png`, and `diff.png` into the run directory.
    Replace `:` with `-` in the nodeId for the URL.
 5. **Responsive comparison** (if expanded screenshot exists):
+
    Look for `screenshot-*.png` in the fixture directory. Sort by width (number in filename).
    If there are 2+ screenshots, the smallest is the original and the largest is the expanded viewport.
+
    ```bash
    # Find expanded screenshot
    ls <fixture-path>/screenshot-*.png | sort -t- -k2 -n
@@ -73,6 +75,7 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
      --width <largest-width> \
      --output $RUN_DIR/responsive
    ```
+
    Record `responsiveSimilarity` from the result and calculate `responsiveDelta = similarity - responsiveSimilarity`.
    If only 1 screenshot exists, skip responsive comparison and set both to `null`.
 6. Use similarity to determine overall difficulty (thresholds defined in `src/agents/orchestrator.ts` → `SIMILARITY_DIFFICULTY_THRESHOLDS`):

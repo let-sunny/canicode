@@ -174,6 +174,7 @@ export function runEvaluationAgent(
     const responsiveDifficulty = responsiveDeltaToDifficulty(input.responsiveDelta);
     for (const mismatch of mismatches) {
       if (!mismatch.ruleId) continue;
+      if (!(mismatch.ruleId in RULE_ID_CATEGORY)) continue;
       const category = RULE_ID_CATEGORY[mismatch.ruleId as RuleId];
       if (category !== "responsive-critical") continue;
 
