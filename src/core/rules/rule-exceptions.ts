@@ -1,43 +1,9 @@
 import type { AnalysisNode } from "../contracts/figma-node.js";
 import type { RuleContext } from "../contracts/rule.js";
-import { isExcludedName } from "./excluded-names.js";
+import { isVisualLeafType, isVisualOnlyNode, isExcludedName } from "./node-semantics.js";
 
-// ============================================
-// Shared node type helpers
-// ============================================
-
-const VISUAL_LEAF_TYPES = new Set([
-  "VECTOR", "BOOLEAN_OPERATION", "ELLIPSE", "LINE", "STAR", "REGULAR_POLYGON", "RECTANGLE",
-]);
-
-export function isVisualLeafType(type: string): boolean {
-  return VISUAL_LEAF_TYPES.has(type);
-}
-
-/** Node has an IMAGE type fill */
-export function hasImageFill(node: AnalysisNode): boolean {
-  if (!Array.isArray(node.fills)) return false;
-  return node.fills.some(
-    (fill) =>
-      typeof fill === "object" &&
-      fill !== null &&
-      (fill as { type?: unknown }).type === "IMAGE",
-  );
-}
-
-/**
- * Node is purely visual — not a layout container.
- * True when: vector/shape type, has image fill, or frame with only visual leaf children.
- */
-export function isVisualOnlyNode(node: AnalysisNode): boolean {
-  if (VISUAL_LEAF_TYPES.has(node.type)) return true;
-  if (hasImageFill(node)) return true;
-  if (node.children && node.children.length > 0 && node.children.every((c) => VISUAL_LEAF_TYPES.has(c.type))) return true;
-  return false;
-}
-
-
-
+// Re-export for existing consumers
+export { isVisualLeafType, isVisualOnlyNode, hasImageFill } from "./node-semantics.js";
 
 // ============================================
 // Auto-layout exceptions
@@ -48,7 +14,7 @@ export function isAutoLayoutExempt(node: AnalysisNode): boolean {
   if (
     node.children &&
     node.children.length > 0 &&
-    node.children.every((c) => VISUAL_LEAF_TYPES.has(c.type))
+    node.children.every((c) => isVisualLeafType(c.type))
   ) return true;
 
   return false;

@@ -1,39 +1,9 @@
 import type { RuleCheckFn, RuleDefinition } from "../../contracts/rule.js";
-import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
 import { getRuleOption } from "../rule-config.js";
 import { isAutoLayoutExempt, isAbsolutePositionExempt, isSizeConstraintExempt, isFixedSizeExempt } from "../rule-exceptions.js";
 import { noAutoLayoutMsg, absolutePositionMsg, fixedSizeMsg, missingSizeConstraintMsg, nonLayoutContainerMsg, deepNestingMsg } from "../rule-messages.js";
-
-// ============================================
-// Helper functions
-// ============================================
-
-function isContainerNode(node: AnalysisNode): boolean {
-  return node.type === "FRAME" || node.type === "GROUP" || node.type === "COMPONENT" || node.type === "INSTANCE";
-}
-
-function hasAutoLayout(node: AnalysisNode): boolean {
-  return node.layoutMode !== undefined && node.layoutMode !== "NONE";
-}
-
-function hasTextContent(node: AnalysisNode): boolean {
-  return node.type === "TEXT" || (node.children?.some((c) => c.type === "TEXT") ?? false);
-}
-
-function hasOverlappingBounds(a: AnalysisNode, b: AnalysisNode): boolean {
-  const boxA = a.absoluteBoundingBox;
-  const boxB = b.absoluteBoundingBox;
-
-  if (!boxA || !boxB) return false;
-
-  return !(
-    boxA.x + boxA.width <= boxB.x ||
-    boxB.x + boxB.width <= boxA.x ||
-    boxA.y + boxA.height <= boxB.y ||
-    boxB.y + boxB.height <= boxA.y
-  );
-}
+import { isContainerNode, hasAutoLayout, hasTextContent, hasOverlappingBounds } from "../node-semantics.js";
 
 // ============================================
 // no-auto-layout (merged: absorbs ambiguous-structure + missing-layout-hint)

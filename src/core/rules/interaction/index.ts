@@ -4,30 +4,7 @@ import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
 import type { MissingInteractionStateSubType, MissingPrototypeSubType } from "../rule-messages.js";
 import { missingInteractionStateMsg, missingPrototypeMsg } from "../rule-messages.js";
-
-// ============================================
-// Interactive component classification
-// ============================================
-
-type InteractiveType = "button" | "link" | "tab" | "input" | "toggle";
-
-const INTERACTIVE_PATTERNS: Array<{ pattern: RegExp; type: InteractiveType }> = [
-  { pattern: /\b(btn|button|cta)\b/i, type: "button" },
-  { pattern: /\b(link|anchor)\b/i, type: "link" },
-  { pattern: /\b(tab|tabs)\b/i, type: "tab" },
-  { pattern: /\b(nav|navigation|menu|navbar)\b/i, type: "tab" },
-  { pattern: /\b(input|text-?field|search-?bar|textarea)\b/i, type: "input" },
-  { pattern: /\b(select|dropdown|combo-?box)\b/i, type: "input" },
-  { pattern: /\b(toggle|switch|checkbox|radio)\b/i, type: "toggle" },
-];
-
-function getInteractiveType(node: AnalysisNode): InteractiveType | null {
-  if (!node.name) return null;
-  for (const entry of INTERACTIVE_PATTERNS) {
-    if (entry.pattern.test(node.name)) return entry.type;
-  }
-  return null;
-}
+import { getInteractiveType, isOverlayNode, isCarouselNode, type InteractiveType } from "../node-semantics.js";
 
 /** Expected state variants by interactive type */
 const EXPECTED_STATES: Record<InteractiveType, MissingInteractionStateSubType[]> = {
@@ -163,17 +140,11 @@ const PROTOTYPE_TYPES: Record<InteractiveType, MissingPrototypeSubType> = {
   toggle: "toggle",
 };
 
-/** Name patterns for overlay elements (open on top of current view) */
-const OVERLAY_PATTERN = /\b(dropdown|select|combo-?box|popover|accordion|drawer|modal|bottom-?sheet|sheet|sidebar|panel|dialog|popup|toast)\b/i;
-
-/** Name patterns for carousel elements (swipe/slide between items) */
-const CAROUSEL_PATTERN = /\b(carousel|slider|swiper|slide-?show|gallery)\b/i;
-
 function getPrototypeSubType(node: AnalysisNode): MissingPrototypeSubType | null {
-  // Check dropdown pattern first — select/dropdown are classified as "input" in
-  // INTERACTIVE_PATTERNS but need "dropdown" subType for prototype checks
-  if (node.name && OVERLAY_PATTERN.test(node.name)) return "overlay";
-  if (node.name && CAROUSEL_PATTERN.test(node.name)) return "carousel";
+  // Check overlay/carousel first — select/dropdown are classified as "input" in
+  // INTERACTIVE_PATTERNS but need "overlay" subType for prototype checks
+  if (isOverlayNode(node)) return "overlay";
+  if (isCarouselNode(node)) return "carousel";
   const interactiveType = getInteractiveType(node);
   if (interactiveType) {
     const mapped = PROTOTYPE_TYPES[interactiveType];

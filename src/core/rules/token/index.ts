@@ -1,20 +1,8 @@
 import type { RuleCheckFn, RuleDefinition } from "../../contracts/rule.js";
-import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
 import { getRuleOption } from "../rule-config.js";
 import { rawValueMsg, irregularSpacingMsg } from "../rule-messages.js";
-
-// ============================================
-// Helper functions
-// ============================================
-
-function hasStyleReference(node: AnalysisNode, styleType: string): boolean {
-  return node.styles !== undefined && styleType in node.styles;
-}
-
-function hasBoundVariable(node: AnalysisNode, key: string): boolean {
-  return node.boundVariables !== undefined && key in node.boundVariables;
-}
+import { hasStyleReference, hasBoundVariable } from "../node-semantics.js";
 
 function isOnGrid(value: number, gridBase: number): boolean {
   return value % gridBase === 0;
