@@ -1,6 +1,9 @@
 import { existsSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import type { CAC } from "cac";
+import { z } from "zod";
+
+const RunDirArgSchema = z.string().trim().min(1, "runDir is required");
 
 import {
   listActiveFixtures,
@@ -121,7 +124,9 @@ export function registerEvidenceEnrich(cli: CAC): void {
       "Enrich evidence with Critic's pro/con/confidence from debate.json"
     )
     .action((runDir: string) => {
-      const resolvedDir = resolve(runDir);
+      const parsed = RunDirArgSchema.safeParse(runDir);
+      if (!parsed.success) { console.log(`Invalid runDir: ${parsed.error.issues[0]?.message}`); return; }
+      const resolvedDir = resolve(parsed.data);
       if (!existsSync(resolvedDir)) {
         console.log(`Run directory not found: ${runDir}`);
         return;
@@ -161,11 +166,13 @@ export function registerEvidencePrune(cli: CAC): void {
       "Prune evidence for rules applied by the Arbitrator in the given run"
     )
     .action((runDir: string) => {
-      if (!existsSync(resolve(runDir))) {
+      const parsed = RunDirArgSchema.safeParse(runDir);
+      if (!parsed.success) { console.log(`Invalid runDir: ${parsed.error.issues[0]?.message}`); return; }
+      if (!existsSync(resolve(parsed.data))) {
         console.log(`Run directory not found: ${runDir}`);
         return;
       }
-      const debate = parseDebateResult(resolve(runDir));
+      const debate = parseDebateResult(resolve(parsed.data));
       if (!debate) {
         console.log("No debate.json found — nothing to prune.");
         return;

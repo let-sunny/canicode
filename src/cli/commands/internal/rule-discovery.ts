@@ -6,6 +6,9 @@ import type { DiscoveryEvidenceEntry } from "../../../agents/evidence-collector.
 import { DecisionFileSchema } from "../../../agents/contracts/evidence.js";
 import { z } from "zod";
 
+const RunDirArgSchema = z.string().trim().min(1, "runDir is required");
+const KeywordArgSchema = z.string().trim().min(1, "keyword is required");
+
 // ─── discovery-filter-evidence ──────────────────────────────────────────────
 
 /**
@@ -40,8 +43,10 @@ export function registerFilterDiscoveryEvidence(cli: CAC): void {
     )
     .option("--run-dir <path>", "Write filtered evidence to run directory")
     .action((keyword: string, options: { runDir?: string }) => {
+      const kParsed = KeywordArgSchema.safeParse(keyword);
+      if (!kParsed.success) { console.log(`Invalid keyword: ${kParsed.error.issues[0]?.message}`); return; }
       try {
-        const filtered = filterDiscoveryEvidence(keyword);
+        const filtered = filterDiscoveryEvidence(kParsed.data);
 
         if (options.runDir) {
           const dir = resolve(options.runDir);
@@ -111,7 +116,9 @@ export function registerApplyDecision(cli: CAC): void {
       "Read decision.json and output the action (commit/revert/adjust)"
     )
     .action((runDir: string) => {
-      const dir = resolve(runDir);
+      const parsed = RunDirArgSchema.safeParse(runDir);
+      if (!parsed.success) { console.log(`Invalid runDir: ${parsed.error.issues[0]?.message}`); return; }
+      const dir = resolve(parsed.data);
       if (!existsSync(dir) || !statSync(dir).isDirectory()) {
         console.log(`Run directory not found or is not a directory: ${runDir}`);
         return;
@@ -186,7 +193,9 @@ export function registerCollectGapEvidence(cli: CAC): void {
       "Collect uncovered actionable gaps from gaps.json into discovery evidence"
     )
     .action((runDir: string) => {
-      const dir = resolve(runDir);
+      const parsed = RunDirArgSchema.safeParse(runDir);
+      if (!parsed.success) { console.log(`Invalid runDir: ${parsed.error.issues[0]?.message}`); return; }
+      const dir = resolve(parsed.data);
       if (!existsSync(dir) || !statSync(dir).isDirectory()) {
         console.log(`Run directory not found or is not a directory: ${runDir}`);
         return;

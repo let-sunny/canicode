@@ -1,9 +1,12 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { CAC } from "cac";
+import { z } from "zod";
 
 import { parseDebateResult } from "../../../agents/run-directory.js";
 import { loadCalibrationEvidence } from "../../../agents/evidence-collector.js";
+
+const RunDirArgSchema = z.string().trim().min(1, "runDir is required");
 
 // ─── calibrate-gather-evidence ──────────────────────────────────────────────
 
@@ -103,7 +106,9 @@ export function registerGatherEvidence(cli: CAC): void {
       "Gather structured evidence for Critic from run artifacts + cross-run data"
     )
     .action((runDir: string) => {
-      const dir = resolve(runDir);
+      const parsed = RunDirArgSchema.safeParse(runDir);
+      if (!parsed.success) { console.log(`Invalid runDir: ${parsed.error.issues[0]?.message}`); return; }
+      const dir = resolve(parsed.data);
       if (!existsSync(dir)) {
         console.log(`Run directory not found: ${runDir}`);
         return;
@@ -134,7 +139,9 @@ export function registerFinalizeDebate(cli: CAC): void {
       "Check early-stop or determine stoppingReason after debate"
     )
     .action((runDir: string) => {
-      const dir = resolve(runDir);
+      const parsed = RunDirArgSchema.safeParse(runDir);
+      if (!parsed.success) { console.log(`Invalid runDir: ${parsed.error.issues[0]?.message}`); return; }
+      const dir = resolve(parsed.data);
       if (!existsSync(dir)) {
         console.log(`Run directory not found: ${runDir}`);
         return;
