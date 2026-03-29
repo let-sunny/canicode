@@ -4,10 +4,10 @@ import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
 import type { MissingInteractionStateSubType, MissingPrototypeSubType } from "../rule-messages.js";
 import { missingInteractionStateMsg, missingPrototypeMsg } from "../rule-messages.js";
-import { getInteractiveType, isOverlayNode, isCarouselNode, type InteractiveType } from "../node-semantics.js";
+import { getStatefulComponentType, isOverlayNode, isCarouselNode, type StatefulComponentType } from "../node-semantics.js";
 
 /** Expected state variants by interactive type */
-const EXPECTED_STATES: Record<InteractiveType, MissingInteractionStateSubType[]> = {
+const EXPECTED_STATES: Record<StatefulComponentType, MissingInteractionStateSubType[]> = {
   button: ["hover", "active", "disabled"],
   link: ["hover"],
   tab: ["hover", "active"],
@@ -87,7 +87,7 @@ const missingInteractionStateCheck: RuleCheckFn = (node, context) => {
   // Only check component instances and components
   if (node.type !== "INSTANCE" && node.type !== "COMPONENT") return null;
 
-  const interactiveType = getInteractiveType(node);
+  const interactiveType = getStatefulComponentType(node);
   if (!interactiveType) return null;
 
   const expectedStates = EXPECTED_STATES[interactiveType];
@@ -132,7 +132,7 @@ export const missingInteractionState = defineRule({
 // ============================================
 
 /** Interactive types that need click prototype */
-const PROTOTYPE_TYPES: Record<InteractiveType, MissingPrototypeSubType> = {
+const PROTOTYPE_TYPES: Record<StatefulComponentType, MissingPrototypeSubType> = {
   button: "button",
   link: "navigation",
   tab: "tab",
@@ -142,10 +142,10 @@ const PROTOTYPE_TYPES: Record<InteractiveType, MissingPrototypeSubType> = {
 
 function getPrototypeSubType(node: AnalysisNode): MissingPrototypeSubType | null {
   // Check overlay/carousel first — select/dropdown are classified as "input" in
-  // INTERACTIVE_PATTERNS but need "overlay" subType for prototype checks
+  // STATEFUL_PATTERNS but need "overlay" subType for prototype checks
   if (isOverlayNode(node)) return "overlay";
   if (isCarouselNode(node)) return "carousel";
-  const interactiveType = getInteractiveType(node);
+  const interactiveType = getStatefulComponentType(node);
   if (interactiveType) {
     const mapped = PROTOTYPE_TYPES[interactiveType];
     if (mapped) return mapped;

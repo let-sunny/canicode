@@ -78,10 +78,10 @@ export function isVisualOnlyNode(node: AnalysisNode): boolean {
 
 // ── Interactive classification ───────────────────────────────────────────────
 
-export type InteractiveType = "button" | "link" | "tab" | "input" | "toggle";
+export type StatefulComponentType = "button" | "link" | "tab" | "input" | "toggle";
 
 /** Name patterns → interactive type mapping */
-export const INTERACTIVE_PATTERNS: Array<{ pattern: RegExp; type: InteractiveType }> = [
+export const STATEFUL_PATTERNS: Array<{ pattern: RegExp; type: StatefulComponentType }> = [
   { pattern: /\b(btn|button|cta)\b/i, type: "button" },
   { pattern: /\b(link|anchor)\b/i, type: "link" },
   { pattern: /\b(tab|tabs)\b/i, type: "tab" },
@@ -91,16 +91,16 @@ export const INTERACTIVE_PATTERNS: Array<{ pattern: RegExp; type: InteractiveTyp
   { pattern: /\b(toggle|switch|checkbox|radio)\b/i, type: "toggle" },
 ];
 
-export function getInteractiveType(node: AnalysisNode): InteractiveType | null {
+export function getStatefulComponentType(node: AnalysisNode): StatefulComponentType | null {
   if (!node.name) return null;
-  for (const entry of INTERACTIVE_PATTERNS) {
+  for (const entry of STATEFUL_PATTERNS) {
     if (entry.pattern.test(node.name)) return entry.type;
   }
   return null;
 }
 
-export function isInteractiveNode(node: AnalysisNode): boolean {
-  return getInteractiveType(node) !== null;
+export function isStatefulComponent(node: AnalysisNode): boolean {
+  return getStatefulComponentType(node) !== null;
 }
 
 // ── Overlay / Carousel patterns ──────────────────────────────────────────────
