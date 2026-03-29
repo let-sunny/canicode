@@ -151,7 +151,7 @@ const nonStandardNamingDef: RuleDefinition = {
   category: "minor",
   why: "Non-standard state names prevent interaction rules from detecting state variants — AI cannot generate correct :hover/:active/:disabled styles",
   impact: "Interaction state detection fails, resulting in static UI with no state transitions",
-  fix: "Use platform-standard state names: hover, active, pressed, selected, highlighted, disabled, focus, focused",
+  fix: "Use platform-standard state names: default, hover, active, pressed, selected, highlighted, disabled, enabled, focus, focused, dragged",
 };
 
 const nonStandardNamingCheck: RuleCheckFn = (node, context) => {

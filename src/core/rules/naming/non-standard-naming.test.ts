@@ -26,13 +26,13 @@ describe("non-standard-naming", () => {
     expect(result!.message).toContain("pressed");
   });
 
-  it("flags 'Inactive' → suggests 'disabled'", () => {
+  it("flags 'On' → suggests 'active'", () => {
     const node = makeNode({
       id: "1:1",
       name: "Toggle",
       type: "COMPONENT_SET",
       componentPropertyDefinitions: {
-        "State": { type: "VARIANT", variantOptions: ["On", "Inactive"] },
+        "State": { type: "VARIANT", variantOptions: ["Default", "On"] },
       },
     });
     const ctx = makeContext();
@@ -41,6 +41,23 @@ describe("non-standard-naming", () => {
     expect(result).not.toBeNull();
     expect(result!.message).toContain("On");
     expect(result!.message).toContain("active");
+  });
+
+  it("flags 'Inactive' → suggests 'disabled'", () => {
+    const node = makeNode({
+      id: "1:1",
+      name: "Toggle",
+      type: "COMPONENT_SET",
+      componentPropertyDefinitions: {
+        "State": { type: "VARIANT", variantOptions: ["Default", "Inactive"] },
+      },
+    });
+    const ctx = makeContext();
+    const result = nonStandardNaming.check(node, ctx);
+
+    expect(result).not.toBeNull();
+    expect(result!.message).toContain("Inactive");
+    expect(result!.message).toContain("disabled");
   });
 
   it("passes when all state names are standard", () => {
@@ -86,6 +103,19 @@ describe("non-standard-naming", () => {
       type: "COMPONENT_SET",
       componentPropertyDefinitions: {
         "State": { type: "VARIANT", variantOptions: ["Default", "Pressed", "Selected", "Highlighted", "Focused"] },
+      },
+    });
+    const ctx = makeContext();
+    expect(nonStandardNaming.check(node, ctx)).toBeNull();
+  });
+
+  it("accepts enabled and dragged (CSS/Material standard)", () => {
+    const node = makeNode({
+      id: "1:1",
+      name: "Chip",
+      type: "COMPONENT_SET",
+      componentPropertyDefinitions: {
+        "State": { type: "VARIANT", variantOptions: ["Enabled", "Dragged", "Disabled"] },
       },
     });
     const ctx = makeContext();

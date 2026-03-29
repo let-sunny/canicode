@@ -133,7 +133,7 @@ export const STANDARD_STATE_NAMES = new Set([
  */
 export const STATE_NAME_SUGGESTIONS: Record<string, string> = {
   on: "active",
-  off: "disabled",
+  off: "default",
   clicked: "pressed",
   tapped: "pressed",
   inactive: "disabled",
