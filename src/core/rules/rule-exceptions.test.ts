@@ -36,8 +36,24 @@ describe("isVisualOnlyNode", () => {
     expect(isVisualOnlyNode(makeNode({ type: "ELLIPSE" as any }))).toBe(true);
   });
 
-  it("true for nodes with image fills", () => {
+  it("true for nodes with image fills and no children", () => {
     const node = makeNode({ fills: [{ type: "IMAGE" }] });
+    expect(isVisualOnlyNode(node)).toBe(true);
+  });
+
+  it("false for image fill frame with content children", () => {
+    const node = makeNode({
+      fills: [{ type: "IMAGE" }],
+      children: [makeNode({ type: "TEXT" as any, name: "Title" })],
+    });
+    expect(isVisualOnlyNode(node)).toBe(false);
+  });
+
+  it("true for image fill frame with only visual leaf children", () => {
+    const node = makeNode({
+      fills: [{ type: "IMAGE" }],
+      children: [makeNode({ type: "VECTOR" as any })],
+    });
     expect(isVisualOnlyNode(node)).toBe(true);
   });
 

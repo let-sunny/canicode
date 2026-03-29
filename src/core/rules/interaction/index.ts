@@ -189,9 +189,9 @@ const missingPrototypeDef: RuleDefinition = {
   id: "missing-prototype",
   name: "Missing Prototype",
   category: "interaction",
-  why: "Interactive elements without click prototypes give AI no information about navigation or behavior on click",
+  why: "Interactive elements without prototype interactions give AI no information about navigation or behavior",
   impact: "AI cannot generate click handlers, routing, or state changes — interactive elements become static",
-  fix: "Add ON_CLICK prototype interactions to define navigation targets or state changes",
+  fix: "Add prototype interactions (ON_CLICK, ON_DRAG) to define navigation targets or state changes",
 };
 
 const SEEN_PROTO_KEY = "missing-prototype:seen";
