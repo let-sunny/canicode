@@ -172,10 +172,9 @@ describe("renderReportBody", () => {
     expect(html).not.toContain("Opportunities");
   });
 
-  it("renders tab switching script", () => {
+  it("does not embed inline script (interactions initialized by caller)", () => {
     const html = renderReportBody(makeReportData());
-    expect(html).toContain("function activate");
-    expect(html).toContain("function focusRule");
+    expect(html).not.toContain("<script>");
   });
 
   it("renders footer", () => {

@@ -120,7 +120,7 @@ body {
   color: var(--fg);
   background: none;
   border: none;
-  padding: 8px;
+  padding: 4px;
   transition: opacity 0.15s;
 }
 .rpt-gauge-item:hover { opacity: 0.8; }
@@ -275,6 +275,20 @@ body {
 /* ---- Category Tabs (shadcn pill style) ---- */
 .rpt-tabs {
   margin-bottom: 24px;
+  position: relative;
+}
+@media (max-width: 600px) {
+  .rpt-tabs::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 32px;
+    height: 40px;
+    background: linear-gradient(to right, transparent, var(--bg));
+    pointer-events: none;
+    border-radius: 0 var(--radius) 0 0;
+  }
 }
 .rpt-tab-list {
   display: flex;
@@ -286,9 +300,11 @@ body {
   overflow-x: auto;
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
 }
-.rpt-tab-list::-webkit-scrollbar { display: none; }
+.rpt-tab-list::-webkit-scrollbar { height: 3px; }
+.rpt-tab-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.rpt-tab-list::-webkit-scrollbar-track { background: transparent; }
+.rpt-tab-list { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 .rpt-tab {
   padding: 6px 12px;
   font-size: 13px;
