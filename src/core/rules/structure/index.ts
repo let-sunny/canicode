@@ -221,8 +221,8 @@ const missingSizeConstraintCheck: RuleCheckFn = (node, context) => {
 
   const nodePath = context.path.join(" > ");
 
-  // Check 1: wrap parent → children need min-width
-  if (context.parent.layoutWrap === "WRAP" && node.minWidth === undefined) {
+  // Check 1: wrap parent → FILL children need min-width
+  if (context.parent.layoutWrap === "WRAP" && node.layoutSizingHorizontal === "FILL" && node.minWidth === undefined) {
     return {
       ruleId: missingSizeConstraintDef.id,
       subType: "wrap" as const,
@@ -232,8 +232,8 @@ const missingSizeConstraintCheck: RuleCheckFn = (node, context) => {
     };
   }
 
-  // Check 2: grid parent → children need size constraints
-  if (context.parent.layoutMode === "GRID" && node.minWidth === undefined && node.maxWidth === undefined) {
+  // Check 2: grid parent → FILL children need size constraints
+  if (context.parent.layoutMode === "GRID" && node.layoutSizingHorizontal === "FILL" && node.minWidth === undefined && node.maxWidth === undefined) {
     return {
       ruleId: missingSizeConstraintDef.id,
       subType: "grid" as const,
