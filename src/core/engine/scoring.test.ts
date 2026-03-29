@@ -445,6 +445,18 @@ describe("buildResultJson", () => {
     });
   });
 
+  it("omits subType when it is an empty string", () => {
+    const emptySubTypeIssue = makeIssue({ ruleId: "raw-value", category: "token-management", severity: "missing-info" });
+    emptySubTypeIssue.violation.subType = "";
+
+    const result = makeResult([emptySubTypeIssue]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+    const issues = json.issues as Array<{ ruleId: string; subType?: string }>;
+
+    expect(issues[0]!["subType"]).toBeUndefined();
+  });
+
   it("includes fileKey when provided", () => {
     const result = makeResult([]);
     const scores = calculateScores(result);
