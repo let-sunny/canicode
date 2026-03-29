@@ -147,7 +147,13 @@ export function registerFinalizeDebate(cli: CAC): void {
       }
 
       const debatePath = join(dir, "debate.json");
-      const raw = JSON.parse(readFileSync(debatePath, "utf-8")) as Record<string, unknown>;
+      let raw: Record<string, unknown>;
+      try {
+        raw = JSON.parse(readFileSync(debatePath, "utf-8")) as Record<string, unknown>;
+      } catch {
+        console.log(JSON.stringify({ action: "continue" }));
+        return;
+      }
 
       // Case 1: Critic done, no Arbitrator yet → check early-stop
       if (debate.critic && !debate.arbitrator) {

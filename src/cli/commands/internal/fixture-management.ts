@@ -145,7 +145,7 @@ export function registerEvidenceEnrich(cli: CAC): void {
         if (r.pro) entry.pro = r.pro;
         if (r.con) entry.con = r.con;
         const dec = r.decision;
-        if (dec === "APPROVE" || dec === "REJECT" || dec === "REVISE") entry.decision = dec;
+        if (dec === "APPROVE" || dec === "REJECT" || dec === "REVISE" || dec === "HOLD") entry.decision = dec;
         return entry;
       });
 

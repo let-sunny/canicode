@@ -12,7 +12,7 @@ export const CalibrationEvidenceEntrySchema = z.object({
   confidence: z.enum(["high", "medium", "low"]).optional(),
   pro: z.array(z.string()).optional(),
   con: z.array(z.string()).optional(),
-  decision: z.enum(["APPROVE", "REJECT", "REVISE"]).optional(),
+  decision: z.enum(["APPROVE", "REJECT", "REVISE", "HOLD"]).optional(),
 });
 
 export type CalibrationEvidenceEntry = z.infer<typeof CalibrationEvidenceEntrySchema>;
@@ -26,7 +26,7 @@ export const CrossRunEvidenceGroupSchema = z.object({
   allPro: z.array(z.string()).optional(),
   allCon: z.array(z.string()).optional(),
   lastConfidence: z.enum(["high", "medium", "low"]).optional(),
-  lastDecision: z.enum(["APPROVE", "REJECT", "REVISE"]).optional(),
+  lastDecision: z.enum(["APPROVE", "REJECT", "REVISE", "HOLD"]).optional(),
 });
 
 export type CrossRunEvidenceGroup = z.infer<typeof CrossRunEvidenceGroupSchema>;

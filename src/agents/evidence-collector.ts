@@ -149,7 +149,7 @@ export function enrichCalibrationEvidence(
     confidence?: "high" | "medium" | "low";
     pro?: string[];
     con?: string[];
-    decision?: "APPROVE" | "REJECT" | "REVISE";
+    decision?: "APPROVE" | "REJECT" | "REVISE" | "HOLD";
   }>,
   fixture: string,
   evidencePath: string = DEFAULT_CALIBRATION_PATH
