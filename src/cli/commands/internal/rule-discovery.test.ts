@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { rm } from "node:fs/promises";
 
-import { filterDiscoveryEvidence, readDecision } from "./rule-discovery.js";
+import { filterDiscoveryEvidence, readDecision, collectGapEvidence } from "./rule-discovery.js";
 
 describe("filterDiscoveryEvidence", () => {
   it("returns empty array when no matching evidence exists", () => {
@@ -116,5 +116,65 @@ describe("readDecision", () => {
   it("returns null for malformed JSON", () => {
     writeFileSync(join(runDir, "decision.json"), "not json");
     expect(readDecision(runDir)).toBeNull();
+  });
+});
+
+describe("collectGapEvidence", () => {
+  let runDir: string;
+
+  beforeEach(() => {
+    runDir = mkdtempSync(join(tmpdir(), "gap-evidence-test-"));
+  });
+
+  afterEach(async () => {
+    await rm(runDir, { recursive: true, force: true });
+  });
+
+  it("extracts uncovered actionable gaps", () => {
+    writeFileSync(join(runDir, "gaps.json"), JSON.stringify({
+      gaps: [
+        { category: "spacing", description: "padding off", actionable: true, coveredByRule: null },
+        { category: "color", description: "wrong shade", actionable: true, coveredByRule: null },
+        { category: "rendering", description: "font fallback", actionable: false },
+        { category: "layout", description: "flex gap", actionable: true, coveredByRule: "no-auto-layout" },
+      ],
+    }));
+
+    const entries = collectGapEvidence(runDir, "test-fixture");
+    expect(entries).toHaveLength(2);
+    expect(entries[0]!.category).toBe("spacing");
+    expect(entries[0]!.source).toBe("gap-analysis");
+    expect(entries[0]!.fixture).toBe("test-fixture");
+    expect(entries[1]!.category).toBe("color");
+  });
+
+  it("returns empty for no gaps.json", () => {
+    expect(collectGapEvidence(runDir, "fx")).toHaveLength(0);
+  });
+
+  it("returns empty when all gaps are covered or non-actionable", () => {
+    writeFileSync(join(runDir, "gaps.json"), JSON.stringify({
+      gaps: [
+        { category: "spacing", description: "x", actionable: false },
+        { category: "color", description: "y", actionable: true, coveredByRule: "raw-value" },
+      ],
+    }));
+
+    expect(collectGapEvidence(runDir, "fx")).toHaveLength(0);
+  });
+
+  it("skips actionable gap when coveredByRule is empty string", () => {
+    writeFileSync(join(runDir, "gaps.json"), JSON.stringify({
+      gaps: [
+        { category: "spacing", description: "x", actionable: true, coveredByRule: "" },
+      ],
+    }));
+
+    expect(collectGapEvidence(runDir, "fx")).toHaveLength(0);
+  });
+
+  it("returns empty for malformed gaps.json", () => {
+    writeFileSync(join(runDir, "gaps.json"), "not json");
+    expect(collectGapEvidence(runDir, "fx")).toHaveLength(0);
   });
 });

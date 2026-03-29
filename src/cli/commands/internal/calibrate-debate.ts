@@ -1,9 +1,10 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import type { CAC } from "cac";
 
 import { parseDebateResult } from "../../../agents/run-directory.js";
 import { loadCalibrationEvidence } from "../../../agents/evidence-collector.js";
+import { resolveRunDir } from "./cli-helpers.js";
 
 // ─── calibrate-gather-evidence ──────────────────────────────────────────────
 
@@ -103,11 +104,8 @@ export function registerGatherEvidence(cli: CAC): void {
       "Gather structured evidence for Critic from run artifacts + cross-run data"
     )
     .action((runDir: string) => {
-      const dir = resolve(runDir);
-      if (!existsSync(dir)) {
-        console.log(`Run directory not found: ${runDir}`);
-        return;
-      }
+      const dir = resolveRunDir(runDir);
+      if (!dir) return;
 
       const proposedRuleIds = loadProposedRuleIds(dir);
       const evidence = gatherEvidence(dir, proposedRuleIds);
@@ -134,11 +132,8 @@ export function registerFinalizeDebate(cli: CAC): void {
       "Check early-stop or determine stoppingReason after debate"
     )
     .action((runDir: string) => {
-      const dir = resolve(runDir);
-      if (!existsSync(dir)) {
-        console.log(`Run directory not found: ${runDir}`);
-        return;
-      }
+      const dir = resolveRunDir(runDir);
+      if (!dir) return;
 
       const debate = parseDebateResult(dir);
       if (!debate) {

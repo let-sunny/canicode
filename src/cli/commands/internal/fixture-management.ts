@@ -1,6 +1,6 @@
-import { existsSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import type { CAC } from "cac";
+import { resolveRunDir } from "./cli-helpers.js";
 
 import {
   listActiveFixtures,
@@ -121,11 +121,8 @@ export function registerEvidenceEnrich(cli: CAC): void {
       "Enrich evidence with Critic's pro/con/confidence from debate.json"
     )
     .action((runDir: string) => {
-      const resolvedDir = resolve(runDir);
-      if (!existsSync(resolvedDir)) {
-        console.log(`Run directory not found: ${runDir}`);
-        return;
-      }
+      const resolvedDir = resolveRunDir(runDir);
+      if (!resolvedDir) return;
       const debate = parseDebateResult(resolvedDir);
       if (!debate?.critic) {
         console.log("No critic reviews in debate.json — nothing to enrich.");
@@ -161,11 +158,9 @@ export function registerEvidencePrune(cli: CAC): void {
       "Prune evidence for rules applied by the Arbitrator in the given run"
     )
     .action((runDir: string) => {
-      if (!existsSync(resolve(runDir))) {
-        console.log(`Run directory not found: ${runDir}`);
-        return;
-      }
-      const debate = parseDebateResult(resolve(runDir));
+      const resolvedDir = resolveRunDir(runDir);
+      if (!resolvedDir) return;
+      const debate = parseDebateResult(resolvedDir);
       if (!debate) {
         console.log("No debate.json found — nothing to prune.");
         return;

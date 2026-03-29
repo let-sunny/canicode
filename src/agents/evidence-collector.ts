@@ -6,6 +6,7 @@ import {
   DiscoveryEvidenceFileSchema,
   DISCOVERY_EVIDENCE_SCHEMA_VERSION,
 } from "./contracts/evidence.js";
+import { CategorySchema } from "../core/contracts/category.js";
 import type {
   CalibrationEvidenceEntry,
   CrossRunEvidence,
@@ -293,6 +294,15 @@ export function appendDiscoveryEvidence(
   evidencePath: string = DEFAULT_DISCOVERY_PATH
 ): void {
   if (entries.length === 0) return;
+
+  // Warn on non-standard categories (safety net for converter typos/old labels)
+  for (const e of entries) {
+    const parsed = CategorySchema.safeParse(e.category);
+    if (!parsed.success) {
+      console.warn(`[evidence] Non-standard category "${e.category}" in discovery evidence (expected: ${CategorySchema.options.join(", ")})`);
+    }
+  }
+
   const existing = readDiscoveryEvidence(evidencePath);
 
   // Build map of existing entries keyed by dedupe key
