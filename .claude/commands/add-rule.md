@@ -23,13 +23,13 @@ Create `$RUN_DIR/activity.jsonl` with a session-start entry.
 
 ### Step 1 — Researcher
 
-Filter discovery evidence (deterministic CLI — no LLM):
+Filter discovery evidence by concept keyword (deterministic CLI — no LLM):
 
 ```bash
 npx canicode discovery-filter-evidence "<concept>" --run-dir $RUN_DIR
 ```
 
-This reads `data/discovery-evidence.json`, filters by category, and writes `$RUN_DIR/prior-evidence.json`.
+This reads `data/discovery-evidence.json`, matches the concept against both `category` and `description` fields (substring + word-level matching), and writes `$RUN_DIR/prior-evidence.json`. The concept string (e.g. "component description") will match evidence entries containing "component" or "description" in their category or description.
 
 Spawn the `rule-discovery-researcher` subagent. Provide:
 - The concept to investigate
@@ -144,14 +144,14 @@ Read the decision (deterministic CLI — no LLM):
 npx canicode rule-apply-decision $RUN_DIR
 ```
 
-This outputs JSON: `{"action": "commit"|"adjust"|"revert", "ruleId": "...", "category": "..."}`.
+This outputs JSON: `{"action": "commit"|"adjust"|"revert", "ruleId": "...", "category": "...", "reason": "..."}`.
 
 Based on the action:
 - **commit** (KEEP): Commit the new rule. Message: `feat: add rule <rule-id> via discovery pipeline`
   - **Prune discovery evidence**: `npx canicode discovery-prune-evidence <category>`. Include the pruned file in the commit.
-- **adjust** (ADJUST): Apply the Critic's suggested changes from `$RUN_DIR/decision.json`, run tests, then commit.
+- **adjust** (ADJUST): Read `$RUN_DIR/decision.json` for the Critic's suggested changes (in the `changes` field), apply them, run tests, then commit.
   - **Prune discovery evidence**: same as commit.
-- **revert** (DROP): Revert all changes to src/. Log the reason.
+- **revert** (DROP): Revert all changes to src/ (`git checkout -- src/`). Log the reason from the JSON output.
 
 ### Done
 

@@ -3,40 +3,55 @@ import { join, resolve } from "node:path";
 import type { CAC } from "cac";
 
 import { loadDiscoveryEvidence } from "../../../agents/evidence-collector.js";
+import type { DiscoveryEvidenceEntry } from "../../../agents/evidence-collector.js";
 
 // ─── discovery-filter-evidence ──────────────────────────────────────────────
 
 /**
- * Filter discovery evidence by category (case-insensitive).
- * Returns matching entries as JSON to stdout, writes to run dir if provided.
+ * Filter discovery evidence by keyword (case-insensitive).
+ * Matches against both `category` and `description` fields using substring search.
+ * This handles the concept-to-evidence mapping: a concept like "component description"
+ * may match evidence with category "component" or description containing "component".
  */
-export function filterDiscoveryEvidence(category: string): unknown[] {
+export function filterDiscoveryEvidence(keyword: string): DiscoveryEvidenceEntry[] {
   const entries = loadDiscoveryEvidence();
-  const catLower = category.toLowerCase().trim();
-  return entries.filter((e) => e.category.toLowerCase().trim() === catLower);
+  const kw = keyword.toLowerCase().trim();
+  return entries.filter((e) =>
+    e.category.toLowerCase().includes(kw) ||
+    e.description.toLowerCase().includes(kw) ||
+    kw.split(/\s+/).some((word) =>
+      e.category.toLowerCase().includes(word) ||
+      e.description.toLowerCase().includes(word)
+    )
+  );
 }
 
 export function registerFilterDiscoveryEvidence(cli: CAC): void {
   cli
     .command(
-      "discovery-filter-evidence <category>",
-      "Filter discovery evidence by category for Researcher input"
+      "discovery-filter-evidence <keyword>",
+      "Filter discovery evidence by keyword (matches category + description)"
     )
     .option("--run-dir <path>", "Write filtered evidence to run directory")
-    .action((category: string, options: { runDir?: string }) => {
-      const filtered = filterDiscoveryEvidence(category);
+    .action((keyword: string, options: { runDir?: string }) => {
+      try {
+        const filtered = filterDiscoveryEvidence(keyword);
 
-      if (options.runDir) {
-        const dir = resolve(options.runDir);
-        if (!existsSync(dir)) {
-          console.log(`Run directory not found: ${options.runDir}`);
-          return;
+        if (options.runDir) {
+          const dir = resolve(options.runDir);
+          if (!existsSync(dir)) {
+            console.log(`Run directory not found: ${options.runDir}`);
+            return;
+          }
+          const outPath = join(dir, "prior-evidence.json");
+          writeFileSync(outPath, JSON.stringify(filtered, null, 2) + "\n", "utf-8");
+          console.log(`Filtered ${filtered.length} entries for "${keyword}" → ${outPath}`);
+        } else {
+          console.log(JSON.stringify(filtered, null, 2));
         }
-        const outPath = join(dir, "prior-evidence.json");
-        writeFileSync(outPath, JSON.stringify(filtered, null, 2) + "\n", "utf-8");
-        console.log(`Filtered ${filtered.length} entries for category "${category}" → ${outPath}`);
-      } else {
-        console.log(JSON.stringify(filtered, null, 2));
+      } catch (err) {
+        // loadDiscoveryEvidence throws on unsupported schemaVersion
+        console.log(`Failed to read discovery evidence: ${err instanceof Error ? err.message : String(err)}`);
       }
     });
 }

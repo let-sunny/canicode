@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { rm } from "node:fs/promises";
@@ -6,11 +6,22 @@ import { rm } from "node:fs/promises";
 import { filterDiscoveryEvidence, readDecision } from "./rule-discovery.js";
 
 describe("filterDiscoveryEvidence", () => {
-  // Note: this function reads from data/discovery-evidence.json which may not exist in test.
-  // We test the logic indirectly through the category matching.
-  it("returns empty array when no evidence file exists", () => {
-    const result = filterDiscoveryEvidence("nonexistent-category");
+  it("returns empty array when no matching evidence exists", () => {
+    // data/discovery-evidence.json may or may not exist in the repo
+    // but a nonexistent category should always return empty
+    const result = filterDiscoveryEvidence("zzz-nonexistent-category-zzz");
     expect(Array.isArray(result)).toBe(true);
+    expect(result).toHaveLength(0);
+  });
+
+  it("returns typed DiscoveryEvidenceEntry array", () => {
+    const result = filterDiscoveryEvidence("anything");
+    expect(Array.isArray(result)).toBe(true);
+    // Even if empty, the type should be correct (not unknown[])
+    for (const entry of result) {
+      expect(typeof entry.category).toBe("string");
+      expect(typeof entry.description).toBe("string");
+    }
   });
 });
 
