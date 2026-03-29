@@ -43,7 +43,7 @@ npx canicode save-fixture "https://www.figma.com/design/ABC123/MyDesign?node-id=
 ### Presets
 - `--preset relaxed` — Downgrades blocking to risk, reduces scores by 50%
 - `--preset dev-friendly` — Enables only pixel-critical and responsive-critical rules, disables the rest
-- `--preset ai-ready` — Boosts pixel-critical and token-management rule scores by 150%
+- `--preset ai-ready` — Sets pixel-critical and token-management rule scores to 150% of defaults
 - `--preset strict` — Increases all scores by 150%
 
 ### Config overrides

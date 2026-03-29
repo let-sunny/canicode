@@ -76,7 +76,7 @@ function generateCustomizationTables(rulesByCategory: Map<Category, RuleEntry[]>
 
   for (const category of CATEGORIES) {
     const rules = rulesByCategory.get(category as Category) ?? [];
-    const label = category.charAt(0).toUpperCase() + category.slice(1);
+    const label = CATEGORY_LABELS[category as Category];
     lines.push(`**${label} (${rules.length} rules)**`);
     lines.push("");
     lines.push("| Rule ID | Default Score | Default Severity |");
