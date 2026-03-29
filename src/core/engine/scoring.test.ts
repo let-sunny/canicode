@@ -418,13 +418,16 @@ describe("buildResultJson", () => {
   });
 
   it("includes detailed issues list with severity and node info", () => {
+    const tokenIssue = makeIssue({ ruleId: "raw-value", category: "token-management", severity: "missing-info" });
+    tokenIssue.violation.subType = "color";
+
     const result = makeResult([
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
-      makeIssue({ ruleId: "raw-value", category: "token-management", severity: "missing-info" }),
+      tokenIssue,
     ]);
     const scores = calculateScores(result);
     const json = buildResultJson("TestFile", result, scores);
-    const issues = json.issues as Array<{ ruleId: string; severity: string; nodeId: string; nodePath: string; message: string }>;
+    const issues = json.issues as Array<{ ruleId: string; subType?: string; severity: string; nodeId: string; nodePath: string; message: string }>;
 
     expect(issues).toHaveLength(2);
     expect(issues[0]).toMatchObject({
@@ -434,8 +437,10 @@ describe("buildResultJson", () => {
       nodePath: expect.any(String),
       message: expect.any(String),
     });
+    expect(issues[0]!["subType"]).toBeUndefined();
     expect(issues[1]).toMatchObject({
       ruleId: "raw-value",
+      subType: "color",
       severity: "missing-info",
     });
   });

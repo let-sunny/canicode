@@ -1,5 +1,5 @@
 import type { ScoreReport, CategoryScoreResult } from "../core/engine/scoring.js";
-import type { Category } from "../core/contracts/category.js";
+import { CATEGORIES, type Category } from "../core/contracts/category.js";
 import type { MismatchCase } from "./contracts/evaluation-agent.js";
 import type { ScoreAdjustment, NewRuleProposal } from "./contracts/tuning-agent.js";
 import {
@@ -7,13 +7,7 @@ import {
   type CalibrationReportData,
 } from "./report-generator.js";
 
-const ALL_CATEGORIES: Category[] = [
-  "pixel-critical",
-  "responsive-critical",
-  "token-management",
-  "code-quality",
-  "minor",
-];
+const ALL_CATEGORIES: Category[] = [...CATEGORIES];
 
 function buildCategoryScore(
   category: Category,
