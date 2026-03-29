@@ -277,6 +277,19 @@ body {
   margin-bottom: 24px;
   position: relative;
 }
+@media (max-width: 600px) {
+  .rpt-tabs::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 40px;
+    height: 100%;
+    background: linear-gradient(to right, transparent, var(--bg));
+    pointer-events: none;
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+}
 .rpt-tab-list {
   display: flex;
   gap: 4px;
@@ -288,10 +301,8 @@ body {
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
 }
-.rpt-tab-list::-webkit-scrollbar { height: 3px; }
-.rpt-tab-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-.rpt-tab-list::-webkit-scrollbar-track { background: transparent; }
-.rpt-tab-list { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.rpt-tab-list::-webkit-scrollbar { display: none; }
+.rpt-tab-list { scrollbar-width: none; }
 .rpt-tab {
   padding: 6px 12px;
   font-size: 13px;
