@@ -148,7 +148,7 @@ const VERTICAL_CONSTRAINT_MAP: Record<string, string> = {
 
 // ---- Transform Figma Plugin nodes to AnalysisNode ----
 
-function transformPluginNode(node: SceneNode): AnalysisNode {
+async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
   const result: AnalysisNode = {
     id: node.id,
     name: node.name,
@@ -322,7 +322,8 @@ function transformPluginNode(node: SceneNode): AnalysisNode {
 
   // Component properties
   if (node.type === "INSTANCE") {
-    result.componentId = (node as InstanceNode).mainComponent?.id ?? "";
+    const mainComp = await (node as InstanceNode).getMainComponentAsync();
+    result.componentId = mainComp?.id ?? "";
     if (
       "componentProperties" in node &&
       node.componentProperties
@@ -360,7 +361,7 @@ function transformPluginNode(node: SceneNode): AnalysisNode {
   // Recurse children
   if ("children" in node) {
     const container = node as FrameNode & { children: readonly SceneNode[] };
-    result.children = container.children.map(transformPluginNode);
+    result.children = await Promise.all(container.children.map(transformPluginNode));
   }
 
   return result;
@@ -368,11 +369,11 @@ function transformPluginNode(node: SceneNode): AnalysisNode {
 
 // ---- Build AnalysisFile from a subtree ----
 
-function buildAnalysisFile(
+async function buildAnalysisFile(
   rootNode: SceneNode,
   pageName: string
-): AnalysisFile {
-  const doc = transformPluginNode(rootNode);
+): Promise<AnalysisFile> {
+  const doc = await transformPluginNode(rootNode);
 
   // Collect component metadata
   const components: AnalysisFile["components"] = {};
@@ -424,7 +425,7 @@ function countNodes(node: { children?: readonly unknown[] }): number {
 
 // ---- Message handler ----
 
-figma.ui.onmessage = (msg: { type: string }) => {
+figma.ui.onmessage = async (msg: { type: string }) => {
   if (msg.type === "analyze-selection") {
     const selection = figma.currentPage.selection;
     if (selection.length === 0) {
@@ -439,7 +440,7 @@ figma.ui.onmessage = (msg: { type: string }) => {
     // Use the first selected node (or a wrapper frame if multiple)
     const target = selection[0]!;
     const nodeCount = countNodes(target as unknown as { children?: readonly unknown[] });
-    const file = buildAnalysisFile(target, figma.currentPage.name);
+    const file = await buildAnalysisFile(target, figma.currentPage.name);
 
     figma.ui.postMessage({
       type: "result",
@@ -466,7 +467,7 @@ figma.ui.onmessage = (msg: { type: string }) => {
 
     for (const child of children) {
       totalNodes += countNodes(child as unknown as { children?: readonly unknown[] });
-      allChildren.push(transformPluginNode(child));
+      allChildren.push(await transformPluginNode(child));
     }
 
     const file: AnalysisFile = {
