@@ -223,7 +223,7 @@ export function renderIssueRow(
                 <div class="rpt-issue-path">${esc(v.nodePath)}</div>
                 <div class="rpt-issue-actions no-print">
                   <a href="${link}" target="_blank" rel="noopener" data-node-id="${esc(v.nodeId)}" class="rpt-btn">Go to node <span>→</span></a>${figmaToken ? `
-                  <button onclick="postComment(this)" data-file-key="${esc(fileKey)}" data-node-id="${esc(v.nodeId)}" data-message="${esc(v.message)}" class="rpt-btn">Comment on Figma</button>` : ""}
+                  <button onclick="postComment(this)" data-file-key="${esc(fileKey)}" data-node-id="${esc(v.nodeId)}" data-message="${esc(v.message)} — ${esc(v.suggestion)}" class="rpt-btn">Comment on Figma</button>` : ""}
                 </div>
               </div>
             </details>`;
@@ -239,6 +239,10 @@ export function renderIssueRow(
  * Uses 'any' to avoid DOM type dependency (this file targets Node.js).
  */
 export function initReportInteractions(container: any): void {
+  // Remove previous handler if re-initialized (e.g., re-analysis)
+  if (container._rptHandler) {
+    container.removeEventListener("click", container._rptHandler);
+  }
   function activate(cat: string, scrollTo: boolean) {
     container.querySelectorAll(".rpt-tab").forEach((t: any) => {
       const active = t.dataset.tab === cat;
@@ -263,7 +267,7 @@ export function initReportInteractions(container: any): void {
       setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     }
   }
-  container.addEventListener("click", (e: any) => {
+  const handler = (e: any) => {
     const tab = e.target.closest("[data-tab]");
     if (tab) {
       const isGauge = tab.classList.contains("rpt-gauge-item");
@@ -277,7 +281,9 @@ export function initReportInteractions(container: any): void {
       if (cat) activate(cat, false);
       setTimeout(() => focusRule(rule), 50);
     }
-  });
+  };
+  container._rptHandler = handler;
+  container.addEventListener("click", handler);
 }
 
 /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
