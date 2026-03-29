@@ -111,8 +111,8 @@ export function registerApplyDecision(cli: CAC): void {
     )
     .action((runDir: string) => {
       const dir = resolve(runDir);
-      if (!existsSync(dir)) {
-        console.log(`Run directory not found: ${runDir}`);
+      if (!existsSync(dir) || !statSync(dir).isDirectory()) {
+        console.log(`Run directory not found or is not a directory: ${runDir}`);
         return;
       }
 
