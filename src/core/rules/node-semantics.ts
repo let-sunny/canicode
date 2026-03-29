@@ -103,6 +103,48 @@ export function isStatefulComponent(node: AnalysisNode): boolean {
   return getStatefulComponentType(node) !== null;
 }
 
+/**
+ * Standard state names across web + mobile platforms.
+ * Used by missing-interaction-state (to detect presence) and
+ * non-standard-naming (to flag non-standard names).
+ *
+ * Sources:
+ * - CSS: :hover, :active, :focus, :disabled, :enabled — https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/Pseudo-classes
+ * - Material Design 3: Hovered, Focused, Pressed, Dragged — https://m3.material.io/foundations/interaction/states
+ * - UIKit: highlighted, selected, disabled, focused — https://developer.apple.com/documentation/uikit/uicontrol/state
+ */
+export const STANDARD_STATE_NAMES = new Set([
+  // CSS pseudo-classes (web)
+  "default", "hover", "active", "focus", "focused", "disabled", "enabled",
+  // Material Design 3 (Android)
+  "pressed", "dragged",
+  // UIKit (iOS)
+  "highlighted",
+  // Common
+  "selected",
+]);
+
+/**
+ * Patterns that look like state names but aren't in the standard set.
+ * Maps common non-standard names to their standard equivalent for suggestions.
+ */
+export const STATE_NAME_SUGGESTIONS: Record<string, string> = {
+  on: "active",
+  off: "default",
+  clicked: "pressed",
+  tapped: "pressed",
+  inactive: "disabled",
+  normal: "default",
+  rest: "default",
+  hovered: "hover",
+  activated: "active",
+  checked: "selected",
+  unchecked: "default",
+};
+
+/** Pattern to detect state-like variant option names (broad match) */
+export const STATE_LIKE_PATTERN = /\b(on|off|clicked|tapped|inactive|normal|rest|hovered|activated|checked|unchecked)\b/i;
+
 // ── Overlay / Carousel patterns ──────────────────────────────────────────────
 
 /** Elements that open on top of current view */
