@@ -11,6 +11,7 @@ import {
   getFigmaCachePath,
   isCacheFresh,
   inferDeviceScaleFactor,
+  inferExportScale,
   compareScreenshots,
 } from "./visual-compare-helpers.js";
 
@@ -150,8 +151,6 @@ export async function visualCompare(options: VisualCompareOptions): Promise<Visu
   const nodeId = nodeIdMatch?.[1]?.replace(/-/g, ":");
   if (!nodeId) throw new Error("Invalid Figma URL — missing node-id");
 
-  const exportScale = options.figmaExportScale ?? 2;
-
   // Step 1: Figma screenshot — use local file if provided, otherwise fetch via API
   if (options.figmaScreenshotPath) {
     if (!existsSync(options.figmaScreenshotPath)) {
@@ -160,7 +159,8 @@ export async function visualCompare(options: VisualCompareOptions): Promise<Visu
     mkdirSync(dirname(figmaScreenshotPath), { recursive: true });
     copyFileSync(options.figmaScreenshotPath, figmaScreenshotPath);
   } else if (!existsSync(figmaScreenshotPath)) {
-    await fetchFigmaScreenshot(fileKey, nodeId, options.figmaToken, figmaScreenshotPath, exportScale);
+    const fetchScale = options.figmaExportScale ?? 2;
+    await fetchFigmaScreenshot(fileKey, nodeId, options.figmaToken, figmaScreenshotPath, fetchScale);
     if (!existsSync(figmaScreenshotPath)) {
       throw new Error(`Figma screenshot was not created at expected path: ${figmaScreenshotPath}`);
     }
@@ -168,6 +168,8 @@ export async function visualCompare(options: VisualCompareOptions): Promise<Visu
 
   // Step 2: Logical viewport + deviceScaleFactor so code.png matches figma.png pixels (@2x, etc.)
   const figmaPng = PNG.sync.read(readFileSync(figmaScreenshotPath));
+  // Auto-detect export scale from PNG width when using local screenshot (KNOWN_1X_WIDTHS convention)
+  const exportScale = options.figmaExportScale ?? inferExportScale(figmaPng.width);
   const hasViewportOverride = options.viewport !== undefined;
   let logicalW: number;
   let logicalH: number;

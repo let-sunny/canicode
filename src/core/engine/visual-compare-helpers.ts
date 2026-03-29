@@ -11,6 +11,21 @@ import { PNG } from "pngjs";
 /** Directory used for caching Figma screenshots. */
 export const FIGMA_CACHE_DIR = "/tmp/canicode-figma-cache";
 
+/**
+ * Known @1x screenshot widths from fixture convention.
+ * Screenshots at these widths are captured at 1x scale (pixel width = logical width).
+ * All other widths are assumed @2x (e.g., 2400px PNG = 1200px logical).
+ */
+export const KNOWN_1X_WIDTHS = [1920, 768];
+
+/**
+ * Infer the export scale of a fixture screenshot based on its pixel width.
+ * Uses KNOWN_1X_WIDTHS convention: 1920/768 = @1x, others = @2x.
+ */
+export function inferExportScale(pngWidth: number): number {
+  return KNOWN_1X_WIDTHS.includes(pngWidth) ? 1 : 2;
+}
+
 /** Cache time-to-live: 1 hour. */
 export const FIGMA_CACHE_TTL_MS = 60 * 60 * 1000;
 
