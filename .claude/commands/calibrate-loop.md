@@ -108,7 +108,13 @@ Proceed to Step 4.
 
 After the Gap Analyzer returns, **you** write the JSON to `$RUN_DIR/gaps.json`.
 
-> **Note**: Discovery evidence from gap analysis is collected programmatically by the orchestrator during Step 4 (Evaluation). Do not manually append to `data/discovery-evidence.json`.
+Then collect uncovered actionable gaps into discovery evidence (deterministic CLI — no LLM):
+
+```bash
+npx canicode calibrate-collect-gap-evidence $RUN_DIR
+```
+
+This reads `gaps.json`, extracts gaps where `actionable: true` and `coveredByRule: null`, and appends them to `data/discovery-evidence.json` as `source: "gap-analysis"` entries.
 
 Append to `$RUN_DIR/activity.jsonl`:
 ```json

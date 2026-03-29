@@ -1,9 +1,10 @@
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { CAC } from "cac";
-import { loadDiscoveryEvidence } from "../../../agents/evidence-collector.js";
+import { loadDiscoveryEvidence, appendDiscoveryEvidence } from "../../../agents/evidence-collector.js";
 import type { DiscoveryEvidenceEntry } from "../../../agents/evidence-collector.js";
 import { DecisionFileSchema } from "../../../agents/contracts/evidence.js";
+import { z } from "zod";
 
 // ─── discovery-filter-evidence ──────────────────────────────────────────────
 
@@ -123,5 +124,90 @@ export function registerApplyDecision(cli: CAC): void {
       }
 
       console.log(JSON.stringify(result));
+    });
+}
+
+// ─── calibrate-collect-gap-evidence ─────────────────────────────────────────
+
+const GapSchema = z.object({
+  category: z.string(),
+  description: z.string(),
+  actionable: z.boolean(),
+  coveredByRule: z.unknown().optional(),
+}).passthrough();
+
+const GapsFileSchema = z.object({
+  fixture: z.string().optional(),
+  gaps: z.array(GapSchema),
+}).passthrough();
+
+/**
+ * Extract uncovered actionable gaps from gaps.json and append to discovery evidence.
+ * Deterministic — no LLM needed.
+ */
+export function collectGapEvidence(runDir: string, fixture: string): DiscoveryEvidenceEntry[] {
+  const gapsPath = join(runDir, "gaps.json");
+  if (!existsSync(gapsPath)) return [];
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(gapsPath, "utf-8"));
+  } catch {
+    return [];
+  }
+  const parsed = GapsFileSchema.safeParse(raw);
+  if (!parsed.success) return [];
+
+  const timestamp = new Date().toISOString();
+  const entries: DiscoveryEvidenceEntry[] = [];
+
+  for (const gap of parsed.data.gaps) {
+    // Only actionable gaps not covered by existing rules
+    if (!gap.actionable) continue;
+    if (gap.coveredByRule !== null && gap.coveredByRule !== undefined) continue;
+
+    entries.push({
+      description: gap.description,
+      category: gap.category,
+      impact: "medium",
+      fixture,
+      timestamp,
+      source: "gap-analysis",
+    });
+  }
+
+  return entries;
+}
+
+export function registerCollectGapEvidence(cli: CAC): void {
+  cli
+    .command(
+      "calibrate-collect-gap-evidence <runDir>",
+      "Collect uncovered actionable gaps from gaps.json into discovery evidence"
+    )
+    .action((runDir: string) => {
+      const dir = resolve(runDir);
+      if (!existsSync(dir) || !statSync(dir).isDirectory()) {
+        console.log(`Run directory not found or is not a directory: ${runDir}`);
+        return;
+      }
+
+      // Extract fixture name from run dir
+      const dirName = dir.split(/[/\\]/).pop() ?? "";
+      const idx = dirName.lastIndexOf("--");
+      const fixture = idx === -1 ? dirName : dirName.slice(0, idx);
+
+      try {
+        const entries = collectGapEvidence(dir, fixture);
+        if (entries.length === 0) {
+          console.log("No uncovered actionable gaps found");
+          return;
+        }
+
+        appendDiscoveryEvidence(entries);
+        console.log(`Collected ${entries.length} gap evidence entries for fixture "${fixture}"`);
+      } catch (err) {
+        console.log(`Failed to collect gap evidence: ${err instanceof Error ? err.message : String(err)}`);
+      }
     });
 }
