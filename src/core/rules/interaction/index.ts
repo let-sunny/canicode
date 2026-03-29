@@ -4,33 +4,10 @@ import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
 import type { MissingInteractionStateSubType, MissingPrototypeSubType } from "../rule-messages.js";
 import { missingInteractionStateMsg, missingPrototypeMsg } from "../rule-messages.js";
-
-// ============================================
-// Interactive component classification
-// ============================================
-
-type InteractiveType = "button" | "link" | "tab" | "input" | "toggle";
-
-const INTERACTIVE_PATTERNS: Array<{ pattern: RegExp; type: InteractiveType }> = [
-  { pattern: /\b(btn|button|cta)\b/i, type: "button" },
-  { pattern: /\b(link|anchor)\b/i, type: "link" },
-  { pattern: /\b(tab|tabs)\b/i, type: "tab" },
-  { pattern: /\b(nav|navigation|menu|navbar)\b/i, type: "tab" },
-  { pattern: /\b(input|text-?field|search-?bar|textarea)\b/i, type: "input" },
-  { pattern: /\b(select|dropdown|combo-?box)\b/i, type: "input" },
-  { pattern: /\b(toggle|switch|checkbox|radio)\b/i, type: "toggle" },
-];
-
-function getInteractiveType(node: AnalysisNode): InteractiveType | null {
-  if (!node.name) return null;
-  for (const entry of INTERACTIVE_PATTERNS) {
-    if (entry.pattern.test(node.name)) return entry.type;
-  }
-  return null;
-}
+import { getStatefulComponentType, isOverlayNode, isCarouselNode, type StatefulComponentType } from "../node-semantics.js";
 
 /** Expected state variants by interactive type */
-const EXPECTED_STATES: Record<InteractiveType, MissingInteractionStateSubType[]> = {
+const EXPECTED_STATES: Record<StatefulComponentType, MissingInteractionStateSubType[]> = {
   button: ["hover", "active", "disabled"],
   link: ["hover"],
   tab: ["hover", "active"],
@@ -110,7 +87,7 @@ const missingInteractionStateCheck: RuleCheckFn = (node, context) => {
   // Only check component instances and components
   if (node.type !== "INSTANCE" && node.type !== "COMPONENT") return null;
 
-  const interactiveType = getInteractiveType(node);
+  const interactiveType = getStatefulComponentType(node);
   if (!interactiveType) return null;
 
   const expectedStates = EXPECTED_STATES[interactiveType];
@@ -155,7 +132,7 @@ export const missingInteractionState = defineRule({
 // ============================================
 
 /** Interactive types that need click prototype */
-const PROTOTYPE_TYPES: Record<InteractiveType, MissingPrototypeSubType> = {
+const PROTOTYPE_TYPES: Record<StatefulComponentType, MissingPrototypeSubType> = {
   button: "button",
   link: "navigation",
   tab: "tab",
@@ -163,18 +140,12 @@ const PROTOTYPE_TYPES: Record<InteractiveType, MissingPrototypeSubType> = {
   toggle: "toggle",
 };
 
-/** Name patterns for overlay elements (open on top of current view) */
-const OVERLAY_PATTERN = /\b(dropdown|select|combo-?box|popover|accordion|drawer|modal|bottom-?sheet|sheet|sidebar|panel|dialog|popup|toast)\b/i;
-
-/** Name patterns for carousel elements (swipe/slide between items) */
-const CAROUSEL_PATTERN = /\b(carousel|slider|swiper|slide-?show|gallery)\b/i;
-
 function getPrototypeSubType(node: AnalysisNode): MissingPrototypeSubType | null {
-  // Check dropdown pattern first — select/dropdown are classified as "input" in
-  // INTERACTIVE_PATTERNS but need "dropdown" subType for prototype checks
-  if (node.name && OVERLAY_PATTERN.test(node.name)) return "overlay";
-  if (node.name && CAROUSEL_PATTERN.test(node.name)) return "carousel";
-  const interactiveType = getInteractiveType(node);
+  // Check overlay/carousel first — select/dropdown are classified as "input" in
+  // STATEFUL_PATTERNS but need "overlay" subType for prototype checks
+  if (isOverlayNode(node)) return "overlay";
+  if (isCarouselNode(node)) return "carousel";
+  const interactiveType = getStatefulComponentType(node);
   if (interactiveType) {
     const mapped = PROTOTYPE_TYPES[interactiveType];
     if (mapped) return mapped;
@@ -190,24 +161,37 @@ function hasInteractionTrigger(node: AnalysisNode, triggerType: string): boolean
   });
 }
 
-/** Check if node (or its component master) has ON_CLICK prototype interaction */
-function hasClickInteraction(node: AnalysisNode, context: RuleContext): boolean {
-  if (hasInteractionTrigger(node, "ON_CLICK")) return true;
+/** Check if node (or its component master) has any of the given trigger types */
+function hasAnyInteraction(node: AnalysisNode, context: RuleContext, triggers: string[]): boolean {
+  for (const trigger of triggers) {
+    if (hasInteractionTrigger(node, trigger)) return true;
+  }
   // INSTANCE nodes don't inherit interactions from master — check master fallback
   if (node.componentId && context.file.componentDefinitions) {
     const master = context.file.componentDefinitions[node.componentId];
-    if (master && hasInteractionTrigger(master, "ON_CLICK")) return true;
+    if (master) {
+      for (const trigger of triggers) {
+        if (hasInteractionTrigger(master, trigger)) return true;
+      }
+    }
   }
   return false;
 }
+
+/** Trigger types to check per subType */
+const PROTOTYPE_TRIGGERS: Record<string, string[]> = {
+  carousel: ["ON_CLICK", "ON_DRAG"],
+};
+
+const DEFAULT_TRIGGERS = ["ON_CLICK"];
 
 const missingPrototypeDef: RuleDefinition = {
   id: "missing-prototype",
   name: "Missing Prototype",
   category: "interaction",
-  why: "Interactive elements without click prototypes give AI no information about navigation or behavior on click",
-  impact: "AI cannot generate click handlers, routing, or state changes — interactive elements become static",
-  fix: "Add ON_CLICK prototype interactions to define navigation targets or state changes",
+  why: "Interactive elements without prototype interactions give AI no information about navigation or behavior",
+  impact: "AI cannot generate interaction handlers, routing, or state changes — interactive elements become static",
+  fix: "Add prototype interactions (ON_CLICK, ON_DRAG) to define navigation targets or state changes",
 };
 
 const SEEN_PROTO_KEY = "missing-prototype:seen";
@@ -222,8 +206,9 @@ const missingPrototypeCheck: RuleCheckFn = (node, context) => {
   const subType = getPrototypeSubType(node);
   if (!subType) return null;
 
-  // Already has click interaction (check instance + master)
-  if (hasClickInteraction(node, context)) return null;
+  // Already has relevant interaction (click, or drag for carousel)
+  const triggers = PROTOTYPE_TRIGGERS[subType] ?? DEFAULT_TRIGGERS;
+  if (hasAnyInteraction(node, context, triggers)) return null;
 
   // Dedup per componentId + subType
   const seen = getSeenProto(context);

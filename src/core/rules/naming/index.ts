@@ -1,47 +1,7 @@
 import type { RuleCheckFn, RuleDefinition } from "../../contracts/rule.js";
 import { defineRule } from "../rule-registry.js";
-import { isExcludedName } from "../excluded-names.js";
 import { defaultNameMsg, getDefaultNameSubType, nonSemanticNameMsg, inconsistentNamingMsg } from "../rule-messages.js";
-
-// ============================================
-// Helper functions
-// ============================================
-
-const DEFAULT_NAME_PATTERNS = [
-  /^Frame\s*\d*$/i,
-  /^Group\s*\d*$/i,
-  /^Rectangle\s*\d*$/i,
-  /^Ellipse\s*\d*$/i,
-  /^Vector\s*\d*$/i,
-  /^Line\s*\d*$/i,
-  /^Text\s*\d*$/i,
-  /^Image\s*\d*$/i,
-  /^Component\s*\d*$/i,
-  /^Instance\s*\d*$/i,
-];
-
-const NON_SEMANTIC_NAMES = [
-  "rectangle",
-  "ellipse",
-  "vector",
-  "line",
-  "polygon",
-  "star",
-  "path",
-  "shape",
-  "image",
-  "fill",
-  "stroke",
-];
-
-function isDefaultName(name: string): boolean {
-  return DEFAULT_NAME_PATTERNS.some((pattern) => pattern.test(name));
-}
-
-function isNonSemanticName(name: string): boolean {
-  const normalized = name.toLowerCase().trim();
-  return NON_SEMANTIC_NAMES.includes(normalized);
-}
+import { isExcludedName, isDefaultName, isNonSemanticName } from "../node-semantics.js";
 
 function detectNamingConvention(name: string): string | null {
   if (/^[a-z]+(-[a-z]+)*$/.test(name)) return "kebab-case";

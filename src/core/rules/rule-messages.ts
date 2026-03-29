@@ -172,7 +172,7 @@ export const missingPrototypeMsg = {
   overlay: (name: string) =>
     `"${name}" looks like an overlay trigger but has no click prototype — add an ON_CLICK interaction to define open/close behavior`,
   carousel: (name: string) =>
-    `"${name}" looks like a carousel but has no click prototype — add an ON_CLICK interaction to define slide navigation`,
+    `"${name}" looks like a carousel but has no interaction prototype — add an ON_CLICK or ON_DRAG interaction to define slide navigation`,
   input: (name: string) =>
     `"${name}" looks like an input but has no click prototype — add an ON_CLICK interaction to define focus/interaction behavior`,
   toggle: (name: string) =>
