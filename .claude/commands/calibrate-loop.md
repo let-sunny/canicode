@@ -135,8 +135,17 @@ If zero proposals, write `$RUN_DIR/debate.json` with skip reason and jump to Ste
 
 ### Step 5 — Critic
 
+Before spawning the Critic, gather supporting evidence:
+
+1. Read `$RUN_DIR/conversion.json` → extract `ruleImpactAssessment` and `uncoveredStruggles`
+2. Read `$RUN_DIR/gaps.json` (if exists) → extract actionable gaps
+3. Read `data/calibration-evidence.json` (if exists) → extract prior evidence for proposed rules
+
 Spawn the `calibration-critic` subagent. In the prompt:
-- Include only the proposal list (NOT the Converter's reasoning)
+- Include the proposal list from summary.md
+- Include the Converter's `ruleImpactAssessment` (actual implementation difficulty per rule)
+- Include actionable gaps from Gap Analysis (if available)
+- Include prior cross-run evidence for the proposed rules
 - **Tell the agent: "Return your reviews as JSON. Do NOT write any files."**
 
 After the Critic returns, **you** write the JSON to `$RUN_DIR/debate.json`:
@@ -145,7 +154,16 @@ After the Critic returns, **you** write the JSON to `$RUN_DIR/debate.json`:
   "critic": {
     "timestamp": "<ISO8601>",
     "summary": "approved=<N> rejected=<N> revised=<N>",
-    "reviews": [ ... ]
+    "reviews": [
+      {
+        "ruleId": "X",
+        "decision": "APPROVE|REJECT|REVISE",
+        "confidence": "high|medium|low",
+        "pro": ["evidence supporting change"],
+        "con": ["evidence against change"],
+        "reason": "..."
+      }
+    ]
   }
 }
 ```
@@ -154,6 +172,26 @@ Append to `$RUN_DIR/activity.jsonl`:
 ```json
 {"step":"Critic","timestamp":"<ISO8601>","result":"approved=<N> rejected=<N> revised=<N>","durationMs":<ms>}
 ```
+
+#### Early-stop check
+
+After the Critic returns, check for early termination:
+
+- If **all reviews** have `decision: "REJECT"` AND `confidence: "high"` → skip Arbitrator. Write debate.json with:
+  ```json
+  {
+    "critic": { ... },
+    "arbitrator": null,
+    "stoppingReason": "all-high-confidence-reject"
+  }
+  ```
+  Append to activity.jsonl:
+  ```json
+  {"step":"Arbitrator","timestamp":"<ISO8601>","result":"SKIPPED — early-stop: all proposals rejected with high confidence","durationMs":0}
+  ```
+  Jump to Step 6.5.
+
+Otherwise, proceed to Step 6.
 
 ### Step 6 — Arbitrator
 
@@ -167,15 +205,23 @@ After the Arbitrator returns, **you** update `$RUN_DIR/debate.json` — read the
   "critic": { ... },
   "arbitrator": {
     "timestamp": "<ISO8601>",
-    "summary": "applied=<N> rejected=<N> revised=<N>",
-    "decisions": [ ... ]
+    "summary": "applied=<N> rejected=<N> hold=<N>",
+    "stoppingReason": "normal|all-high-confidence-reject|low-confidence-hold",
+    "decisions": [
+      {
+        "ruleId": "X",
+        "decision": "applied|rejected|hold|disabled",
+        "confidence": "high|medium|low",
+        "reason": "..."
+      }
+    ]
   }
 }
 ```
 
 Append to `$RUN_DIR/activity.jsonl`:
 ```json
-{"step":"Arbitrator","timestamp":"<ISO8601>","result":"applied=<N> rejected=<N>","durationMs":<ms>}
+{"step":"Arbitrator","timestamp":"<ISO8601>","result":"applied=<N> rejected=<N> hold=<N>","durationMs":<ms>}
 ```
 
 ### Step 6.5 — Prune evidence
@@ -209,7 +255,7 @@ Report the final summary: similarity, proposals, decisions, and path to `logs/ca
 
 - Each agent must be a SEPARATE subagent call (isolated context).
 - Pass only structured data between agents — never raw reasoning.
-- The Critic must NOT see the Runner's or Converter's reasoning, only the proposal list.
+- The Critic receives proposals + converter's ruleImpactAssessment + gaps + prior evidence (structured data, not free-form reasoning).
 - Only the Arbitrator may edit `rule-config.ts`.
 - Steps 1, 4, 7 are CLI commands — run them directly with Bash.
 - **CRITICAL: YOU write all files to $RUN_DIR. Subagents (Gap Analyzer, Critic, Arbitrator) MUST return JSON as text — tell them "Do NOT write any files." You are the only one who writes to $RUN_DIR.**

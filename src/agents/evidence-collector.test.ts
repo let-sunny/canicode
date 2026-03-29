@@ -62,12 +62,16 @@ describe("evidence-collector", () => {
         underscoredCount: 1,
         overscoredDifficulties: ["easy", "moderate"],
         underscoredDifficulties: ["hard"],
+        allPro: [],
+        allCon: [],
       });
       expect(result["rule-b"]).toEqual({
         overscoredCount: 0,
         underscoredCount: 1,
         overscoredDifficulties: [],
         underscoredDifficulties: ["hard"],
+        allPro: [],
+        allCon: [],
       });
     });
 

@@ -16,6 +16,10 @@ You receive the Runner's proposals and the Critic's reviews, and make final deci
 - **proposedDisable: true** → if both Runner and Critic agree, set `enabled: false` in `rule-config.ts`. Decision type: `"disabled"`. If Critic rejects the disable, treat as a normal score adjustment instead.
 - **New rule proposals** → record in `$RUN_DIR/debate.json` only, do NOT add to `rule-config.ts`
 
+### Self-consistency guard
+
+- If the Critic's confidence is `"low"` for a proposal → do NOT apply, regardless of decision. Set decision to `"hold"` with reason explaining insufficient confidence. The evidence will accumulate for future runs.
+
 ## After Deciding
 
 1. Apply approved changes to `src/core/rules/rule-config.ts`
@@ -39,15 +43,22 @@ Return this JSON structure:
 ```json
 {
   "timestamp": "<ISO8601>",
-  "summary": "applied=2 rejected=1 revised=1 newProposals=0",
+  "summary": "applied=2 rejected=1 hold=1 newProposals=0",
+  "stoppingReason": "normal|all-high-confidence-reject|low-confidence-hold",
   "decisions": [
-    {"ruleId": "X", "decision": "applied", "before": -10, "after": -7, "reason": "Critic revised, midpoint applied"},
-    {"ruleId": "X", "decision": "rejected", "reason": "Critic rejection compelling — insufficient evidence"},
-    {"ruleId": "X", "decision": "disabled", "reason": "Converged to zero impact across 3+ runs, all easy"}
+    {"ruleId": "X", "decision": "applied", "before": -10, "after": -7, "confidence": "high", "reason": "Critic revised, midpoint applied"},
+    {"ruleId": "X", "decision": "rejected", "confidence": "medium", "reason": "Critic rejection compelling — insufficient evidence"},
+    {"ruleId": "X", "decision": "hold", "confidence": "low", "reason": "Low confidence — accumulate more evidence before applying"},
+    {"ruleId": "X", "decision": "disabled", "confidence": "high", "reason": "Converged to zero impact across 3+ runs, all easy"}
   ],
   "newRuleProposals": []
 }
 ```
+
+### Field requirements
+
+- **confidence**: carried from Critic's review for each decision
+- **stoppingReason**: why the debate ended — `"normal"` (mixed decisions), `"all-high-confidence-reject"` (all rejected with high confidence), `"low-confidence-hold"` (all held due to low confidence)
 
 ## Rules
 
@@ -56,3 +67,4 @@ Return this JSON structure:
 - Only modify `rule-config.ts` for approved score/severity changes.
 - Never force-push or amend existing commits.
 - If tests fail, revert everything and report which change caused the failure.
+- **Never apply changes with `confidence: "low"`.** Hold them for future evidence accumulation.

@@ -63,6 +63,8 @@ export function loadCalibrationEvidence(
         underscoredCount: 0,
         overscoredDifficulties: [],
         underscoredDifficulties: [],
+        allPro: [],
+        allCon: [],
       };
       result[entry.ruleId] = group;
     }
@@ -74,6 +76,19 @@ export function loadCalibrationEvidence(
       group.underscoredCount++;
       group.underscoredDifficulties.push(entry.actualDifficulty);
     }
+
+    // Aggregate pro/con from enriched entries
+    if (entry.pro) {
+      group.allPro ??= [];
+      group.allPro.push(...entry.pro);
+    }
+    if (entry.con) {
+      group.allCon ??= [];
+      group.allCon.push(...entry.con);
+    }
+    // Keep last confidence/decision (most recent entry wins)
+    if (entry.confidence) group.lastConfidence = entry.confidence;
+    if (entry.decision) group.lastDecision = entry.decision;
   }
 
   return result;
