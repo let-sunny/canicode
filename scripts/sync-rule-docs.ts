@@ -4,6 +4,9 @@
  * Usage: npx tsx scripts/sync-rule-docs.ts
  *
  * Replaces content between RULE_TABLE_START and RULE_TABLE_END markers in CUSTOMIZATION.md.
+ *
+ * NOTE: This script does NOT update the GitHub Wiki Rule Reference page.
+ * After rule changes, manually update: https://github.com/let-sunny/canicode/wiki/Rule-Reference
  */
 
 // Import rules to populate registry
