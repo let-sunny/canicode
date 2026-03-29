@@ -135,17 +135,19 @@ If zero proposals, write `$RUN_DIR/debate.json` with skip reason and jump to Ste
 
 ### Step 5 — Critic
 
-Before spawning the Critic, gather supporting evidence:
+Gather supporting evidence (deterministic CLI — no LLM):
 
-1. Read `$RUN_DIR/conversion.json` → extract `ruleImpactAssessment` and `uncoveredStruggles`
-2. Read `$RUN_DIR/gaps.json` (if exists) → extract actionable gaps
-3. Read `data/calibration-evidence.json` (if exists) → extract prior evidence for proposed rules
+```bash
+npx canicode calibrate-gather-evidence $RUN_DIR
+```
+
+This reads `conversion.json`, `gaps.json`, `summary.md`, and `data/calibration-evidence.json`, and writes a single `$RUN_DIR/critic-evidence.json` with structured data for the Critic.
+
+Read `$RUN_DIR/critic-evidence.json` and include it in the Critic prompt.
 
 Spawn the `calibration-critic` subagent. In the prompt:
 - Include the proposal list from summary.md
-- Include the Converter's `ruleImpactAssessment` (actual implementation difficulty per rule)
-- Include actionable gaps from Gap Analysis (if available)
-- Include prior cross-run evidence for the proposed rules
+- Include the gathered evidence from `critic-evidence.json`
 - **Tell the agent: "Return your reviews as JSON. Do NOT write any files."**
 
 After the Critic returns, **you** write the JSON to `$RUN_DIR/debate.json`:
@@ -173,25 +175,21 @@ Append to `$RUN_DIR/activity.jsonl`:
 {"step":"Critic","timestamp":"<ISO8601>","result":"approved=<N> rejected=<N> revised=<N>","durationMs":<ms>}
 ```
 
-#### Early-stop check
+#### Early-stop check (deterministic CLI — no LLM)
 
-After the Critic returns, check for early termination:
+```bash
+npx canicode calibrate-finalize-debate $RUN_DIR
+```
 
-- If **all reviews** have `decision: "REJECT"` AND `confidence: "high"` → skip Arbitrator. Write debate.json with:
-  ```json
-  {
-    "critic": { ... },
-    "arbitrator": null,
-    "stoppingReason": "all-high-confidence-reject"
-  }
-  ```
-  Append to activity.jsonl:
+This outputs JSON: `{"action": "early-stop"|"continue", ...}`.
+
+- If `action` is `"early-stop"`: the CLI has already written `stoppingReason` to debate.json. Append to activity.jsonl:
   ```json
   {"step":"Arbitrator","timestamp":"<ISO8601>","result":"SKIPPED — early-stop: all proposals rejected with high confidence","durationMs":0}
   ```
   Jump to Step 6.5.
 
-Otherwise, proceed to Step 6.
+- If `action` is `"continue"`: proceed to Step 6.
 
 ### Step 6 — Arbitrator
 
@@ -199,7 +197,7 @@ Spawn the `calibration-arbitrator` subagent. In the prompt:
 - Include proposals and the Critic's reviews from `$RUN_DIR/debate.json`
 - **Tell the agent: "Return your decisions as JSON. Only edit rule-config.ts if applying changes. Do NOT write to logs."**
 
-After the Arbitrator returns, **you** update `$RUN_DIR/debate.json` — read the existing content and add the `arbitrator` field. Only set `stoppingReason` at the **top level** when non-normal termination occurred (e.g. `"low-confidence-hold"`, `"all-high-confidence-reject"`). Omit the field for normal completion:
+After the Arbitrator returns, **you** update `$RUN_DIR/debate.json` — read the existing content and add the `arbitrator` field:
 
 ```json
 {
@@ -217,10 +215,17 @@ After the Arbitrator returns, **you** update `$RUN_DIR/debate.json` — read the
         "reason": "..."
       }
     ]
-  },
-  "stoppingReason": "low-confidence-hold"
+  }
 }
 ```
+
+Then finalize the debate (deterministic CLI — no LLM):
+
+```bash
+npx canicode calibrate-finalize-debate $RUN_DIR
+```
+
+This determines `stoppingReason` (if any) and writes it to debate.json. Outputs JSON with `action: "finalized"`.
 
 Append to `$RUN_DIR/activity.jsonl`:
 ```json
