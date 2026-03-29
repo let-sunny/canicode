@@ -108,7 +108,7 @@ EXAMPLE
 USAGE
   canicode analyze <url> --config ./my-config.json
 
-  Full guide: docs/REFERENCE.md
+  Full guide: docs/CUSTOMIZATION.md
   Examples:   examples/config.json
 `.trimStart());
 }

@@ -1,9 +1,9 @@
 /**
- * Auto-generate rule tables in docs/REFERENCE.md from rule-config.ts + rule registry.
+ * Auto-generate rule tables in docs/CUSTOMIZATION.md from rule-config.ts + rule registry.
  *
  * Usage: npx tsx scripts/sync-rule-docs.ts
  *
- * Replaces content between RULE_TABLE_START and RULE_TABLE_END markers in REFERENCE.md.
+ * Replaces content between RULE_TABLE_START and RULE_TABLE_END markers in CUSTOMIZATION.md.
  */
 
 // Import rules to populate registry
@@ -18,7 +18,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REFERENCE_PATH = resolve(__dirname, "../docs/REFERENCE.md");
+const REFERENCE_PATH = resolve(__dirname, "../docs/CUSTOMIZATION.md");
 const START_MARKER = "<!-- RULE_TABLE_START";
 const END_MARKER = "<!-- RULE_TABLE_END -->";
 
@@ -61,7 +61,7 @@ const startIdx = content.indexOf(START_MARKER);
 const endIdx = content.indexOf(END_MARKER);
 
 if (startIdx === -1 || endIdx === -1) {
-  console.error("RULE_TABLE markers not found in REFERENCE.md");
+  console.error("RULE_TABLE markers not found in CUSTOMIZATION.md");
   process.exit(1);
 }
 
@@ -78,8 +78,8 @@ const updated =
   after;
 
 if (content === updated) {
-  console.log("docs/REFERENCE.md is already up to date.");
+  console.log("docs/CUSTOMIZATION.md is already up to date.");
 } else {
   writeFileSync(REFERENCE_PATH, updated, "utf-8");
-  console.log("docs/REFERENCE.md updated.");
+  console.log("docs/CUSTOMIZATION.md updated.");
 }

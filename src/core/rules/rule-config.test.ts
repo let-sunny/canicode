@@ -9,7 +9,7 @@ import type { RuleId } from "../contracts/rule.js";
 import "./index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REFERENCE_PATH = resolve(__dirname, "../../../docs/REFERENCE.md");
+const REFERENCE_PATH = resolve(__dirname, "../../../docs/CUSTOMIZATION.md");
 
 describe("rule-config sync", () => {
   describe("REFERENCE.md matches rule-config.ts", () => {

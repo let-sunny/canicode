@@ -133,7 +133,7 @@ With a Figma API token:
 claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode canicode-mcp
 ```
 
-For Cursor / Claude Desktop config, see [`docs/REFERENCE.md`](docs/REFERENCE.md).
+For Cursor / Claude Desktop config, see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md).
 
 </details>
 
@@ -198,7 +198,7 @@ Posts analysis as a PR comment. Fails if score is below threshold. See [**canico
 | **Presets** | `--preset relaxed \| dev-friendly \| ai-ready \| strict` |
 | **Config overrides** | `--config ./config.json` — adjust scores, severity, exclude nodes |
 
-See [`docs/REFERENCE.md`](docs/REFERENCE.md) for the full guide, examples, and all available options.
+See [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md) for the full guide, examples, and all available options.
 
 ---
 
