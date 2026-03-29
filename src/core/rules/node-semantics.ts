@@ -104,12 +104,9 @@ export function isStatefulComponent(node: AnalysisNode): boolean {
 }
 
 /**
- * Standard state names accepted across web + mobile platforms.
+ * Standard state names across web + mobile platforms.
  * Used by missing-interaction-state (to detect presence) and
  * non-standard-naming (to flag non-standard names).
- */
-/**
- * Standard state names across web + mobile platforms.
  *
  * Sources:
  * - CSS: :hover, :active, :focus, :disabled, :enabled — https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/Pseudo-classes
