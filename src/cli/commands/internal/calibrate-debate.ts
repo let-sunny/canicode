@@ -105,8 +105,7 @@ export function registerGatherEvidence(cli: CAC): void {
     .action((runDir: string) => {
       const dir = resolve(runDir);
       if (!existsSync(dir)) {
-        console.error(`Run directory not found: ${runDir}`);
-        process.exitCode = 1;
+        console.log(`Run directory not found: ${runDir}`);
         return;
       }
 
@@ -137,15 +136,13 @@ export function registerFinalizeDebate(cli: CAC): void {
     .action((runDir: string) => {
       const dir = resolve(runDir);
       if (!existsSync(dir)) {
-        console.error(`Run directory not found: ${runDir}`);
-        process.exitCode = 1;
+        console.log(`Run directory not found: ${runDir}`);
         return;
       }
 
       const debate = parseDebateResult(dir);
       if (!debate) {
-        console.error("No debate.json found");
-        process.exitCode = 1;
+        console.log("No debate.json found");
         return;
       }
 

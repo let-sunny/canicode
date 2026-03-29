@@ -123,8 +123,7 @@ export function registerEvidenceEnrich(cli: CAC): void {
     .action((runDir: string) => {
       const resolvedDir = resolve(runDir);
       if (!existsSync(resolvedDir)) {
-        console.error(`Run directory not found: ${runDir}`);
-        process.exitCode = 1;
+        console.log(`Run directory not found: ${runDir}`);
         return;
       }
       const debate = parseDebateResult(resolvedDir);
@@ -136,8 +135,7 @@ export function registerEvidenceEnrich(cli: CAC): void {
       // Extract fixture name from run directory (e.g. "material3-kit--2026-03-26-0900" → "material3-kit")
       const { name: fixture } = parseRunDirName(basename(resolvedDir));
       if (!fixture) {
-        console.error("Cannot extract fixture name from run directory");
-        process.exitCode = 1;
+        console.log("Cannot extract fixture name from run directory");
         return;
       }
 
@@ -164,14 +162,12 @@ export function registerEvidencePrune(cli: CAC): void {
     )
     .action((runDir: string) => {
       if (!existsSync(resolve(runDir))) {
-        console.error(`Run directory not found: ${runDir}`);
-        process.exitCode = 1;
+        console.log(`Run directory not found: ${runDir}`);
         return;
       }
       const debate = parseDebateResult(resolve(runDir));
       if (!debate) {
-        console.error("No debate.json found — nothing to prune.");
-        process.exitCode = 1;
+        console.log("No debate.json found — nothing to prune.");
         return;
       }
 
