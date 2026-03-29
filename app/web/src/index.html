@@ -154,7 +154,7 @@
         <input id="auth-token-input" type="password" placeholder="figd_..." class="web-input">
         <p class="web-hint">
           <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-          Stored in your browser session only. Never sent to any server.
+          Stored in your browser session only. Sent directly from your browser to Figma when you analyze or post a comment.
         </p>
         <p class="web-hint" style="margin-top:8px">
           Figma &rarr; Settings &rarr; Security &rarr; Personal access tokens &rarr; Generate new token
@@ -172,7 +172,7 @@
     <!-- Hero -->
     <section class="web-hero">
       <h1>Analyze your Figma designs</h1>
-      <p>Check development-friendliness and AI-readiness scores. Runs entirely in your browser — no data leaves your machine.</p>
+      <p>Check development-friendliness and AI-readiness scores. Analysis runs in your browser, and requests go directly to Figma rather than through an app backend.</p>
       <p>
         <a href="https://github.com/let-sunny/canicode/discussions/categories/share-your-figma" target="_blank" rel="noopener" class="web-hero-link">
           Share your Figma design to help improve scoring accuracy
@@ -204,7 +204,7 @@
       </div>
 
       <!-- Error Display -->
-      <div id="error-box" class="web-error">
+      <div id="error-box" class="web-error" role="alert" aria-live="assertive" aria-atomic="true">
         <p class="web-error-title" id="error-title">Error</p>
         <p class="web-error-detail" id="error-detail"></p>
       </div>
@@ -388,11 +388,13 @@
           throw new Error(errMsg + (errBody ? ': ' + errBody.slice(0, 100) : ''));
         }
         btn.textContent = 'Sent \u2713';
+        btn.classList.remove('rpt-btn-fail');
         btn.classList.add('rpt-btn-ok');
         window._trackEvent && window._trackEvent('cic_comment_posted', {});
       } catch (e) {
         btn.textContent = 'Failed';
         btn.title = e.message || String(e);
+        btn.classList.remove('rpt-btn-ok');
         btn.classList.add('rpt-btn-fail');
         btn.disabled = false;
         window._trackEvent && window._trackEvent('cic_comment_failed', { error: e.message || String(e) });

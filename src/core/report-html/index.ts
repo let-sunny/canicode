@@ -125,10 +125,12 @@ function renderFigmaCommentScript(figmaToken: string): string {
           throw new Error(errMsg + (errBody ? ': ' + errBody.slice(0, 100) : ''));
         }
         btn.textContent = 'Sent \\u2713';
+        btn.classList.remove('rpt-btn-fail');
         btn.classList.add('rpt-btn-ok');
       } catch (e) {
         btn.textContent = 'Failed';
         btn.title = e.message || String(e);
+        btn.classList.remove('rpt-btn-ok');
         btn.classList.add('rpt-btn-fail');
         btn.disabled = false;
       }

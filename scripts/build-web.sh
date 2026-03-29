@@ -16,7 +16,7 @@ echo "=== Building CanICode Web App ==="
 mkdir -p "$WEB_DIST"
 
 # Step 1: Build the browser bundle (outputs to app/web/dist/)
-echo "[1/2] Building browser.global.js..."
+echo "[1/3] Building browser.global.js..."
 npx tsup src/browser.ts --config tsup.browser.config.ts
 
 # Step 2: Copy static assets

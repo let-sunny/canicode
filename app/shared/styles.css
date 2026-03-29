@@ -24,8 +24,8 @@
   --blue-bg: rgba(59,130,246,0.08);
   --radius: 8px;
   --radius-sm: 6px;
-  --font-sans: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'SF Mono', Menlo, Monaco, monospace;
+  --font-sans: 'Inter', -apple-system, 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', sans-serif;
+  --font-mono: 'SF Mono', 'Menlo', 'Monaco', monospace;
 }
 
 body {
@@ -496,7 +496,7 @@ body {
   .rpt-summary-total { border-left: none; padding-left: 0; }
   .rpt-opps-item { padding: 10px 16px; gap: 10px; }
   .rpt-opps-bar-wrap { width: 80px; }
-  .rpt-opps-link { display: none; }
+  .rpt-opps-link { font-size: 11px; }
   .rpt-cat-header { padding: 10px 14px; gap: 8px; }
   .rpt-sev-group { padding: 10px 14px; }
   .rpt-issue-header { padding: 6px 10px; gap: 6px; font-size: 12px; }

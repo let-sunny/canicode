@@ -69,7 +69,6 @@ export function renderReportBody(data: ReportData): string {
       <div class="rpt-gauges-grid">
 ${CATEGORIES.map(cat => {
     const cs = scores.byCategory[cat];
-    const desc = CATEGORY_DESCRIPTIONS[cat];
     return `        <a href="#cat-${cat}" class="rpt-gauge-item">
           ${renderGaugeSvg(cs.percentage, 100, 7)}
           <span class="rpt-gauge-label">${CATEGORY_LABELS[cat]}</span>
