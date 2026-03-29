@@ -245,7 +245,7 @@ SCORING MODEL
   Grades: S(95) A+(90) A(85) B+(80) B(75) C+(70) C(65) D(50) F(<50)
   Floor: 5% minimum.
 
-  Full documentation: https://github.com/let-sunny/canicode/blob/main/docs/SCORING.md
+  Full documentation: https://github.com/let-sunny/canicode/wiki/Scoring-Model
 `.trimStart());
 }
 

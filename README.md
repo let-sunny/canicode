@@ -43,7 +43,7 @@ Rule scores aren't guesswork. A 6-agent calibration pipeline converts real Figma
 - Design that's hard to implement accurately → rule score goes **up**
 - Design that's easy despite the flag → rule score goes **down**
 
-The pipeline runs on community fixtures, not on every analysis. See [`docs/CALIBRATION.md`](docs/CALIBRATION.md).
+The pipeline runs on community fixtures, not on every analysis. See the [Calibration wiki](https://github.com/let-sunny/canicode/wiki/Calibration).
 
 ---
 
@@ -215,7 +215,7 @@ pnpm test       # run tests
 pnpm lint       # type check
 ```
 
-For architecture details, see [`CLAUDE.md`](CLAUDE.md). For calibration pipeline, see [`docs/CALIBRATION.md`](docs/CALIBRATION.md).
+For architecture details, see [`CLAUDE.md`](CLAUDE.md). For calibration pipeline, see the [Calibration wiki](https://github.com/let-sunny/canicode/wiki/Calibration).
 
 ## Contributing
 
