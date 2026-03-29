@@ -5,8 +5,8 @@ import {
   isAbsolutePositionExempt,
   isSizeConstraintExempt,
   isFixedSizeExempt,
-  isVisualOnlyNode,
 } from "./rule-exceptions.js";
+import { isVisualOnlyNode } from "./node-semantics.js";
 
 function makeNode(overrides: Partial<AnalysisNode> = {}): AnalysisNode {
   return {

@@ -146,7 +146,7 @@ const ELIGIBLE_NODE_TYPES: Set<AnalysisNodeType> = new Set([
   "INSTANCE",
 ]);
 
-import { isExcludedName } from "../core/rules/excluded-names.js";
+import { isExcludedName } from "../core/rules/node-semantics.js";
 
 /**
  * Filter node summaries to meaningful conversion candidates.

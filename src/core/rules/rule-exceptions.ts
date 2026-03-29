@@ -2,9 +2,6 @@ import type { AnalysisNode } from "../contracts/figma-node.js";
 import type { RuleContext } from "../contracts/rule.js";
 import { isVisualLeafType, isVisualOnlyNode, isExcludedName } from "./node-semantics.js";
 
-// Re-export for existing consumers
-export { isVisualLeafType, isVisualOnlyNode, hasImageFill } from "./node-semantics.js";
-
 // ============================================
 // Auto-layout exceptions
 // ============================================
