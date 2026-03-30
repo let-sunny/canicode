@@ -34,6 +34,7 @@ export type ConversionRecord = z.infer<typeof ConversionRecordSchema>;
 
 export const StripTypeEnum = z.enum([
   "layout-direction-spacing",
+  "size-constraints",
   "component-references",
   "node-names-hierarchy",
   "variable-references",
@@ -42,10 +43,29 @@ export const StripTypeEnum = z.enum([
 
 export const StripDeltaResultSchema = z.object({
   stripType: StripTypeEnum,
+  // Pixel similarity (design viewport)
   baselineSimilarity: z.number(),
   strippedSimilarity: z.number(),
   delta: z.number().finite(),
   deltaDifficulty: DifficultySchema,
+  // Responsive similarity (expanded viewport — primarily for size-constraints)
+  baselineResponsiveSimilarity: z.number().finite().nullable().optional(),
+  strippedResponsiveSimilarity: z.number().finite().nullable().optional(),
+  responsiveDelta: z.number().finite().nullable().optional(),
+  responsiveViewport: z.number().int().positive().nullable().optional(),
+  // Input tokens (design-tree token count)
+  baselineInputTokens: z.number().int().nonnegative().optional(),
+  strippedInputTokens: z.number().int().nonnegative().optional(),
+  tokenDelta: z.number().int().optional(),
+  // HTML output size
+  baselineHtmlBytes: z.number().int().nonnegative().optional(),
+  strippedHtmlBytes: z.number().int().nonnegative().optional(),
+  htmlBytesDelta: z.number().int().optional(),
+  // CSS metrics
+  baselineCssClassCount: z.number().int().nonnegative().optional(),
+  strippedCssClassCount: z.number().int().nonnegative().optional(),
+  baselineCssVariableCount: z.number().int().nonnegative().optional(),
+  strippedCssVariableCount: z.number().int().nonnegative().optional(),
 });
 
 export const StripDeltasArraySchema = z.array(StripDeltaResultSchema);

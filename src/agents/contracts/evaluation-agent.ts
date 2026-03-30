@@ -25,6 +25,17 @@ export const MismatchCaseSchema = z.object({
 
 export type MismatchCase = z.infer<typeof MismatchCaseSchema>;
 
+export interface StripDeltaForEval {
+  /** Pixel similarity delta (baseline - stripped) at design viewport */
+  pixelDelta: number;
+  /** Responsive pixel similarity delta at expanded viewport (null if not measured) */
+  responsiveDelta: number | null;
+  /** Baseline design-tree input token count */
+  baselineInputTokens: number | null;
+  /** Stripped design-tree input token count */
+  strippedInputTokens: number | null;
+}
+
 export interface EvaluationAgentInput {
   nodeIssueSummaries: Array<{
     nodeId: string;
@@ -54,12 +65,12 @@ export interface EvaluationAgentInput {
    */
   responsiveDelta?: number | null | undefined;
   /**
-   * Strip ablation deltas keyed by strip type.
-   * Each value = baseline similarity - stripped similarity (percentage points).
-   * Positive = removing that info caused degradation. Used to objectively override AI self-assessment.
+   * Strip ablation results keyed by strip type.
+   * Contains pixel delta, token counts, responsive delta, and HTML metrics per strip.
+   * Used to objectively override AI self-assessment with category-appropriate metrics.
    * undefined = no strip ablation data available.
    */
-  stripDeltas?: Record<string, number> | undefined;
+  stripDeltas?: Record<string, StripDeltaForEval> | undefined;
   /**
    * Whether the conversion was whole-design (single root record covering the entire page).
    * When true, evaluation merges all nodeIssueSummaries' flaggedRuleIds into the single record

@@ -71,14 +71,14 @@ npx canicode design-tree <fixture-path> --output $RUN_DIR/design-tree.txt
 # Create stripped directory
 mkdir -p $RUN_DIR/stripped
 
-# Generate stripped versions (deterministic text processing)
+# Generate stripped versions (deterministic text processing; default = all DESIGN_TREE_INFO_TYPES)
 npx canicode design-tree-strip $RUN_DIR/design-tree.txt \
-  --types layout-direction-spacing,component-references,node-names-hierarchy,variable-references,style-references \
   --output-dir $RUN_DIR/stripped
 ```
 
-This produces 5 files in `$RUN_DIR/stripped/`:
+This produces 6 files in `$RUN_DIR/stripped/` (`DESIGN_TREE_INFO_TYPES` in `src/core/design-tree/strip.ts`):
 - `layout-direction-spacing.txt`
+- `size-constraints.txt`
 - `component-references.txt`
 - `node-names-hierarchy.txt`
 - `variable-references.txt`
