@@ -29,3 +29,26 @@ export function stripDeltaToDifficulty(delta: number): Difficulty {
   if (delta <= 30) return "hard";
   return "failed";
 }
+
+/**
+ * Map a token count delta percentage to a difficulty level.
+ *
+ * tokenDelta = baselineInputTokens - strippedInputTokens.
+ * tokenDeltaPercent = tokenDelta / baselineInputTokens * 100.
+ * Higher percentage means removing that info significantly reduces token cost,
+ * i.e. the info contributed a lot of tokens — its absence matters for token management.
+ *
+ * Thresholds:
+ * - ≤ 5%  → easy    (minimal token impact)
+ * - 6-20% → moderate (noticeable token savings)
+ * - 21-40% → hard   (significant token impact)
+ * - > 40% → failed  (critical for token budget)
+ */
+export function tokenDeltaToDifficulty(baselineTokens: number, strippedTokens: number): Difficulty {
+  if (baselineTokens <= 0) return "easy";
+  const deltaPercent = ((baselineTokens - strippedTokens) / baselineTokens) * 100;
+  if (deltaPercent <= 5) return "easy";
+  if (deltaPercent <= 20) return "moderate";
+  if (deltaPercent <= 40) return "hard";
+  return "failed";
+}

@@ -316,13 +316,18 @@ export function runCalibrationEvaluate(
     : null;
 
   // Extract strip ablation deltas if available (Zod-validated)
-  let stripDeltas: Record<string, number> | undefined;
+  let stripDeltas: Record<string, import("./contracts/evaluation-agent.js").StripDeltaForEval> | undefined;
   {
     const parsed = StripDeltasArraySchema.safeParse(conversionJson["stripDeltas"]);
     if (parsed.success && parsed.data.length > 0) {
       stripDeltas = {};
       for (const r of parsed.data) {
-        stripDeltas[r.stripType] = r.delta;
+        stripDeltas[r.stripType] = {
+          pixelDelta: r.delta,
+          responsiveDelta: r.responsiveDelta ?? null,
+          baselineInputTokens: r.baselineInputTokens ?? null,
+          strippedInputTokens: r.strippedInputTokens ?? null,
+        };
       }
     }
   }

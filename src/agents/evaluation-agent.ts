@@ -3,13 +3,14 @@ import type {
   EvaluationAgentOutput,
   MismatchCase,
   MismatchType,
+  StripDeltaForEval,
 } from "./contracts/evaluation-agent.js";
 import type { Difficulty } from "./contracts/conversion-agent.js";
 import type { Severity } from "../core/contracts/severity.js";
 import type { RuleId } from "../core/contracts/rule.js";
 import { RULE_ID_CATEGORY } from "../core/rules/rule-config.js";
 import type { DesignTreeInfoType } from "../core/design-tree/strip.js";
-import { stripDeltaToDifficulty } from "../core/design-tree/delta.js";
+import { stripDeltaToDifficulty, tokenDeltaToDifficulty } from "../core/design-tree/delta.js";
 
 /**
  * Difficulty-to-score range mapping.
@@ -259,23 +260,70 @@ const STRIP_TYPE_RULES: Record<DesignTreeInfoType, RuleId[]> = {
 };
 
 /**
+ * Strip types that should use token delta instead of pixel delta.
+ * These represent information whose absence affects token cost/code quality,
+ * not pixel accuracy at design viewport.
+ */
+const TOKEN_METRIC_STRIPS = new Set<DesignTreeInfoType>([
+  "component-references",
+  "node-names-hierarchy",
+  "variable-references",
+  "style-references",
+]);
+
+/**
+ * Strip types that should use responsive pixel delta.
+ * These represent information whose absence manifests at expanded viewports.
+ */
+const RESPONSIVE_METRIC_STRIPS = new Set<DesignTreeInfoType>([
+  "size-constraints",
+]);
+
+/**
  * Get the objective strip-based difficulty for a rule.
- * If multiple strip types affect the same rule, take the maximum delta (worst case).
+ * Uses category-appropriate metric per strip type:
+ * - layout-direction-spacing → pixel delta
+ * - size-constraints → responsive pixel delta
+ * - component/naming/variable/style → token delta
+ * If multiple strip types affect the same rule, take the worst difficulty.
  */
 function getStripDifficultyForRule(
   ruleId: string,
-  stripDeltas: Record<string, number>,
+  stripDeltas: Record<string, StripDeltaForEval>,
 ): Difficulty | null {
-  let maxDelta = -1;
+  const difficulties: Difficulty[] = [];
+
   for (const [stripType, ruleIds] of Object.entries(STRIP_TYPE_RULES)) {
     if (!ruleIds.includes(ruleId as RuleId)) continue;
-    const delta = stripDeltas[stripType];
-    if (delta != null && delta > maxDelta) {
-      maxDelta = delta;
+    const data = stripDeltas[stripType];
+    if (!data) continue;
+
+    const infoType = stripType as DesignTreeInfoType;
+
+    if (RESPONSIVE_METRIC_STRIPS.has(infoType)) {
+      // size-constraints: use responsive delta if available, fall back to pixel delta
+      const delta = data.responsiveDelta ?? data.pixelDelta;
+      difficulties.push(stripDeltaToDifficulty(delta));
+    } else if (TOKEN_METRIC_STRIPS.has(infoType)) {
+      // token-management strips: use token delta if available, fall back to pixel delta
+      if (data.baselineInputTokens != null && data.strippedInputTokens != null) {
+        difficulties.push(tokenDeltaToDifficulty(data.baselineInputTokens, data.strippedInputTokens));
+      } else {
+        difficulties.push(stripDeltaToDifficulty(data.pixelDelta));
+      }
+    } else {
+      // layout: use pixel delta
+      difficulties.push(stripDeltaToDifficulty(data.pixelDelta));
     }
   }
-  if (maxDelta < 0) return null;
-  return stripDeltaToDifficulty(maxDelta);
+
+  if (difficulties.length === 0) return null;
+
+  // Take worst difficulty (failed > hard > moderate > easy)
+  const order: Difficulty[] = ["easy", "moderate", "hard", "failed"];
+  return difficulties.reduce((worst, d) =>
+    order.indexOf(d) > order.indexOf(worst) ? d : worst
+  );
 }
 
 /**

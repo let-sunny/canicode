@@ -333,7 +333,7 @@ describe("runEvaluationAgent", () => {
         "no-auto-layout": { score: -3, severity: "blocking" },
       },
       stripDeltas: {
-        "layout-direction-spacing": 20,
+        "layout-direction-spacing": { pixelDelta: 20, responsiveDelta: null, baselineInputTokens: null, strippedInputTokens: null },
       },
     };
 
@@ -341,7 +341,7 @@ describe("runEvaluationAgent", () => {
 
     const match = result.mismatches.find(m => m.ruleId === "no-auto-layout");
     expect(match).toBeDefined();
-    // AI said "easy" but strip delta=20 → hard → score -3 is underscored (expected -8 to -12)
+    // AI said "easy" but strip pixel delta=20 → hard → score -3 is underscored (expected -8 to -12)
     expect(match!.type).toBe("underscored");
     expect(match!.actualDifficulty).toBe("hard");
     expect(match!.reasoning).toContain("strip-ablation");
@@ -368,7 +368,7 @@ describe("runEvaluationAgent", () => {
         "missing-component": { score: -3, severity: "risk" },
       },
       stripDeltas: {
-        "component-references": 2,
+        "component-references": { pixelDelta: 2, responsiveDelta: null, baselineInputTokens: 10000, strippedInputTokens: 9800 },
       },
     };
 
@@ -376,6 +376,7 @@ describe("runEvaluationAgent", () => {
 
     const match = result.mismatches.find(m => m.ruleId === "missing-component");
     expect(match).toBeDefined();
+    // token delta = 2% → easy → score -3 validated
     expect(match!.type).toBe("validated");
     expect(match!.actualDifficulty).toBe("easy");
     expect(result.validatedRules).toContain("missing-component");
@@ -401,8 +402,8 @@ describe("runEvaluationAgent", () => {
         "deep-nesting": { score: -3, severity: "risk" },
       },
       stripDeltas: {
-        "layout-direction-spacing": 25,
-        "component-references": 20,
+        "layout-direction-spacing": { pixelDelta: 25, responsiveDelta: null, baselineInputTokens: null, strippedInputTokens: null },
+        "component-references": { pixelDelta: 20, responsiveDelta: null, baselineInputTokens: null, strippedInputTokens: null },
       },
     };
 
@@ -434,8 +435,8 @@ describe("runEvaluationAgent", () => {
         "raw-value": { score: -2, severity: "missing-info" },
       },
       stripDeltas: {
-        "variable-references": 3,   // easy
-        "style-references": 18,     // hard
+        "variable-references": { pixelDelta: 3, responsiveDelta: null, baselineInputTokens: 10000, strippedInputTokens: 9700 },
+        "style-references": { pixelDelta: 18, responsiveDelta: null, baselineInputTokens: 10000, strippedInputTokens: 5500 },
       },
     };
 
@@ -443,9 +444,10 @@ describe("runEvaluationAgent", () => {
 
     const match = result.mismatches.find(m => m.ruleId === "raw-value");
     expect(match).toBeDefined();
-    // max delta is 18 (style-references) → hard → score -2 is underscored
+    // variable-references: token delta=3% → easy. style-references: token delta=45% → failed.
+    // Worst = failed → score -2 is underscored
     expect(match!.type).toBe("underscored");
-    expect(match!.actualDifficulty).toBe("hard");
+    expect(match!.actualDifficulty).toBe("failed");
   });
 
   it("strip delta overrides apply after responsive delta overrides", () => {
@@ -471,7 +473,7 @@ describe("runEvaluationAgent", () => {
       },
       responsiveDelta: 25,
       stripDeltas: {
-        "layout-direction-spacing": 8,
+        "layout-direction-spacing": { pixelDelta: 8, responsiveDelta: null, baselineInputTokens: null, strippedInputTokens: null },
       },
     };
 
