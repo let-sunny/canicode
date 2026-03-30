@@ -33,10 +33,11 @@ Use ALL inputs to form pro/con arguments. Do not rely on proposals alone.
 ### Strip Ablation Deltas (objective ground truth)
 
 When `stripDeltas` are present, they provide the **most reliable** difficulty signal:
-- They measure actual pixel degradation when info is removed (not AI self-assessment)
-- Each strip type maps to specific rules (e.g., `layout-direction-spacing` → layout rules, `component-references` → component rules)
-- Higher delta = removing that info caused more degradation = rule is more important
-- **Always weigh strip delta evidence above Converter's `ruleImpactAssessment`** when they conflict
+- They measure objective degradation when info is removed (not AI self-assessment): **pixel delta** for layout strips, **token-count delta** for component/naming/variable/style strips, **responsive similarity delta** for `size-constraints` when that metric is recorded
+- Strip-to-rule mapping (calibration): `layout-direction-spacing` → layout rules; `size-constraints` → `missing-size-constraint`, `fixed-size-in-auto-layout` (responsive-critical); `component-references` → component rules; `node-names-hierarchy` → naming rules; `variable-references` / `style-references` → `raw-value`
+- For **responsive-critical** rules, the evaluation agent may rely on baseline page `responsiveDelta` rather than strip rows when per-strip responsive compare is not yet reliable — do not assume strip entries always override those rules
+- Higher delta (for the metric used for that strip family) = removing that info hurt more = rule is more important
+- **Always weigh strip delta evidence above Converter's `ruleImpactAssessment`** when they conflict and the strip metric applies to that rule
 
 ### Evidence Ratios (critical for contradictory evidence)
 
