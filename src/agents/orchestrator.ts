@@ -309,6 +309,20 @@ export function runCalibrationEvaluate(
     ? conversionJson["responsiveDelta"] as number
     : null;
 
+  // Extract strip ablation deltas if available
+  const stripDeltaResults = conversionJson["stripDeltas"] as
+    | Array<{ stripType: string; delta: number }> | undefined;
+  let stripDeltas: Record<string, number> | undefined;
+  if (Array.isArray(stripDeltaResults) && stripDeltaResults.length > 0) {
+    stripDeltas = {};
+    for (const r of stripDeltaResults) {
+      if (typeof r.stripType === "string" && typeof r.delta === "number") {
+        stripDeltas[r.stripType] = r.delta;
+      }
+    }
+    if (Object.keys(stripDeltas).length === 0) stripDeltas = undefined;
+  }
+
   const evaluationOutput = runEvaluationAgent({
     nodeIssueSummaries: analysisJson.nodeIssueSummaries.map((s) => ({
       nodeId: s.nodeId,
@@ -318,6 +332,7 @@ export function runCalibrationEvaluate(
     conversionRecords,
     ruleScores,
     responsiveDelta,
+    stripDeltas,
   });
 
   // Load prior evidence if collecting

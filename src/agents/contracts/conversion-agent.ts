@@ -32,3 +32,13 @@ export const ConversionRecordSchema = z.object({
 
 export type ConversionRecord = z.infer<typeof ConversionRecordSchema>;
 
+export const StripDeltaResultSchema = z.object({
+  stripType: z.string(),
+  baselineSimilarity: z.number(),
+  strippedSimilarity: z.number(),
+  delta: z.number(),
+  deltaDifficulty: DifficultySchema,
+});
+
+export type StripDeltaResult = z.infer<typeof StripDeltaResultSchema>;
+
