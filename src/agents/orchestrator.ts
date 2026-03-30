@@ -3,6 +3,7 @@ import { analyzeFile } from "../core/engine/rule-engine.js";
 import { RULE_CONFIGS } from "../core/rules/rule-config.js";
 
 import type { CalibrationConfigInput } from "./contracts/calibration.js";
+import { StripDeltasArraySchema } from "./contracts/conversion-agent.js";
 import { CalibrationConfigSchema } from "./contracts/calibration.js";
 import type { NodeIssueSummary } from "./contracts/analysis-agent.js";
 import type { ScoreReport } from "../core/engine/scoring.js";
@@ -309,18 +310,16 @@ export function runCalibrationEvaluate(
     ? conversionJson["responsiveDelta"] as number
     : null;
 
-  // Extract strip ablation deltas if available
-  const stripDeltaResults = conversionJson["stripDeltas"] as
-    | Array<{ stripType: string; delta: number }> | undefined;
+  // Extract strip ablation deltas if available (Zod-validated)
   let stripDeltas: Record<string, number> | undefined;
-  if (Array.isArray(stripDeltaResults) && stripDeltaResults.length > 0) {
-    stripDeltas = {};
-    for (const r of stripDeltaResults) {
-      if (r && typeof r === "object" && typeof r.stripType === "string" && typeof r.delta === "number" && Number.isFinite(r.delta)) {
+  {
+    const parsed = StripDeltasArraySchema.safeParse(conversionJson["stripDeltas"]);
+    if (parsed.success && parsed.data.length > 0) {
+      stripDeltas = {};
+      for (const r of parsed.data) {
         stripDeltas[r.stripType] = r.delta;
       }
     }
-    if (Object.keys(stripDeltas).length === 0) stripDeltas = undefined;
   }
 
   const evaluationOutput = runEvaluationAgent({
