@@ -14,7 +14,7 @@ export function registerDesignTreeStrip(cli: CAC): void {
       "design-tree-strip <input>",
       "[internal] Generate stripped design-tree variants for ablation"
     )
-    .option("--types <types>", `Comma-separated strip types (default: all 5 info types)`)
+    .option("--types <types>", `Comma-separated strip types (default: all DESIGN_TREE_INFO_TYPES)`)
     .option("--output-dir <dir>", "Output directory for stripped files (required)")
     .action(async (input: string, options: { types?: string; outputDir?: string }) => {
       try {
