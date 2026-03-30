@@ -5,6 +5,7 @@
 
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 /**
  * Extract HTML from LLM markdown response text.
@@ -29,10 +30,11 @@ export function sanitizeHtml(html: string): string {
   let result = html;
   result = result.replace(/^\/\/\s*filename:.*\n/i, "");
   result = result.replace(/<script[\s\S]*?<\/script>/gi, "");
-  result = result.replace(/\s+on\w+\s*=\s*"[^"]*"/gi, "");
-  result = result.replace(/\s+on\w+\s*=\s*'[^']*'/gi, "");
-  result = result.replace(/href\s*=\s*"javascript:[^"]*"/gi, 'href="#"');
-  result = result.replace(/href\s*=\s*'javascript:[^']*'/gi, "href='#'");
+  result = result.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+  result = result.replace(
+    /\s+(?:href|src|xlink:href)\s*=\s*(?:"\s*javascript:[^"]*"|'\s*javascript:[^']*'|javascript:[^\s>]+)/gi,
+    ' href="#"',
+  );
   return result;
 }
 
@@ -42,7 +44,8 @@ export function sanitizeHtml(html: string): string {
 export function injectLocalFont(html: string): string {
   const fontPath = resolve("assets/fonts/Inter.var.woff2");
   if (!existsSync(fontPath)) return html;
-  const fontCss = `@font-face { font-family: "Inter"; src: url("file://${fontPath}") format("woff2"); font-weight: 100 900; }`;
+  const fontUrl = pathToFileURL(fontPath).href;
+  const fontCss = `@font-face { font-family: "Inter"; src: url("${fontUrl}") format("woff2"); font-weight: 100 900; }`;
   let result = html;
   result = result.replace(/<link[^>]*fonts\.googleapis\.com[^>]*>/gi, "");
   result = result.replace(/<link[^>]*fonts\.gstatic\.com[^>]*>/gi, "");

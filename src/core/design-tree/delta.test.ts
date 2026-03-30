@@ -2,6 +2,7 @@ import { stripDeltaToDifficulty } from "./delta.js";
 
 describe("stripDeltaToDifficulty", () => {
   it("maps delta ≤ 5 to easy", () => {
+    expect(stripDeltaToDifficulty(-10)).toBe("easy"); // stripped better than baseline
     expect(stripDeltaToDifficulty(0)).toBe("easy");
     expect(stripDeltaToDifficulty(3)).toBe("easy");
     expect(stripDeltaToDifficulty(5)).toBe("easy");

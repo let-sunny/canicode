@@ -55,7 +55,10 @@ export async function callApi(client: Anthropic, prompt: string, designTree: str
       });
       return await stream.finalMessage();
     } catch (err) {
-      const status = (err as { status?: number }).status;
+      const status =
+        typeof err === "object" && err !== null && "status" in err && typeof err.status === "number"
+          ? err.status
+          : undefined;
       if ((status === 429 || status === 529) && attempt < MAX_RETRIES) {
         const delay = Math.pow(2, attempt + 1) * 1000;
         console.warn(`    ⚠ ${status} error, retrying in ${delay / 1000}s (${attempt + 1}/${MAX_RETRIES})...`);
@@ -89,7 +92,7 @@ export function parseFixtures(): string[] {
 }
 
 export function requireApiKey(): string {
-  const apiKey = process.env["ANTHROPIC_API_KEY"];
+  const apiKey = process.env["ANTHROPIC_API_KEY"]?.trim();
   if (!apiKey) {
     console.error("Error: ANTHROPIC_API_KEY environment variable is required");
     process.exit(1);

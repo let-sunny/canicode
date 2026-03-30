@@ -36,8 +36,9 @@ export function copyFixtureImages(fixture: string, runDir: string): void {
   if (existsSync(fixtureImagesDir)) {
     const runImagesDir = join(runDir, "images");
     mkdirSync(runImagesDir, { recursive: true });
-    for (const f of readdirSync(fixtureImagesDir)) {
-      copyFileSync(join(fixtureImagesDir, f), join(runImagesDir, f));
+    for (const entry of readdirSync(fixtureImagesDir, { withFileTypes: true })) {
+      if (!entry.isFile()) continue;
+      copyFileSync(join(fixtureImagesDir, entry.name), join(runImagesDir, entry.name));
     }
   }
 }
