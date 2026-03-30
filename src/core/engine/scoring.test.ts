@@ -1,4 +1,4 @@
-import { calculateScores, formatScoreSummary, gradeToClassName, getCategoryLabel, getSeverityLabel, buildResultJson, CATEGORY_WEIGHT } from "./scoring.js";
+import { calculateScores, formatScoreSummary, gradeToClassName, getCategoryLabel, getSeverityLabel, buildResultJson } from "./scoring.js";
 import type { AnalysisIssue, AnalysisResult } from "./rule-engine.js";
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 import type { Rule, RuleConfig, RuleViolation } from "../contracts/rule.js";
@@ -221,18 +221,17 @@ describe("calculateScores", () => {
     expect(scores.byCategory["responsive-critical"].percentage).toBe(100);
   });
 
-  it("overall score is weighted average of all 5 categories", () => {
+  it("overall score is simple average of all categories", () => {
     const scores = calculateScores(makeResult([
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
     ], 100));
 
-    let weightedSum = 0;
-    let totalWeight = 0;
-    for (const [cat, w] of Object.entries(CATEGORY_WEIGHT)) {
-      weightedSum += scores.byCategory[cat as Category].percentage * w;
-      totalWeight += w;
+    const categories = Object.keys(scores.byCategory) as Category[];
+    let sum = 0;
+    for (const cat of categories) {
+      sum += scores.byCategory[cat].percentage;
     }
-    const expectedOverall = Math.round(weightedSum / totalWeight);
+    const expectedOverall = Math.round(sum / categories.length);
     expect(scores.overall.percentage).toBe(expectedOverall);
   });
 

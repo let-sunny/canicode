@@ -37,12 +37,15 @@ export const RULE_ID_CATEGORY: Record<RuleId, Category> = {
 
 /**
  * Central configuration for all rules.
- * Scores based on ablation experiment impact data:
+ * Scores based on ablation experiment impact data (PR #149, #150):
  * - pixel-critical: -10 ~ -7 (layout strip caused ΔV +5.4%)
  * - responsive-critical: -7 ~ -5 (size-constraints ΔV +15.9% at responsive viewports)
  * - code-quality: -5 ~ -3 (CSS classes -8~15, no pixel impact)
  * - token-management: -3 ~ -2 (wrong input = wrong output, but values still present)
+ * - interaction: -3 (data incomplete)
  * - minor: -2 ~ -1 (ΔV < 2%, negligible)
+ *
+ * Category weights removed (#196) — overall score is simple average of categories.
  */
 export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ── Pixel Critical ──
