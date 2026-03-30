@@ -283,7 +283,7 @@ export function runCalibrationEvaluate(
   if (Array.isArray(conversionJson["records"])) {
     // Old per-node format
     conversionRecords = conversionJson["records"] as typeof conversionRecords;
-  } else if (conversionJson["ruleImpactAssessment"]) {
+  } else if (Array.isArray(conversionJson["ruleImpactAssessment"])) {
     wholeDesign = true;
     // New whole-design format — convert to records format
     const assessment = conversionJson["ruleImpactAssessment"] as Array<{
