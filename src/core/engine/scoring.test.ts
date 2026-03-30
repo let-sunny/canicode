@@ -336,7 +336,7 @@ describe("formatScoreSummary", () => {
     expect(summary).toContain("Overall: S (100%)");
   });
 
-  it("includes all 5 categories", () => {
+  it("includes all categories", () => {
     const scores = calculateScores(makeResult([]));
     const summary = formatScoreSummary(scores);
 
@@ -344,6 +344,7 @@ describe("formatScoreSummary", () => {
     expect(summary).toContain("responsive-critical:");
     expect(summary).toContain("code-quality:");
     expect(summary).toContain("token-management:");
+    expect(summary).toContain("interaction:");
     expect(summary).toContain("semantic:");
   });
 

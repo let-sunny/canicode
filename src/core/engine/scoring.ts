@@ -62,7 +62,7 @@ export type Grade = "S" | "A+" | "A" | "B+" | "B" | "C+" | "C" | "D" | "F";
  *
  * Category weights removed (#196) — overall score is simple average of categories.
  * Category importance is already encoded in rule scores (pixel-critical -10
- * vs minor -1), so per-category weighting is unnecessary.
+ * vs semantic -1), so per-category weighting is unnecessary.
  */
 
 /**

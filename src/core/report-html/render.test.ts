@@ -386,8 +386,8 @@ describe("platform-neutral wording", () => {
 describe("category order", () => {
   it("renders Semantic before Interaction in tabs", () => {
     const html = renderReportBody(makeReportData());
-    const minorPos = html.indexOf('data-tab="semantic"');
+    const semanticPos = html.indexOf('data-tab="semantic"');
     const interactionPos = html.indexOf('data-tab="interaction"');
-    expect(minorPos).toBeLessThan(interactionPos);
+    expect(semanticPos).toBeLessThan(interactionPos);
   });
 });
