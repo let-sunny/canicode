@@ -13,7 +13,8 @@
 import { resolve } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 
-// Re-export shared utilities so existing experiment scripts don't break
+// Re-export shared utilities for experiment scripts
+// Note: run-phase1.ts uses CLIs directly; other scripts (run-condition.ts) still use these
 export { extractHtml, sanitizeHtml, injectLocalFont, processHtml } from "../../core/comparison/html-utils.js";
 export { getDesignTreeOptions, getFixtureScreenshotPath, copyFixtureImages } from "../../core/utils/fixture-helpers.js";
 

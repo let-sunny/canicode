@@ -54,7 +54,13 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
    - Copy style values directly — they are already CSS-ready
    - Follow all rules from DESIGN-TO-CODE-PROMPT.md
 4. Save to `$RUN_DIR/output.html`
-5. Run visual comparison:
+5. Post-process HTML (sanitize + inject local fonts):
+
+   ```bash
+   npx canicode html-postprocess $RUN_DIR/output.html
+   ```
+
+6. Run visual comparison:
 
    ```bash
    npx canicode visual-compare $RUN_DIR/output.html \
