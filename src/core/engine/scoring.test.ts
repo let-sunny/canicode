@@ -86,9 +86,9 @@ describe("calculateScores", () => {
     expect(scores.summary.totalIssues).toBe(4);
   });
 
-  it("uses calculatedScore for density: higher score = more density impact", () => {
+  it("uses base rule score with sqrt damping for density (#226)", () => {
     const heavyIssue = makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking", score: -10 });
-    heavyIssue.calculatedScore = -15; // Simulate depthWeight effect
+    heavyIssue.calculatedScore = -15; // depthWeight not used for density anymore
 
     const lightIssue = makeIssue({ ruleId: "non-semantic-name", category: "semantic", severity: "suggestion", score: -1 });
     lightIssue.calculatedScore = -1;
@@ -96,16 +96,14 @@ describe("calculateScores", () => {
     const heavy = calculateScores(makeResult([heavyIssue], 100));
     const light = calculateScores(makeResult([lightIssue], 100));
 
-    expect(heavy.byCategory["pixel-critical"].weightedIssueCount).toBe(15);
+    // sqrt(1) = 1, so 1 issue = base score directly
+    expect(heavy.byCategory["pixel-critical"].weightedIssueCount).toBe(10);
     expect(light.byCategory["semantic"].weightedIssueCount).toBe(1);
   });
 
-  it("differentiates rules within the same severity by score", () => {
+  it("differentiates rules within the same severity by base score", () => {
     const highScoreIssue = makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking", score: -10 });
-    highScoreIssue.calculatedScore = -15;
-
     const lowScoreIssue = makeIssue({ ruleId: "absolute-position-in-auto-layout", category: "pixel-critical", severity: "blocking", score: -3 });
-    lowScoreIssue.calculatedScore = -5;
 
     const highScore = calculateScores(makeResult([highScoreIssue], 100));
     const lowScore = calculateScores(makeResult([lowScoreIssue], 100));
@@ -113,8 +111,9 @@ describe("calculateScores", () => {
     expect(highScore.byCategory["pixel-critical"].densityScore).toBeLessThan(
       lowScore.byCategory["pixel-critical"].densityScore
     );
-    expect(highScore.byCategory["pixel-critical"].weightedIssueCount).toBe(15);
-    expect(lowScore.byCategory["pixel-critical"].weightedIssueCount).toBe(5);
+    // sqrt(1) = 1, so single issue = base score
+    expect(highScore.byCategory["pixel-critical"].weightedIssueCount).toBe(10);
+    expect(lowScore.byCategory["pixel-critical"].weightedIssueCount).toBe(3);
   });
 
   it("density score decreases as weighted issue count increases relative to node count", () => {
