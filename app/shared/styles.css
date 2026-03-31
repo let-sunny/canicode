@@ -601,9 +601,8 @@ body {
    4. Responsive — narrow viewport (Figma plugin ~420px)
    ================================================================ */
 @media (max-width: 600px) {
-  .rpt-groups {
-    grid-template-columns: 1fr;
-  }
+  .rpt-group-bars { display: none; }
+  .rpt-group-header { border-bottom: none; }
   .rpt-overall { padding: 24px 0 16px; }
   .rpt-summary-inner { gap: 12px; }
   .rpt-summary-total { border-left: none; padding-left: 0; }
