@@ -103,9 +103,15 @@ Do NOT run visual-compare, html-postprocess, or code-metrics — the orchestrato
 After the Converter returns, **verify** these files exist in $RUN_DIR:
 ```bash
 ls $RUN_DIR/output.html $RUN_DIR/converter-assessment.json
+ls $RUN_DIR/stripped/layout-direction-spacing.html \
+   $RUN_DIR/stripped/size-constraints.html \
+   $RUN_DIR/stripped/component-references.html \
+   $RUN_DIR/stripped/node-names-hierarchy.html \
+   $RUN_DIR/stripped/variable-references.html \
+   $RUN_DIR/stripped/style-references.html
 ```
 
-If `converter-assessment.json` is missing, write it yourself from the Converter's returned summary.
+If any file is missing, log a warning naming the missing files but continue.
 
 **Record token usage**: The subagent result includes `total_tokens`, `tool_uses`, `duration_ms` in usage metadata. Store these for later inclusion in conversion.json.
 

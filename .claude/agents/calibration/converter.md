@@ -81,7 +81,7 @@ Write results to `$RUN_DIR/converter-assessment.json`.
     {
       "ruleId": "no-auto-layout",
       "issueCount": 5,
-      "actualImpact": "high",
+      "actualImpact": "hard",
       "description": "..."
     }
   ],
