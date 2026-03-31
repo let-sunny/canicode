@@ -127,8 +127,8 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
 
   // ── Interaction ──
   "missing-interaction-state": {
-    severity: "risk",
-    score: -5,
+    severity: "suggestion",
+    score: -1, // uncalibrated: no metric to validate score (#210), kept at -1 to preserve category visibility
     enabled: true,
   },
   "missing-prototype": {
