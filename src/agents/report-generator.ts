@@ -68,6 +68,7 @@ function renderCurrentScores(data: CalibrationReportData): string {
   lines.push("|----------|-------|--------|---------|-----------|");
 
   for (const [category, catScore] of Object.entries(data.scoreReport.byCategory)) {
+    if (catScore.disabled) continue;
     lines.push(
       `| ${category} | ${catScore.percentage}% | ${catScore.issueCount} | ${catScore.densityScore} | ${catScore.diversityScore} |`
     );
