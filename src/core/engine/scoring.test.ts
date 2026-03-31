@@ -216,22 +216,27 @@ describe("calculateScores", () => {
 
     expect(scores.byCategory["token-management"].percentage).toBe(100);
     expect(scores.byCategory["code-quality"].percentage).toBe(100);
-    expect(scores.byCategory["interaction"].percentage).toBe(100);
     expect(scores.byCategory["semantic"].percentage).toBe(100);
     expect(scores.byCategory["responsive-critical"].percentage).toBe(100);
   });
 
-  it("overall score is simple average of all categories", () => {
+  it("fully-disabled categories are marked disabled", () => {
+    const scores = calculateScores(makeResult([]));
+    expect(scores.byCategory["interaction"].disabled).toBe(true);
+  });
+
+  it("overall score is simple average of active categories only", () => {
     const scores = calculateScores(makeResult([
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
     ], 100));
 
-    const categories = Object.keys(scores.byCategory) as Category[];
+    const activeCategories = (Object.keys(scores.byCategory) as Category[])
+      .filter((cat) => !scores.byCategory[cat].disabled);
     let sum = 0;
-    for (const cat of categories) {
+    for (const cat of activeCategories) {
       sum += scores.byCategory[cat].percentage;
     }
-    const expectedOverall = Math.round(sum / categories.length);
+    const expectedOverall = Math.round(sum / activeCategories.length);
     expect(scores.overall.percentage).toBe(expectedOverall);
   });
 
@@ -336,7 +341,7 @@ describe("formatScoreSummary", () => {
     expect(summary).toContain("Overall: S (100%)");
   });
 
-  it("includes all categories", () => {
+  it("includes active categories and excludes disabled ones", () => {
     const scores = calculateScores(makeResult([]));
     const summary = formatScoreSummary(scores);
 
@@ -344,7 +349,7 @@ describe("formatScoreSummary", () => {
     expect(summary).toContain("responsive-critical:");
     expect(summary).toContain("code-quality:");
     expect(summary).toContain("token-management:");
-    expect(summary).toContain("interaction:");
+    expect(summary).not.toContain("interaction:");
     expect(summary).toContain("semantic:");
   });
 

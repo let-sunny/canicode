@@ -76,7 +76,7 @@ export function renderReportBody(data: ReportData): string {
     <!-- Category Gauges -->
     <section class="card rpt-gauges">
       <div class="rpt-gauges-grid">
-${CATEGORIES.map((cat) => {
+${CATEGORIES.filter((cat) => !scores.byCategory[cat].disabled).map((cat) => {
     const cs = scores.byCategory[cat];
     return `        <button type="button" class="rpt-gauge-item" data-tab="${cat}">
           ${renderGaugeSvg(cs.percentage, 100, 7)}
@@ -106,13 +106,13 @@ ${ruleOpportunities.length > 0 ? renderOpportunities(ruleOpportunities) : ""}
     <!-- Category Tabs -->
     <div class="rpt-tabs">
       <div class="rpt-tab-list" role="tablist">
-${CATEGORIES.map((cat, i) => {
+${CATEGORIES.filter((cat) => !scores.byCategory[cat].disabled).map((cat, i) => {
     const cs = scores.byCategory[cat];
     return `        <button type="button" role="tab" class="rpt-tab${i === 0 ? " active" : ""}" data-tab="${cat}" aria-selected="${i === 0}">${CATEGORY_LABELS[cat]} <span class="rpt-tab-count">${cs.issueCount}</span></button>`;
   }).join("\n")}
       </div>
 
-${CATEGORIES.map((cat, i) => {
+${CATEGORIES.filter((cat) => !scores.byCategory[cat].disabled).map((cat, i) => {
     const catIssues = issuesByCategory.get(cat) ?? [];
     const ruleGroups = groupIssuesByRule(catIssues);
     return `      <div class="rpt-tab-panel${i === 0 ? " active" : ""}" data-panel="${cat}" role="tabpanel">

@@ -20,6 +20,8 @@ export interface CategoryScoreResult {
   densityScore: number;
   diversityScore: number;
   bySeverity: Record<Severity, number>;
+  /** Category has no enabled rules — excluded from overall score and reports. */
+  disabled?: true;
 }
 
 /**
@@ -234,16 +236,20 @@ export function calculateScores(
     catScore.maxScore = 100;
   }
 
-  // Calculate overall score as simple average of categories
-  // Category importance is already encoded in rule scores (weight baked in),
-  // so no per-category weighting is needed.
+  // Calculate overall score as simple average of active categories.
+  // Categories where all rules are disabled are excluded from the average
+  // to avoid inflating the score with a free 100%.
   let categorySum = 0;
+  let activeCategories = 0;
   for (const category of CATEGORIES) {
-    categorySum += categoryScores[category].percentage;
+    if (totalScorePerCategory[category] > 0) {
+      categorySum += categoryScores[category].percentage;
+      activeCategories++;
+    }
   }
 
-  const overallPercentage = CATEGORIES.length > 0
-    ? Math.round(categorySum / CATEGORIES.length)
+  const overallPercentage = activeCategories > 0
+    ? Math.round(categorySum / activeCategories)
     : 100;
 
   // Count issues by severity
@@ -270,6 +276,13 @@ export function calculateScores(
       case "suggestion":
         summary.suggestion++;
         break;
+    }
+  }
+
+  // Mark fully-disabled categories so consumers can skip them
+  for (const category of CATEGORIES) {
+    if (totalScorePerCategory[category] === 0) {
+      categoryScores[category].disabled = true;
     }
   }
 
@@ -326,6 +339,7 @@ export function formatScoreSummary(report: ScoreReport): string {
 
   for (const category of CATEGORIES) {
     const cat = report.byCategory[category];
+    if (cat.disabled) continue;
     lines.push(`  ${category}: ${cat.percentage}% (${cat.issueCount} issues, ${cat.uniqueRuleCount} rules)`);
   }
 
