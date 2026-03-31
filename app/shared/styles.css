@@ -529,6 +529,18 @@ body {
   color: rgba(113,113,122,0.6);
   margin-top: 4px;
 }
+.rpt-footer-links {
+  margin-top: 4px;
+  font-size: 12px;
+}
+.rpt-footer-links a {
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+.rpt-footer-links a:hover {
+  color: var(--fg);
+  text-decoration: underline;
+}
 
 /* ================================================================
    4. Responsive — narrow viewport (Figma plugin ~420px)
