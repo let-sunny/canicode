@@ -1,19 +1,9 @@
 import { resolve } from "node:path";
 import type { CAC } from "cac";
-import { z } from "zod";
 
 import { parseFigmaUrl } from "../../core/adapters/figma-url-parser.js";
 import { getFigmaToken } from "../../core/engine/config-store.js";
-
-const VisualCompareOptionsSchema = z.object({
-  figmaUrl: z.string().optional(),
-  figmaScreenshot: z.string().optional(),
-  token: z.string().optional(),
-  output: z.string().optional(),
-  width: z.union([z.string(), z.number()]).optional(),
-  height: z.union([z.string(), z.number()]).optional(),
-  figmaScale: z.string().optional(),
-});
+import { VisualCompareCliOptionsSchema } from "../../core/contracts/visual-compare.js";
 
 
 export function registerVisualCompare(cli: CAC): void {
@@ -29,10 +19,11 @@ export function registerVisualCompare(cli: CAC): void {
     .option("--width <px>", "Logical viewport width in CSS px (default: infer from Figma PNG ÷ export scale)")
     .option("--height <px>", "Logical viewport height in CSS px (default: infer from Figma PNG ÷ export scale)")
     .option("--figma-scale <n>", "Figma export scale (default: 2, matches save-fixture / @2x PNGs)")
+    .option("--expand-root", "Replace root element's fixed width with 100% before rendering (for responsive comparison)")
     .example("  canicode visual-compare ./generated/index.html --figma-url 'https://www.figma.com/design/ABC/File?node-id=1-234'")
     .action(async (codePath: string, rawOptions: Record<string, unknown>) => {
       try {
-        const parseResult = VisualCompareOptionsSchema.safeParse(rawOptions);
+        const parseResult = VisualCompareCliOptionsSchema.safeParse(rawOptions);
         if (!parseResult.success) {
           const msg = parseResult.error.issues.map(i => `--${i.path.join(".")}: ${i.message}`).join("\n");
           console.error(`\nInvalid options:\n${msg}`);
@@ -60,27 +51,7 @@ export function registerVisualCompare(cli: CAC): void {
 
         const { visualCompare } = await import("../../core/comparison/visual-compare.js");
 
-        const exportScale =
-          options.figmaScale !== undefined ? Number(options.figmaScale) : undefined;
-        if (exportScale !== undefined && (!Number.isFinite(exportScale) || exportScale < 1)) {
-          console.error("Error: --figma-scale must be a number >= 1");
-          process.exitCode = 1; return;
-        }
-
-        // CAC passes option values as strings — coerce to numbers before validation
-        const width = options.width !== undefined ? Number(options.width) : undefined;
-        const height = options.height !== undefined ? Number(options.height) : undefined;
-
-        if (width !== undefined && (!Number.isFinite(width) || width <= 0)) {
-          console.error("Error: --width must be a positive number");
-          process.exitCode = 1; return;
-        }
-        if (height !== undefined && (!Number.isFinite(height) || height <= 0)) {
-          console.error("Error: --height must be a positive number");
-          process.exitCode = 1; return;
-        }
-
-        const hasViewportOverride = width !== undefined || height !== undefined;
+        const hasViewportOverride = options.width !== undefined || options.height !== undefined;
 
         // Progress to stderr so stdout contains only valid JSON
         console.error("Comparing...");
@@ -89,16 +60,17 @@ export function registerVisualCompare(cli: CAC): void {
           figmaToken: token ?? "",
           codePath: resolve(codePath),
           outputDir: options.output,
-          ...(exportScale !== undefined ? { figmaExportScale: exportScale } : {}),
+          ...(options.figmaScale !== undefined ? { figmaExportScale: options.figmaScale } : {}),
           ...(options.figmaScreenshot ? { figmaScreenshotPath: resolve(options.figmaScreenshot) } : {}),
           ...(hasViewportOverride
             ? {
                 viewport: {
-                  ...(width !== undefined ? { width } : {}),
-                  ...(height !== undefined ? { height } : {}),
+                  ...(options.width !== undefined ? { width: options.width } : {}),
+                  ...(options.height !== undefined ? { height: options.height } : {}),
                 },
               }
             : {}),
+          ...(options.expandRoot ? { expandRoot: true } : {}),
         });
 
         // JSON output for programmatic use
