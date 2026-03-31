@@ -246,6 +246,22 @@ describe("expandRootWidth", () => {
     const matches = result.match(/width: 100%/g);
     expect(matches).toHaveLength(1);
   });
+
+  it("does not match width inside min-width", () => {
+    const html = `<style>.root { min-width: 375px; width: 375px; }</style>`;
+    const result = expandRootWidth(html);
+    expect(result).toContain("width: 100%");
+    expect(result).toContain("min-width: 0");
+    expect(result).not.toContain("width: 375px");
+  });
+
+  it("skips child width when another selector appears first", () => {
+    const html = `<style>.card { width: 200px; } .root { width: 375px; }</style>`;
+    const result = expandRootWidth(html);
+    expect(result).toContain("width: 100%");
+    expect(result).toContain("width: 375px");
+    expect(result).not.toContain("width: 200px");
+  });
 });
 
 describe("inferDeviceScaleFactor", () => {

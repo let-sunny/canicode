@@ -1,20 +1,9 @@
 import { resolve } from "node:path";
 import type { CAC } from "cac";
-import { z } from "zod";
 
 import { parseFigmaUrl } from "../../core/adapters/figma-url-parser.js";
 import { getFigmaToken } from "../../core/engine/config-store.js";
-
-const VisualCompareOptionsSchema = z.object({
-  figmaUrl: z.string().optional(),
-  figmaScreenshot: z.string().optional(),
-  token: z.string().optional(),
-  output: z.string().optional(),
-  width: z.union([z.string(), z.number()]).optional(),
-  height: z.union([z.string(), z.number()]).optional(),
-  figmaScale: z.string().optional(),
-  expandRoot: z.boolean().optional(),
-});
+import { VisualCompareCliOptionsSchema } from "../../core/contracts/visual-compare.js";
 
 
 export function registerVisualCompare(cli: CAC): void {
@@ -34,7 +23,7 @@ export function registerVisualCompare(cli: CAC): void {
     .example("  canicode visual-compare ./generated/index.html --figma-url 'https://www.figma.com/design/ABC/File?node-id=1-234'")
     .action(async (codePath: string, rawOptions: Record<string, unknown>) => {
       try {
-        const parseResult = VisualCompareOptionsSchema.safeParse(rawOptions);
+        const parseResult = VisualCompareCliOptionsSchema.safeParse(rawOptions);
         if (!parseResult.success) {
           const msg = parseResult.error.issues.map(i => `--${i.path.join(".")}: ${i.message}`).join("\n");
           console.error(`\nInvalid options:\n${msg}`);

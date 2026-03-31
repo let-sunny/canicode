@@ -197,9 +197,9 @@ export function expandRootWidth(html: string): string {
   if (!styleMatch) return html;
 
   const style = styleMatch[0];
-  // Replace the first fixed pixel width (root element) with 100%
+  // Replace the first standalone `width` (not min-width/max-width) with 100%
   let replaced = false;
-  const newStyle = style.replace(/width:\s*\d+px/g, (match) => {
+  const newStyle = style.replace(/(?<![-\w])width:\s*\d+px/g, (match) => {
     if (!replaced) {
       replaced = true;
       return "width: 100%";

@@ -7,3 +7,4 @@ export * from "./rule.js";
 export * from "./issue.js";
 export * from "./score.js";
 export * from "./report.js";
+export * from "./visual-compare.js";
