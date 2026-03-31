@@ -129,7 +129,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   "missing-interaction-state": {
     severity: "risk",
     score: -5,
-    enabled: true,
+    enabled: false, // disabled: no calibration metric — token delta can't measure "AI guesses wrong hover" cost (#210)
   },
   "missing-prototype": {
     severity: "missing-info",
