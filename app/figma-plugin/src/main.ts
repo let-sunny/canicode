@@ -302,7 +302,19 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
   if (hasFills(node)) {
     const fills = node.fills;
     if (Array.isArray(fills)) {
-      result.fills = fills.map((f) => ({ ...f }));
+      result.fills = fills.map((f) => {
+        const plain: Record<string, unknown> = { ...f };
+        // Figma Paint proxy objects expose boundVariables as a non-enumerable
+        // getter, so spread silently drops it. Copy it explicitly so that
+        // library variable bindings on individual fills survive serialization.
+        const fillBV = (f as unknown as { boundVariables?: unknown }).boundVariables;
+        if (fillBV !== undefined) {
+          try {
+            plain["boundVariables"] = JSON.parse(JSON.stringify(fillBV));
+          } catch { /* ignore if not serializable */ }
+        }
+        return plain;
+      });
     }
   }
   if (hasStrokes(node)) {
@@ -322,6 +334,21 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
     result.boundVariables = JSON.parse(
       JSON.stringify(node.boundVariables)
     ) as Record<string, unknown>;
+  }
+
+  // Plugin API may omit node.boundVariables["fills"] for library variables even
+  // when the individual fills have variable bindings. Synthesize the key from
+  // fill-level data so the rule engine sees a consistent REST-API-shaped object.
+  if (result.fills && result.fills.length > 0) {
+    const fillBVs = result.fills.map(
+      (f) => (f as Record<string, unknown>)["boundVariables"] as unknown
+    );
+    if (fillBVs.some(Boolean)) {
+      if (!result.boundVariables) result.boundVariables = {};
+      if (!("fills" in result.boundVariables)) {
+        result.boundVariables["fills"] = fillBVs;
+      }
+    }
   }
 
   // Text properties
