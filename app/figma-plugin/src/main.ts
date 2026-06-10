@@ -330,24 +330,38 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
   }
 
   // Bound variables (design tokens)
+  // JSON.stringify(node.boundVariables) silently drops library variable keys:
+  // Figma's proxy only enumerates local-file variables via ownKeys, but all
+  // variables (local + library) are accessible via direct property access (get).
+  // Extract each known key explicitly so library bindings survive serialization.
   if ("boundVariables" in node && node.boundVariables) {
-    result.boundVariables = JSON.parse(
-      JSON.stringify(node.boundVariables)
-    ) as Record<string, unknown>;
-  }
-
-  // Plugin API may omit node.boundVariables["fills"] for library variables even
-  // when the individual fills have variable bindings. Synthesize the key from
-  // fill-level data so the rule engine sees a consistent REST-API-shaped object.
-  if (result.fills && result.fills.length > 0) {
-    const fillBVs = result.fills.map(
-      (f) => (f as Record<string, unknown>)["boundVariables"] as unknown
-    );
-    if (fillBVs.some(Boolean)) {
-      if (!result.boundVariables) result.boundVariables = {};
-      if (!("fills" in result.boundVariables)) {
-        result.boundVariables["fills"] = fillBVs;
-      }
+    const bv = node.boundVariables as Record<string, unknown>;
+    const SCALAR_KEYS = [
+      "itemSpacing", "counterAxisSpacing",
+      "paddingLeft", "paddingRight", "paddingTop", "paddingBottom",
+      "opacity",
+      "topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius",
+      "minWidth", "maxWidth", "minHeight", "maxHeight",
+      "strokeWeight", "strokeTopWeight", "strokeRightWeight", "strokeBottomWeight", "strokeLeftWeight",
+      "gridRowGap", "gridColumnGap",
+      "width", "height", "characters", "visible",
+    ] as const;
+    const ARRAY_KEYS = [
+      "fills", "strokes", "effects", "layoutGrids",
+      "fontFamily", "fontSize", "fontStyle", "fontWeight",
+      "letterSpacing", "lineHeight", "paragraphSpacing", "paragraphIndent",
+    ] as const;
+    const extracted: Record<string, unknown> = {};
+    for (const key of [...SCALAR_KEYS, ...ARRAY_KEYS]) {
+      try {
+        const val = bv[key];
+        if (val !== undefined) {
+          extracted[key] = JSON.parse(JSON.stringify(val));
+        }
+      } catch { /* skip unserializable values */ }
+    }
+    if (Object.keys(extracted).length > 0) {
+      result.boundVariables = extracted;
     }
   }
 
