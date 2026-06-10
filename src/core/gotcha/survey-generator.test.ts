@@ -1528,6 +1528,9 @@ describe("generateGotchaSurvey", () => {
       );
       expect(survey.questions).toHaveLength(1);
       expect(survey.questions[0]?.groupMembers).toEqual(["fA", "fB", "fC"]);
+      // ADR-016: pre-computed scalars derived from groupMembers
+      expect(survey.questions[0]?.othersCount).toBe(2); // 3 members → 2 others
+      expect(survey.questions[0]?.totalCount).toBe(3);  // 3 members total
       // Schema validation — `groupMembers: z.array(z.string()).optional()`
       const parsed = GotchaSurveySchema.safeParse(survey);
       expect(parsed.success).toBe(true);
@@ -1548,6 +1551,8 @@ describe("generateGotchaSurvey", () => {
       );
       expect(survey.questions).toHaveLength(1);
       expect(survey.questions[0]?.groupMembers).toBeUndefined();
+      expect(survey.questions[0]?.othersCount).toBeUndefined();
+      expect(survey.questions[0]?.totalCount).toBeUndefined();
     });
   });
 });

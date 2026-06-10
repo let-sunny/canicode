@@ -229,8 +229,14 @@ function mapToQuestion(
     // #560 / Phase 3 delta 4a: thread groupMembers through from the
     // violation. Currently only populated by `missing-component`
     // Stage 3; non-group rules pass undefined and the field is omitted.
+    // ADR-016: pre-compute othersCount / totalCount so SKILL.md prose needs
+    // no arithmetic.
     ...(issue.violation.groupMembers !== undefined
-      ? { groupMembers: issue.violation.groupMembers }
+      ? {
+          groupMembers: issue.violation.groupMembers,
+          othersCount: issue.violation.groupMembers.length - 1,
+          totalCount: issue.violation.groupMembers.length,
+        }
       : {}),
   };
 }
