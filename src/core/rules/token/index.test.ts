@@ -36,6 +36,17 @@ describe("raw-value", () => {
       expect(result?.ruleId).toBe("raw-value");
       expect(result?.subType).toBe("color");
     });
+
+    it("still flags raw opacity when fill has a Path B binding", () => {
+      const node = makeNode({
+        type: "FRAME",
+        fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 }, boundVariables: { color: { type: "VARIABLE_ALIAS", id: "VariableID:1:1" } } }],
+        opacity: 0.5,
+      });
+      const result = rawValue.check(node, makeContext());
+      expect(result?.ruleId).toBe("raw-value");
+      expect(result?.subType).toBe("opacity");
+    });
   });
 });
 

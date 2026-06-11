@@ -334,9 +334,9 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
     });
   }
   if (hasEffects(node)) {
-    result.effects = node.effects.map((e) => {
-      const plain: Record<string, unknown> = { ...e };
-      const bv = (e as unknown as { boundVariables?: unknown }).boundVariables;
+    result.effects = node.effects.map((effect) => {
+      const plain: Record<string, unknown> = { ...effect };
+      const bv = (effect as unknown as { boundVariables?: unknown }).boundVariables;
       if (bv !== undefined) {
         try {
           plain["boundVariables"] = JSON.parse(JSON.stringify(bv));

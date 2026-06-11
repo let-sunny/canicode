@@ -32,19 +32,20 @@ const rawValueCheck: RuleCheckFn = (node, context) => {
         const bv = (f as Record<string, unknown>)["boundVariables"];
         return bv !== undefined && Object.keys(bv as object).length > 0;
       });
-      if (hasFillColorVar) return null;
-      for (const fill of node.fills) {
-        const fillObj = fill as Record<string, unknown>;
-        if (fillObj["type"] === "SOLID" && fillObj["color"]) {
-          const c = fillObj["color"] as Record<string, number>;
-          const hex = `#${Math.round((c["r"] ?? 0) * 255).toString(16).padStart(2, "0")}${Math.round((c["g"] ?? 0) * 255).toString(16).padStart(2, "0")}${Math.round((c["b"] ?? 0) * 255).toString(16).padStart(2, "0")}`.toUpperCase();
-          return {
-            ruleId: rawValueDef.id,
-            subType: "color" as const,
-            nodeId: node.id,
-            nodePath,
-            ...rawValueMsg.color(node.name, hex),
-          };
+      if (!hasFillColorVar) {
+        for (const fill of node.fills) {
+          const fillObj = fill as Record<string, unknown>;
+          if (fillObj["type"] === "SOLID" && fillObj["color"]) {
+            const c = fillObj["color"] as Record<string, number>;
+            const hex = `#${Math.round((c["r"] ?? 0) * 255).toString(16).padStart(2, "0")}${Math.round((c["g"] ?? 0) * 255).toString(16).padStart(2, "0")}${Math.round((c["b"] ?? 0) * 255).toString(16).padStart(2, "0")}`.toUpperCase();
+            return {
+              ruleId: rawValueDef.id,
+              subType: "color" as const,
+              nodeId: node.id,
+              nodePath,
+              ...rawValueMsg.color(node.name, hex),
+            };
+          }
         }
       }
     }
