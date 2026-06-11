@@ -61,6 +61,55 @@ function hasEffects(
   return "effects" in node;
 }
 
+// Bindable fields on Paint / Effect sub-objects (Path B bindings).
+const PAINT_BV_KEYS = ["color"] as const;
+const EFFECT_BV_KEYS = ["color", "radius", "spread", "offsetX", "offsetY"] as const;
+
+// Serialize a Paint/Effect proxy to a plain object, preserving boundVariables.
+// Two proxy quirks force the explicit handling (same root cause as the
+// node-level extraction below):
+// 1. boundVariables is a non-enumerable getter, so spread drops it.
+// 2. The boundVariables proxy only enumerates LOCAL variables via ownKeys —
+//    JSON.stringify silently drops library variable keys, so each known key
+//    must be read via direct property access.
+function serializeSubObject(
+  obj: unknown,
+  bvKeys: readonly string[],
+  label: string
+): Record<string, unknown> {
+  const plain: Record<string, unknown> = { ...(obj as object) };
+  const bv = (obj as { boundVariables?: unknown }).boundVariables;
+  if (bv !== undefined && bv !== null) {
+    const extracted: Record<string, unknown> = {};
+    for (const key of bvKeys) {
+      try {
+        const val = (bv as Record<string, unknown>)[key];
+        if (val !== undefined) {
+          extracted[key] = JSON.parse(JSON.stringify(val));
+        }
+      } catch (e) {
+        console.warn(`[canicode] ${label}.boundVariables["${key}"] not serializable:`, e);
+      }
+    }
+    // Catch any enumerable keys outside the known list (future-proofing)
+    try {
+      for (const key of Object.keys(bv as object)) {
+        if (extracted[key] !== undefined) continue;
+        const val = (bv as Record<string, unknown>)[key];
+        if (val !== undefined) {
+          extracted[key] = JSON.parse(JSON.stringify(val));
+        }
+      }
+    } catch (e) {
+      console.warn(`[canicode] ${label}.boundVariables enumeration failed:`, e);
+    }
+    if (Object.keys(extracted).length > 0) {
+      plain["boundVariables"] = extracted;
+    }
+  }
+  return plain;
+}
+
 // ---- AnalysisNode shape (matches src/contracts/figma-node.ts) ----
 
 interface AnalysisNode {
@@ -325,50 +374,14 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
   if (hasFills(node)) {
     const fills = node.fills;
     if (Array.isArray(fills)) {
-      result.fills = fills.map((f) => {
-        const plain: Record<string, unknown> = { ...f };
-        // Figma Paint proxy objects expose boundVariables as a non-enumerable
-        // getter, so spread silently drops it. Copy it explicitly so that
-        // library variable bindings on individual fills survive serialization.
-        const fillBV = (f as unknown as { boundVariables?: unknown }).boundVariables;
-        if (fillBV !== undefined) {
-          try {
-            plain["boundVariables"] = JSON.parse(JSON.stringify(fillBV));
-          } catch (e) {
-            console.warn("[canicode] fill.boundVariables not serializable:", e);
-          }
-        }
-        return plain;
-      });
+      result.fills = fills.map((f) => serializeSubObject(f, PAINT_BV_KEYS, "fill"));
     }
   }
   if (hasStrokes(node)) {
-    result.strokes = node.strokes.map((s) => {
-      const plain: Record<string, unknown> = { ...s };
-      const bv = (s as unknown as { boundVariables?: unknown }).boundVariables;
-      if (bv !== undefined) {
-        try {
-          plain["boundVariables"] = JSON.parse(JSON.stringify(bv));
-        } catch (e) {
-          console.warn("[canicode] stroke.boundVariables not serializable:", e);
-        }
-      }
-      return plain;
-    });
+    result.strokes = node.strokes.map((s) => serializeSubObject(s, PAINT_BV_KEYS, "stroke"));
   }
   if (hasEffects(node)) {
-    result.effects = node.effects.map((effect) => {
-      const plain: Record<string, unknown> = { ...effect };
-      const bv = (effect as unknown as { boundVariables?: unknown }).boundVariables;
-      if (bv !== undefined) {
-        try {
-          plain["boundVariables"] = JSON.parse(JSON.stringify(bv));
-        } catch (e) {
-          console.warn("[canicode] effect.boundVariables not serializable:", e);
-        }
-      }
-      return plain;
-    });
+    result.effects = node.effects.map((effect) => serializeSubObject(effect, EFFECT_BV_KEYS, "effect"));
   }
 
   // Corner radius
