@@ -40,6 +40,18 @@ import { createDevelopRunDir } from "../src/agents/run-directory.js";
 import { conventionalizeTitle } from "./conventional-title.js";
 
 // ---------------------------------------------------------------------------
+// Bootstrap: inject fnm-managed pnpm into PATH if not already present
+// ---------------------------------------------------------------------------
+
+try {
+  if (!execSync("which pnpm 2>/dev/null || true", { encoding: "utf-8", shell: "/bin/zsh" }).trim()) {
+    const fnmOut = execSync("fnm env 2>/dev/null || true", { encoding: "utf-8", shell: "/bin/zsh" });
+    const match = fnmOut.match(/export PATH="([^"]+)"/);
+    if (match) process.env["PATH"] = `${match[1]}:${process.env["PATH"] ?? ""}`;
+  }
+} catch { /* non-fatal */ }
+
+// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
