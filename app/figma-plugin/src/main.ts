@@ -311,7 +311,9 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
         if (fillBV !== undefined) {
           try {
             plain["boundVariables"] = JSON.parse(JSON.stringify(fillBV));
-          } catch { /* ignore if not serializable */ }
+          } catch (e) {
+            console.warn("[canicode] fill.boundVariables not serializable:", e);
+          }
         }
         return plain;
       });
@@ -358,7 +360,9 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
         if (val !== undefined) {
           extracted[key] = JSON.parse(JSON.stringify(val));
         }
-      } catch { /* skip unserializable values */ }
+      } catch (e) {
+        console.warn(`[canicode] boundVariables["${key}"] not serializable:`, e);
+      }
     }
     if (Object.keys(extracted).length > 0) {
       result.boundVariables = extracted;
