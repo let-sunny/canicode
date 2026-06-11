@@ -211,6 +211,27 @@
 
   </main>
 
+  <!--
+    Node-builtin shims for the analysis engine bundle.
+    tsup wraps the IIFE with `(function(exports, fs$1, path){...})({}, fs$1, path);`
+    because rollup externalises `fs`/`path` regardless of the browser platform target.
+    Pre-declaring them here prevents a ReferenceError that would leave `CanICode` undefined.
+  -->
+  <script>
+    var fs$1 = {
+      existsSync: function () { return false; },
+      readFileSync: function () { return ''; },
+      statSync: function () { throw new Error('statSync not available in browser'); },
+      readdirSync: function () { return []; }
+    };
+    var path = {
+      sep: '/',
+      join: function () { return Array.prototype.filter.call(arguments, Boolean).join('/'); },
+      resolve: function () { return Array.prototype.filter.call(arguments, Boolean).join('/'); },
+      isAbsolute: function (p) { return typeof p === 'string' && p.charAt(0) === '/'; }
+    };
+  </script>
+
   <script src="browser.global.js"></script>
 
   <!-- Monitoring: PostHog analytics + Sentry error tracking -->
