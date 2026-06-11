@@ -302,7 +302,21 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
   if (hasFills(node)) {
     const fills = node.fills;
     if (Array.isArray(fills)) {
-      result.fills = fills.map((f) => ({ ...f }));
+      result.fills = fills.map((f) => {
+        const plain: Record<string, unknown> = { ...f };
+        // Figma Paint proxy objects expose boundVariables as a non-enumerable
+        // getter, so spread silently drops it. Copy it explicitly so that
+        // library variable bindings on individual fills survive serialization.
+        const fillBV = (f as unknown as { boundVariables?: unknown }).boundVariables;
+        if (fillBV !== undefined) {
+          try {
+            plain["boundVariables"] = JSON.parse(JSON.stringify(fillBV));
+          } catch (e) {
+            console.warn("[canicode] fill.boundVariables not serializable:", e);
+          }
+        }
+        return plain;
+      });
     }
   }
   if (hasStrokes(node)) {
@@ -318,10 +332,41 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
   }
 
   // Bound variables (design tokens)
+  // JSON.stringify(node.boundVariables) silently drops library variable keys:
+  // Figma's proxy only enumerates local-file variables via ownKeys, but all
+  // variables (local + library) are accessible via direct property access (get).
+  // Extract each known key explicitly so library bindings survive serialization.
   if ("boundVariables" in node && node.boundVariables) {
-    result.boundVariables = JSON.parse(
-      JSON.stringify(node.boundVariables)
-    ) as Record<string, unknown>;
+    const bv = node.boundVariables as Record<string, unknown>;
+    const SCALAR_KEYS = [
+      "itemSpacing", "counterAxisSpacing",
+      "paddingLeft", "paddingRight", "paddingTop", "paddingBottom",
+      "opacity",
+      "topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius",
+      "minWidth", "maxWidth", "minHeight", "maxHeight",
+      "strokeWeight", "strokeTopWeight", "strokeRightWeight", "strokeBottomWeight", "strokeLeftWeight",
+      "gridRowGap", "gridColumnGap",
+      "width", "height", "characters", "visible",
+    ] as const;
+    const ARRAY_KEYS = [
+      "fills", "strokes", "effects", "layoutGrids",
+      "fontFamily", "fontSize", "fontStyle", "fontWeight",
+      "letterSpacing", "lineHeight", "paragraphSpacing", "paragraphIndent",
+    ] as const;
+    const extracted: Record<string, unknown> = {};
+    for (const key of [...SCALAR_KEYS, ...ARRAY_KEYS]) {
+      try {
+        const val = bv[key];
+        if (val !== undefined) {
+          extracted[key] = JSON.parse(JSON.stringify(val));
+        }
+      } catch (e) {
+        console.warn(`[canicode] boundVariables["${key}"] not serializable:`, e);
+      }
+    }
+    if (Object.keys(extracted).length > 0) {
+      result.boundVariables = extracted;
+    }
   }
 
   // Text properties

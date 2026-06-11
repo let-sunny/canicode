@@ -145,13 +145,13 @@ const irregularSpacingCheck: RuleCheckFn = (node, context, options) => {
   const configuredGridBase = (options?.["gridBase"] as number) ?? getRuleOption("irregular-spacing", "gridBase", 4);
   const gridBase = Number.isFinite(configuredGridBase) && configuredGridBase > 0 ? configuredGridBase : 4;
 
-  const spacingEntries: Array<{ value: number; subType: "padding" | "gap" }> = [];
+  const spacingEntries: Array<{ key: string; value: number; subType: "padding" | "gap" }> = [];
   for (const key of ["paddingLeft", "paddingRight", "paddingTop", "paddingBottom"] as const) {
     const v = node[key];
-    if (v !== undefined && v > 0) spacingEntries.push({ value: v, subType: "padding" });
+    if (v !== undefined && v > 0) spacingEntries.push({ key, value: v, subType: "padding" });
   }
   if (node.itemSpacing !== undefined && node.itemSpacing > 0) {
-    spacingEntries.push({ value: node.itemSpacing, subType: "gap" });
+    spacingEntries.push({ key: "itemSpacing", value: node.itemSpacing, subType: "gap" });
   }
 
   // Allow small intentional values
@@ -159,6 +159,8 @@ const irregularSpacingCheck: RuleCheckFn = (node, context, options) => {
 
   for (const entry of spacingEntries) {
     if (commonValues.includes(entry.value)) continue;
+    // Skip entries bound to a design token — off-grid is intentional for library variables
+    if (hasBoundVariable(node, entry.key)) continue;
     if (!isOnGrid(entry.value, gridBase)) {
       return {
         ruleId: irregularSpacingDef.id,
