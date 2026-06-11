@@ -161,8 +161,10 @@ function markFailed(index: DevelopRunIndex, name: string, error: string): void {
 
 function runCli(command: string, label: string): string {
   console.log(`  [cli] ${label}`);
+  const shell = process.env["SHELL"] ?? "/bin/zsh";
+  const wrapped = `eval "$(fnm env 2>/dev/null)"; ${command}`;
   try {
-    return execSync(command, { encoding: "utf-8", maxBuffer: 50 * 1024 * 1024, cwd: PROJECT_ROOT });
+    return execSync(wrapped, { encoding: "utf-8", maxBuffer: 50 * 1024 * 1024, cwd: PROJECT_ROOT, shell });
   } catch (err) {
     const execErr = err as SpawnSyncReturns<string>;
     const stderr = execErr.stderr ?? "";
