@@ -33,7 +33,7 @@ When recording an answer, add a Figma annotation to the node (\`node.annotations
 
 - One annotation entry per answer, with the body set via \`labelMarkdown\` ONLY — never set both \`label\` and \`labelMarkdown\`.
 - The body MUST end with the footer \`— *<rule-id>*\` (em-dash, space, rule id in italics) on its own line, e.g. \`— *missing-interaction-state*\`. Use the rule id given in parentheses for each item above.
-- Set the entry's \`categoryId\` to the annotation category labeled \`canicode:gotcha\`. If that category does not exist yet, create it once with \`figma.annotations.addAnnotationCategoryAsync({ label: "canicode:gotcha", color: "blue" })\`. If you cannot create or assign categories, keep the footer anyway — footer-only annotations are still recognized.
+- Set the entry's \`categoryId\` to the annotation category labeled \`canicode:gotcha\`. If that category does not exist yet, create it once with \`figma.annotations.addAnnotationCategoryAsync({ label: "canicode:gotcha", color: "blue" })\`. If you cannot create or assign categories, keep the footer anyway — the footer is what ties the annotation to the rule.
 - If the node already has an annotation whose body ends with the same \`— *<rule-id>*\` footer, REPLACE that entry instead of adding a duplicate.`;
 
 export interface BuildFixPromptOptions {
