@@ -298,6 +298,29 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
     }
   }
 
+  // Style references (fillStyleId/strokeStyleId/effectStyleId/textStyleId →
+  // REST-style `styles` map) so hasStyleReference() works in the plugin
+  // channel. figma.mixed is a symbol, so the typeof check skips mixed values;
+  // an empty string means no style is applied.
+  const styleRefs: Record<string, string> = {};
+  const STYLE_ID_KEYS: Array<[prop: string, key: string]> = [
+    ["fillStyleId", "fill"],
+    ["strokeStyleId", "stroke"],
+    ["effectStyleId", "effect"],
+    ["textStyleId", "text"],
+  ];
+  for (const [prop, key] of STYLE_ID_KEYS) {
+    if (prop in node) {
+      const styleId = (node as unknown as Record<string, unknown>)[prop];
+      if (typeof styleId === "string" && styleId !== "") {
+        styleRefs[key] = styleId;
+      }
+    }
+  }
+  if (Object.keys(styleRefs).length > 0) {
+    result.styles = styleRefs;
+  }
+
   // Fills, strokes, effects — serialize as plain arrays
   if (hasFills(node)) {
     const fills = node.fills;

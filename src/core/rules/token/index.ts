@@ -8,6 +8,12 @@ function isOnGrid(value: number, gridBase: number): boolean {
   return value % gridBase === 0;
 }
 
+/** Path B variable binding: a sub-object (fill/stroke/effect) carrying its own boundVariables */
+function hasOwnBoundVariables(obj: Record<string, unknown>): boolean {
+  const bv = obj["boundVariables"];
+  return bv !== undefined && bv !== null && Object.keys(bv as object).length > 0;
+}
+
 // ============================================
 // raw-value (merged: raw-color + raw-font + raw-shadow + raw-opacity + raw-spacing)
 // ============================================
@@ -27,25 +33,22 @@ const rawValueCheck: RuleCheckFn = (node, context) => {
   // Check 1: Raw fill color
   if (node.fills && Array.isArray(node.fills) && node.fills.length > 0) {
     if (!hasStyleReference(node, "fill") && !hasBoundVariable(node, "fills")) {
-      // Path B: variable bound directly on a fill's own boundVariables (e.g. fills[i].boundVariables.color)
-      const hasFillColorVar = node.fills.some((f) => {
-        const bv = (f as Record<string, unknown>)["boundVariables"];
-        return bv !== undefined && Object.keys(bv as object).length > 0;
-      });
-      if (!hasFillColorVar) {
-        for (const fill of node.fills) {
-          const fillObj = fill as Record<string, unknown>;
-          if (fillObj["type"] === "SOLID" && fillObj["color"]) {
-            const c = fillObj["color"] as Record<string, number>;
-            const hex = `#${Math.round((c["r"] ?? 0) * 255).toString(16).padStart(2, "0")}${Math.round((c["g"] ?? 0) * 255).toString(16).padStart(2, "0")}${Math.round((c["b"] ?? 0) * 255).toString(16).padStart(2, "0")}`.toUpperCase();
-            return {
-              ruleId: rawValueDef.id,
-              subType: "color" as const,
-              nodeId: node.id,
-              nodePath,
-              ...rawValueMsg.color(node.name, hex),
-            };
-          }
+      for (const fill of node.fills) {
+        const fillObj = fill as Record<string, unknown>;
+        // Path B: variable bound directly on this fill's own boundVariables
+        // (e.g. fills[i].boundVariables.color) — checked per fill so a raw
+        // fill next to a bound one is still flagged
+        if (hasOwnBoundVariables(fillObj)) continue;
+        if (fillObj["type"] === "SOLID" && fillObj["color"]) {
+          const c = fillObj["color"] as Record<string, number>;
+          const hex = `#${Math.round((c["r"] ?? 0) * 255).toString(16).padStart(2, "0")}${Math.round((c["g"] ?? 0) * 255).toString(16).padStart(2, "0")}${Math.round((c["b"] ?? 0) * 255).toString(16).padStart(2, "0")}`.toUpperCase();
+          return {
+            ruleId: rawValueDef.id,
+            subType: "color" as const,
+            nodeId: node.id,
+            nodePath,
+            ...rawValueMsg.color(node.name, hex),
+          };
         }
       }
     }
@@ -75,11 +78,13 @@ const rawValueCheck: RuleCheckFn = (node, context) => {
     }
   }
 
-  // Check 3: Raw shadow (effects without effect style)
+  // Check 3: Raw shadow (effects without effect style or variable binding)
   if (node.effects && Array.isArray(node.effects) && node.effects.length > 0) {
-    if (!hasStyleReference(node, "effect")) {
+    if (!hasStyleReference(node, "effect") && !hasBoundVariable(node, "effects")) {
       for (const effect of node.effects) {
         const effectObj = effect as Record<string, unknown>;
+        // Path B: variable bound directly on this effect (effects[i].boundVariables)
+        if (hasOwnBoundVariables(effectObj)) continue;
         if (effectObj["type"] === "DROP_SHADOW" || effectObj["type"] === "INNER_SHADOW") {
           const shadowType = effectObj["type"] === "DROP_SHADOW" ? "drop shadow" : "inner shadow";
           const offset = effectObj["offset"] as Record<string, number> | undefined;
