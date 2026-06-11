@@ -320,10 +320,32 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
     }
   }
   if (hasStrokes(node)) {
-    result.strokes = node.strokes.map((s) => ({ ...s }));
+    result.strokes = node.strokes.map((s) => {
+      const plain: Record<string, unknown> = { ...s };
+      const bv = (s as unknown as { boundVariables?: unknown }).boundVariables;
+      if (bv !== undefined) {
+        try {
+          plain["boundVariables"] = JSON.parse(JSON.stringify(bv));
+        } catch (e) {
+          console.warn("[canicode] stroke.boundVariables not serializable:", e);
+        }
+      }
+      return plain;
+    });
   }
   if (hasEffects(node)) {
-    result.effects = node.effects.map((e) => ({ ...e }));
+    result.effects = node.effects.map((e) => {
+      const plain: Record<string, unknown> = { ...e };
+      const bv = (e as unknown as { boundVariables?: unknown }).boundVariables;
+      if (bv !== undefined) {
+        try {
+          plain["boundVariables"] = JSON.parse(JSON.stringify(bv));
+        } catch (e) {
+          console.warn("[canicode] effect.boundVariables not serializable:", e);
+        }
+      }
+      return plain;
+    });
   }
 
   // Corner radius

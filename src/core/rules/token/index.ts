@@ -27,6 +27,12 @@ const rawValueCheck: RuleCheckFn = (node, context) => {
   // Check 1: Raw fill color
   if (node.fills && Array.isArray(node.fills) && node.fills.length > 0) {
     if (!hasStyleReference(node, "fill") && !hasBoundVariable(node, "fills")) {
+      // Path B: variable bound directly on a fill's own boundVariables (e.g. fills[i].boundVariables.color)
+      const hasFillColorVar = node.fills.some((f) => {
+        const bv = (f as Record<string, unknown>)["boundVariables"];
+        return bv !== undefined && Object.keys(bv as object).length > 0;
+      });
+      if (hasFillColorVar) return null;
       for (const fill of node.fills) {
         const fillObj = fill as Record<string, unknown>;
         if (fillObj["type"] === "SOLID" && fillObj["color"]) {

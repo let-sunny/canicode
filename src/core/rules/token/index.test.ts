@@ -1,5 +1,43 @@
 import { makeNode, makeContext } from "../test-helpers.js";
-import { irregularSpacing } from "./index.js";
+import { rawValue, irregularSpacing } from "./index.js";
+
+describe("raw-value", () => {
+  describe("fill color Path B — fills[i].boundVariables", () => {
+    it("does not flag a SOLID fill whose fill object carries a color variable binding", () => {
+      const node = makeNode({
+        type: "FRAME",
+        fills: [
+          {
+            type: "SOLID",
+            color: { r: 1, g: 0, b: 0 },
+            boundVariables: { color: { type: "VARIABLE_ALIAS", id: "VariableID:1:1" } },
+          },
+        ],
+      });
+      expect(rawValue.check(node, makeContext())).toBeNull();
+    });
+
+    it("flags a SOLID fill whose fill object carries an empty boundVariables", () => {
+      const node = makeNode({
+        type: "FRAME",
+        fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 }, boundVariables: {} }],
+      });
+      const result = rawValue.check(node, makeContext());
+      expect(result?.ruleId).toBe("raw-value");
+      expect(result?.subType).toBe("color");
+    });
+
+    it("flags a SOLID fill with no boundVariables on the fill object", () => {
+      const node = makeNode({
+        type: "FRAME",
+        fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 } }],
+      });
+      const result = rawValue.check(node, makeContext());
+      expect(result?.ruleId).toBe("raw-value");
+      expect(result?.subType).toBe("color");
+    });
+  });
+});
 
 describe("irregular-spacing", () => {
   describe("off-grid spacing without variable binding", () => {
