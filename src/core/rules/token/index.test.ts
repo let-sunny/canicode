@@ -1,5 +1,138 @@
 import { makeNode, makeContext } from "../test-helpers.js";
-import { irregularSpacing } from "./index.js";
+import { rawValue, irregularSpacing } from "./index.js";
+
+describe("raw-value", () => {
+  describe("fill color Path B — fills[i].boundVariables", () => {
+    it("does not flag a SOLID fill whose fill object carries a color variable binding", () => {
+      const node = makeNode({
+        type: "FRAME",
+        fills: [
+          {
+            type: "SOLID",
+            color: { r: 1, g: 0, b: 0 },
+            boundVariables: { color: { type: "VARIABLE_ALIAS", id: "VariableID:1:1" } },
+          },
+        ],
+      });
+      expect(rawValue.check(node, makeContext())).toBeNull();
+    });
+
+    it("flags a SOLID fill whose fill object carries an empty boundVariables", () => {
+      const node = makeNode({
+        type: "FRAME",
+        fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 }, boundVariables: {} }],
+      });
+      const result = rawValue.check(node, makeContext());
+      expect(result?.ruleId).toBe("raw-value");
+      expect(result?.subType).toBe("color");
+    });
+
+    it("flags a SOLID fill with no boundVariables on the fill object", () => {
+      const node = makeNode({
+        type: "FRAME",
+        fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 } }],
+      });
+      const result = rawValue.check(node, makeContext());
+      expect(result?.ruleId).toBe("raw-value");
+      expect(result?.subType).toBe("color");
+    });
+
+    it("still flags raw opacity when fill has a Path B binding", () => {
+      const node = makeNode({
+        type: "FRAME",
+        fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 }, boundVariables: { color: { type: "VARIABLE_ALIAS", id: "VariableID:1:1" } } }],
+        opacity: 0.5,
+      });
+      const result = rawValue.check(node, makeContext());
+      expect(result?.ruleId).toBe("raw-value");
+      expect(result?.subType).toBe("opacity");
+    });
+
+    it("flags a raw SOLID fill sitting next to a variable-bound fill", () => {
+      const node = makeNode({
+        type: "FRAME",
+        fills: [
+          {
+            type: "SOLID",
+            color: { r: 0, g: 0, b: 1 },
+            boundVariables: { color: { type: "VARIABLE_ALIAS", id: "VariableID:1:1" } },
+          },
+          { type: "SOLID", color: { r: 1, g: 0, b: 0 } },
+        ],
+      });
+      const result = rawValue.check(node, makeContext());
+      expect(result?.ruleId).toBe("raw-value");
+      expect(result?.subType).toBe("color");
+    });
+  });
+
+  describe("style references (plugin styles map)", () => {
+    it("does not flag a fill backed by a fill style", () => {
+      const node = makeNode({
+        type: "FRAME",
+        styles: { fill: "S:abc123" },
+        fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 } }],
+      });
+      expect(rawValue.check(node, makeContext())).toBeNull();
+    });
+
+    it("does not flag a TEXT node backed by a text style", () => {
+      const node = makeNode({
+        type: "TEXT",
+        styles: { text: "S:txt456" },
+        style: { fontFamily: "Inter", fontSize: 16, fontWeight: 400 },
+      });
+      expect(rawValue.check(node, makeContext())).toBeNull();
+    });
+  });
+
+  describe("shadow variable bindings", () => {
+    const dropShadow = {
+      type: "DROP_SHADOW",
+      color: { r: 0, g: 0, b: 0, a: 0.25 },
+      offset: { x: 0, y: 4 },
+      radius: 8,
+    };
+
+    it("does not flag a shadow when effects are bound at node level (Path A)", () => {
+      const node = makeNode({
+        type: "FRAME",
+        effects: [dropShadow],
+        boundVariables: { effects: [{ type: "VARIABLE_ALIAS", id: "VariableID:2:1" }] },
+      });
+      expect(rawValue.check(node, makeContext())).toBeNull();
+    });
+
+    it("does not flag a shadow whose effect object carries its own binding (Path B)", () => {
+      const node = makeNode({
+        type: "FRAME",
+        effects: [
+          { ...dropShadow, boundVariables: { color: { type: "VARIABLE_ALIAS", id: "VariableID:2:2" } } },
+        ],
+      });
+      expect(rawValue.check(node, makeContext())).toBeNull();
+    });
+
+    it("flags a shadow with an empty boundVariables on the effect object", () => {
+      const node = makeNode({
+        type: "FRAME",
+        effects: [{ ...dropShadow, boundVariables: {} }],
+      });
+      const result = rawValue.check(node, makeContext());
+      expect(result?.ruleId).toBe("raw-value");
+      expect(result?.subType).toBe("shadow");
+    });
+
+    it("does not flag a shadow backed by an effect style", () => {
+      const node = makeNode({
+        type: "FRAME",
+        styles: { effect: "S:eff789" },
+        effects: [dropShadow],
+      });
+      expect(rawValue.check(node, makeContext())).toBeNull();
+    });
+  });
+});
 
 describe("irregular-spacing", () => {
   describe("off-grid spacing without variable binding", () => {

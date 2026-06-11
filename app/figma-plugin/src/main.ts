@@ -298,6 +298,29 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
     }
   }
 
+  // Style references (fillStyleId/strokeStyleId/effectStyleId/textStyleId →
+  // REST-style `styles` map) so hasStyleReference() works in the plugin
+  // channel. figma.mixed is a symbol, so the typeof check skips mixed values;
+  // an empty string means no style is applied.
+  const styleRefs: Record<string, string> = {};
+  const STYLE_ID_KEYS: Array<[prop: string, key: string]> = [
+    ["fillStyleId", "fill"],
+    ["strokeStyleId", "stroke"],
+    ["effectStyleId", "effect"],
+    ["textStyleId", "text"],
+  ];
+  for (const [prop, key] of STYLE_ID_KEYS) {
+    if (prop in node) {
+      const styleId = (node as unknown as Record<string, unknown>)[prop];
+      if (typeof styleId === "string" && styleId !== "") {
+        styleRefs[key] = styleId;
+      }
+    }
+  }
+  if (Object.keys(styleRefs).length > 0) {
+    result.styles = styleRefs;
+  }
+
   // Fills, strokes, effects — serialize as plain arrays
   if (hasFills(node)) {
     const fills = node.fills;
@@ -320,10 +343,32 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
     }
   }
   if (hasStrokes(node)) {
-    result.strokes = node.strokes.map((s) => ({ ...s }));
+    result.strokes = node.strokes.map((s) => {
+      const plain: Record<string, unknown> = { ...s };
+      const bv = (s as unknown as { boundVariables?: unknown }).boundVariables;
+      if (bv !== undefined) {
+        try {
+          plain["boundVariables"] = JSON.parse(JSON.stringify(bv));
+        } catch (e) {
+          console.warn("[canicode] stroke.boundVariables not serializable:", e);
+        }
+      }
+      return plain;
+    });
   }
   if (hasEffects(node)) {
-    result.effects = node.effects.map((e) => ({ ...e }));
+    result.effects = node.effects.map((effect) => {
+      const plain: Record<string, unknown> = { ...effect };
+      const bv = (effect as unknown as { boundVariables?: unknown }).boundVariables;
+      if (bv !== undefined) {
+        try {
+          plain["boundVariables"] = JSON.parse(JSON.stringify(bv));
+        } catch (e) {
+          console.warn("[canicode] effect.boundVariables not serializable:", e);
+        }
+      }
+      return plain;
+    });
   }
 
   // Corner radius

@@ -40,6 +40,18 @@ import { createDevelopRunDir } from "../src/agents/run-directory.js";
 import { conventionalizeTitle } from "./conventional-title.js";
 
 // ---------------------------------------------------------------------------
+// Bootstrap: inject fnm-managed pnpm into PATH if not already present
+// ---------------------------------------------------------------------------
+
+try {
+  if (!execSync("which pnpm 2>/dev/null || true", { encoding: "utf-8", shell: "/bin/zsh" }).trim()) {
+    const fnmOut = execSync("fnm env 2>/dev/null || true", { encoding: "utf-8", shell: "/bin/zsh" });
+    const match = fnmOut.match(/export PATH="([^"]+)"/);
+    if (match) process.env["PATH"] = `${match[1]}:${process.env["PATH"] ?? ""}`;
+  }
+} catch { /* non-fatal */ }
+
+// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
@@ -149,8 +161,10 @@ function markFailed(index: DevelopRunIndex, name: string, error: string): void {
 
 function runCli(command: string, label: string): string {
   console.log(`  [cli] ${label}`);
+  const shell = process.env["SHELL"] ?? "/bin/zsh";
+  const wrapped = `eval "$(fnm env 2>/dev/null)"; ${command}`;
   try {
-    return execSync(command, { encoding: "utf-8", maxBuffer: 50 * 1024 * 1024, cwd: PROJECT_ROOT });
+    return execSync(wrapped, { encoding: "utf-8", maxBuffer: 50 * 1024 * 1024, cwd: PROJECT_ROOT, shell });
   } catch (err) {
     const execErr = err as SpawnSyncReturns<string>;
     const stderr = execErr.stderr ?? "";

@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ \"$DEVELOP_SUBAGENT\" = \"1\" ] && exit 0; OUT=$({ pnpm lint && pnpm build; } 2>&1); [ $? -eq 0 ] || { echo '[stop-hook] pnpm lint/build FAILED'; echo \"$OUT\"; exit 1; }"
+            "command": "[ \"$DEVELOP_SUBAGENT\" = \"1\" ] && exit 0; eval \"$(fnm env 2>/dev/null)\"; OUT=$({ pnpm lint && pnpm build; } 2>&1); [ $? -eq 0 ] || { echo '[stop-hook] pnpm lint/build FAILED' >&2; echo \"$OUT\" >&2; exit 1; }"
           },
           {
             "type": "command",
