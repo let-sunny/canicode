@@ -132,6 +132,43 @@ describe("raw-value", () => {
       expect(rawValue.check(node, makeContext())).toBeNull();
     });
   });
+
+  describe("gap Auto (space-between)", () => {
+    it("does not flag the stale itemSpacing when gap is Auto", () => {
+      const node = makeNode({
+        type: "INSTANCE",
+        layoutMode: "HORIZONTAL",
+        primaryAxisAlignItems: "SPACE_BETWEEN",
+        itemSpacing: 24,
+      });
+      expect(rawValue.check(node, makeContext())).toBeNull();
+    });
+
+    it("still flags a raw itemSpacing when gap is a fixed number", () => {
+      const node = makeNode({
+        type: "FRAME",
+        layoutMode: "HORIZONTAL",
+        primaryAxisAlignItems: "MIN",
+        itemSpacing: 24,
+      });
+      const result = rawValue.check(node, makeContext());
+      expect(result?.ruleId).toBe("raw-value");
+      expect(result?.subType).toBe("spacing");
+    });
+
+    it("still flags raw padding on a gap-Auto node", () => {
+      const node = makeNode({
+        type: "FRAME",
+        layoutMode: "HORIZONTAL",
+        primaryAxisAlignItems: "SPACE_BETWEEN",
+        itemSpacing: 24,
+        paddingLeft: 12,
+      });
+      const result = rawValue.check(node, makeContext());
+      expect(result?.ruleId).toBe("raw-value");
+      expect(result?.subType).toBe("spacing");
+    });
+  });
 });
 
 describe("irregular-spacing", () => {
@@ -142,6 +179,11 @@ describe("irregular-spacing", () => {
       expect(result).not.toBeNull();
       expect(result?.ruleId).toBe("irregular-spacing");
       expect(result?.subType).toBe("padding");
+    });
+
+    it("does not flag off-grid itemSpacing when gap is Auto (space-between)", () => {
+      const node = makeNode({ itemSpacing: 7, primaryAxisAlignItems: "SPACE_BETWEEN" });
+      expect(irregularSpacing.check(node, makeContext())).toBeNull();
     });
 
     it("flags off-grid itemSpacing", () => {

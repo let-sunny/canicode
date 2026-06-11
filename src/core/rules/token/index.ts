@@ -119,6 +119,9 @@ const rawValueCheck: RuleCheckFn = (node, context) => {
   // Check 5: Raw spacing (padding/gap without variable binding)
   const spacingKeys = ["paddingLeft", "paddingRight", "paddingTop", "paddingBottom", "itemSpacing"] as const;
   for (const key of spacingKeys) {
+    // Gap set to "Auto" (space-between): Figma keeps the stale itemSpacing
+    // number in the API but the layout engine ignores it — not a raw value
+    if (key === "itemSpacing" && node.primaryAxisAlignItems === "SPACE_BETWEEN") continue;
     const value = node[key];
     if (value !== undefined && value > 0 && !hasBoundVariable(node, key)) {
       const label = key === "itemSpacing" ? "gap" : key.replace("padding", "padding-").toLowerCase();
@@ -162,7 +165,8 @@ const irregularSpacingCheck: RuleCheckFn = (node, context, options) => {
     const v = node[key];
     if (v !== undefined && v > 0) spacingEntries.push({ key, value: v, subType: "padding" });
   }
-  if (node.itemSpacing !== undefined && node.itemSpacing > 0) {
+  // Gap "Auto" (space-between) leaves a stale itemSpacing value the layout ignores
+  if (node.itemSpacing !== undefined && node.itemSpacing > 0 && node.primaryAxisAlignItems !== "SPACE_BETWEEN") {
     spacingEntries.push({ key: "itemSpacing", value: node.itemSpacing, subType: "gap" });
   }
 
