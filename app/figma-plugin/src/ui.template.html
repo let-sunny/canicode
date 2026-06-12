@@ -33,6 +33,23 @@
 
   </div>
 
+  <!-- Fix prompt modal (#587) — read-only textarea doubles as a manual
+       select-copy fallback for Figma's plugin-iframe clipboard restrictions -->
+  <div id="fixprompt-overlay" class="fixprompt-overlay" style="display:none" onclick="if (event.target === this) closeFixPromptModal()">
+    <div class="fixprompt-panel">
+      <div class="fixprompt-header">
+        <strong>Fix prompt for Figma's AI agent</strong>
+        <button class="fixprompt-close" onclick="closeFixPromptModal()" aria-label="Close">&times;</button>
+      </div>
+      <p class="fixprompt-hint">Paste this into Figma's AI agent, let it apply the fixes, then re-run Analyze Selection to verify.</p>
+      <div id="fixprompt-warning" class="fixprompt-warning" style="display:none"></div>
+      <textarea id="fixprompt-text" class="fixprompt-text" readonly></textarea>
+      <div class="fixprompt-actions">
+        <button class="btn btn-primary" id="fixprompt-copy" onclick="copyFixPrompt()">Copy</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Monitoring: lightweight inline PostHog + Sentry via fetch -->
   <script>
     (function() {
@@ -130,13 +147,26 @@
     }
 
     // ---- Render results via shared renderReportBody() ----
+    // Latest analysis kept for the fix-prompt modal. Stateless across
+    // analyses — each result fully replaces the previous one (#587).
+    var _lastFile = null;
+    var _lastResult = null;
+
     function showResults(file, result, scores, skipped) {
       document.getElementById('empty-state').style.display = 'none';
       document.getElementById('loading').style.display = 'none';
       document.getElementById('error').style.display = 'none';
 
+      _lastFile = file;
+      _lastResult = result;
+
       var el = document.getElementById('results');
       var bannerHtml = renderSkippedBanner(skipped);
+      if (result.issues.length > 0) {
+        bannerHtml = '<div class="fixprompt-toolbar">' +
+          '<button class="btn" onclick="openFixPromptModal()">Copy fix prompt</button>' +
+          '</div>' + bannerHtml;
+      }
       el.innerHTML = bannerHtml + CanICode.renderReportBody({
         fileName: file.name,
         fileKey: file.fileKey,
@@ -163,6 +193,57 @@
         '<strong>' + skipped.length + ' node(s) skipped</strong> — their parent component sets have errors in Figma. Related rule scores may be incomplete.' +
         '<details><summary>Show list</summary><ul>' + items + '</ul></details>' +
         '</div>';
+    }
+
+    // ---- Fix prompt modal (#587) ----
+    function openFixPromptModal() {
+      if (!_lastResult || !_lastFile) return;
+
+      var warningEl = document.getElementById('fixprompt-warning');
+      var nodeCount = _lastResult.nodeCount || 0;
+      if (nodeCount >= CanICode.SELECTION_NODE_WARNING_THRESHOLD) {
+        warningEl.textContent = 'Large selection (' + nodeCount + ' nodes) — the agent works better on one section at a time; consider re-running on a smaller selection.';
+        warningEl.style.display = 'block';
+      } else {
+        warningEl.style.display = 'none';
+      }
+
+      document.getElementById('fixprompt-text').value =
+        CanICode.buildFixPrompt(_lastResult.issues, { fileName: _lastFile.name });
+      var copyBtn = document.getElementById('fixprompt-copy');
+      copyBtn.textContent = 'Copy';
+      document.getElementById('fixprompt-overlay').style.display = 'flex';
+    }
+
+    function closeFixPromptModal() {
+      document.getElementById('fixprompt-overlay').style.display = 'none';
+    }
+
+    function copyFixPrompt() {
+      var textarea = document.getElementById('fixprompt-text');
+      var onCopied = function() {
+        var copyBtn = document.getElementById('fixprompt-copy');
+        copyBtn.textContent = 'Copied';
+        setTimeout(function() { copyBtn.textContent = 'Copy'; }, 1500);
+        window._trackEvent('cic_fix_prompt_copied', {
+          issueCount: _lastResult ? _lastResult.issues.length : 0,
+          nodeCount: _lastResult ? _lastResult.nodeCount : 0
+        });
+      };
+      // Clipboard API may reject inside Figma's plugin iframe — fall back to
+      // select + execCommand; the read-only textarea remains a manual fallback.
+      var fallbackCopy = function() {
+        textarea.focus();
+        textarea.select();
+        try {
+          if (document.execCommand('copy')) onCopied();
+        } catch (e) {}
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textarea.value).then(onCopied, fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
     }
 
     // ---- Focus node in Figma — intercept all [data-node-id] clicks ----

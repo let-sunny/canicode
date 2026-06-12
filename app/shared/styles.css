@@ -702,6 +702,84 @@ body {
   text-decoration: underline;
 }
 
+/* ---- Fix prompt modal (fixprompt-*) — Figma plugin only (#587) ---- */
+.fixprompt-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+.fixprompt-toolbar .btn { flex: 0 0 auto; }
+.fixprompt-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+.fixprompt-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  padding: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fixprompt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.fixprompt-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.fixprompt-close:hover { color: var(--fg); }
+.fixprompt-hint {
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+.fixprompt-warning {
+  background: var(--amber-bg);
+  color: #92400e;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  border: 1px solid rgba(245,158,11,0.2);
+}
+.fixprompt-text {
+  width: 100%;
+  min-height: 200px;
+  flex: 1;
+  resize: vertical;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+}
+.fixprompt-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.fixprompt-actions .btn { flex: 0 0 auto; padding: 8px 16px; }
+
 /* ---- Results visibility ---- */
 #results { display: none; }
 #results.visible { display: block; }

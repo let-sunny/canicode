@@ -22,6 +22,7 @@ export {
   GAUGE_C,
   CATEGORY_DESCRIPTIONS,
   SEVERITY_ORDER,
+  SELECTION_NODE_WARNING_THRESHOLD,
 } from "./core/ui-constants.js";
 export {
   gaugeColor,
@@ -36,6 +37,10 @@ export {
 // Report rendering (shared with web/plugin)
 export { renderReportBody, initReportInteractions } from "./core/report-html/render.js";
 export type { ReportData } from "./core/report-html/render.js";
+
+// Fix prompt for the host design agent (#587, plugin copy-as-prompt)
+export { buildFixPrompt, ANNOTATION_FORMAT_SPEC } from "./core/fix-prompt/build-fix-prompt.js";
+export type { BuildFixPromptOptions } from "./core/fix-prompt/build-fix-prompt.js";
 
 // Import rules to register them with the global registry
 import "./core/rules/index.js";

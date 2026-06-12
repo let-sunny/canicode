@@ -33,3 +33,9 @@ export const SEVERITY_ORDER: Severity[] = [
   "suggestion",
   "note",
 ];
+
+// #587: selection size above which the plugin's copy-as-prompt modal shows an
+// inline "scope too big" warning. Keyed on node count, NOT issue count — real
+// designs produce dozens of issues even at proper section scope. Warning only;
+// never blocks.
+export const SELECTION_NODE_WARNING_THRESHOLD = 1000;

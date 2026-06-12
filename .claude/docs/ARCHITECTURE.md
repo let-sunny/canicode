@@ -47,6 +47,9 @@
 - Source: `app/figma-plugin/src/`
 - Build: `pnpm build:plugin` → `app/figma-plugin/dist/` (gitignored)
 - Shared UI from `app/shared/` inlined at build time
+- Copy-as-prompt (#587): "Copy fix prompt" button on the report opens a modal with a deterministic fix prompt built by `buildFixPrompt` (`src/core/fix-prompt/`, pure templating — no LLM call). Flow: analyze → copy prompt → paste into Figma's native AI agent (which applies fixes / asks gotcha questions and records answers as canicode-format annotations) → re-analyze to verify. This is the no-MCP-access counterpart of `/canicode-roundtrip`; fix execution is owned by the host agent per ADR-013.
+- The prompt always contains the entire current report — stateless, no chunking; re-analysis regenerates the remaining prompt. A selection-size warning (node count ≥ `SELECTION_NODE_WARNING_THRESHOLD`, 1000, in `src/core/ui-constants.ts`) shows inline in the modal but never blocks.
+- The prompt's annotation-format section mirrors the roundtrip read/write contract (`labelMarkdown` body ending with the `— *<ruleId>*` footer, category `canicode:gotcha`) so annotated gotchas are recognized on re-analysis; plugin-side annotation readback is a follow-up issue.
 
 ### CLI Commands (User-Facing)
 
