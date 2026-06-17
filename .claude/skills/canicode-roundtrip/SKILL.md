@@ -263,10 +263,10 @@ Instance-child guard and per-rule prompts — **[Appendix Strategy B](https://gi
 
 ##### Strategy B group componentize — Phase 3 (`missing-component:structure-repetition`)
 
-When `applyStrategy === "structural-mod"` AND `question.ruleId === "missing-component"` AND `question.subType === "structure-repetition"` AND `question.groupMembers` is set, the question represents a fingerprint group of N FRAMEs the user can componentize-and-swap in one batch. The group spans both same-parent siblings and cross-parent matches found by the Stage 3 scope-wide pass (#557). Render the per-question prompt with the **group size** explicitly so the designer knows the scope before answering. Substitute `{nodeName}` with `question.nodeName` and `{others}` with `question.groupMembers.length - 1` (the count excluding the first member that becomes the new component); render in the user's session language:
+When `applyStrategy === "structural-mod"` AND `question.ruleId === "missing-component"` AND `question.subType === "structure-repetition"` AND `question.groupMembers` is set, the question represents a fingerprint group of N FRAMEs the user can componentize-and-swap in one batch. The group spans both same-parent siblings and cross-parent matches found by the Stage 3 scope-wide pass (#557). Render the per-question prompt with the **group size** explicitly so the designer knows the scope before answering. Substitute `{nodeName}` with `question.nodeName`, `{others}` with `question.othersCount`, and `{total}` with `question.totalCount`; render in the user's session language:
 
-- Korean: `> "{nodeName}" 외에 동일한 구조의 frame이 {others}개 더 있습니다 (총 {others + 1}개). 모두 컴포넌트화 할까요? (yes/no)`
-- English: `> "{nodeName}" and {others} other frame(s) share the same structure ({others + 1} total). Componentize the whole group? (yes/no)`
+- Korean: `> "{nodeName}" 외에 동일한 구조의 frame이 {others}개 더 있습니다 (총 {total}개). 모두 컴포넌트화 할까요? (yes/no)`
+- English: `> "{nodeName}" and {others} other frame(s) share the same structure ({total} total). Componentize the whole group? (yes/no)`
 
 On `yes`, compute the file-wide existing component name set once (decision C uses this for the suffix), then call the group orchestrator. On `no` / `skip`, drop the question without writing anything; the gotcha state is captured in the SKILL's section markdown either way.
 

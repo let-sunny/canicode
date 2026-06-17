@@ -106,6 +106,11 @@ export const GotchaSurveyQuestionSchema = z.object({
   // = 2). A future rule emitting `[]` or `[oneId]` is a programming error,
   // not a runtime case to handle gracefully.
   groupMembers: z.array(z.string()).min(2).optional(),
+  // Pre-computed scalars derived from `groupMembers` (ADR-016: no arithmetic
+  // in SKILL.md prose). Only present when `groupMembers` is set.
+  // othersCount = groupMembers.length - 1 (≥1), totalCount = groupMembers.length (≥2).
+  othersCount: z.number().int().min(1).optional(),
+  totalCount: z.number().int().min(2).optional(),
 });
 
 export type GotchaSurveyQuestion = z.infer<typeof GotchaSurveyQuestionSchema>;

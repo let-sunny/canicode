@@ -1528,9 +1528,34 @@ describe("generateGotchaSurvey", () => {
       );
       expect(survey.questions).toHaveLength(1);
       expect(survey.questions[0]?.groupMembers).toEqual(["fA", "fB", "fC"]);
+      // ADR-016: pre-computed scalars derived from groupMembers
+      expect(survey.questions[0]?.othersCount).toBe(2); // 3 members → 2 others
+      expect(survey.questions[0]?.totalCount).toBe(3);  // 3 members total
       // Schema validation — `groupMembers: z.array(z.string()).optional()`
       const parsed = GotchaSurveySchema.safeParse(survey);
       expect(parsed.success).toBe(true);
+    });
+
+    it("computes othersCount/totalCount correctly for minimum 2-member group", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "missing-component",
+          category: "code-quality",
+          severity: "risk",
+          nodeId: "fA",
+          nodePath: "Root > A",
+          subType: "structure-repetition",
+          groupMembers: ["fA", "fB"],
+        }),
+      ];
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("C"),
+      );
+      expect(survey.questions).toHaveLength(1);
+      expect(survey.questions[0]?.othersCount).toBe(1); // 2 members → 1 other
+      expect(survey.questions[0]?.totalCount).toBe(2);  // 2 members total
+      expect(GotchaSurveySchema.safeParse(survey).success).toBe(true);
     });
 
     it("omits groupMembers when the violation does not carry one (non-group rules)", () => {
@@ -1548,6 +1573,8 @@ describe("generateGotchaSurvey", () => {
       );
       expect(survey.questions).toHaveLength(1);
       expect(survey.questions[0]?.groupMembers).toBeUndefined();
+      expect(survey.questions[0]?.othersCount).toBeUndefined();
+      expect(survey.questions[0]?.totalCount).toBeUndefined();
     });
   });
 });
