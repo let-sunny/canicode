@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  collectAcknowledgmentsFromAnalysisTree,
   extractAcknowledgmentsFromNode,
   readCanicodeAcknowledgments,
 } from "./read-acknowledgments.js";
+import type { AnalysisNode } from "../contracts/figma-node.js";
 import type {
   AnnotationEntry,
   CanicodeCategories,
@@ -324,5 +326,108 @@ describe("readCanicodeAcknowledgments", () => {
 
     const acks = await readCanicodeAcknowledgments("1:1", CATEGORIES);
     expect(acks).toEqual([{ nodeId: "5:5", ruleId: "raw-value" }]);
+  });
+});
+
+function makeAnalysisNode(
+  id: string,
+  annotations?: AnnotationEntry[],
+  children?: AnalysisNode[]
+): AnalysisNode {
+  const node: AnalysisNode = {
+    id,
+    name: id,
+    type: "FRAME",
+    visible: true,
+  };
+  if (annotations) node.annotations = annotations;
+  if (children) node.children = children;
+  return node;
+}
+
+describe("collectAcknowledgmentsFromAnalysisTree", () => {
+  it("returns empty for a null / undefined root", () => {
+    expect(collectAcknowledgmentsFromAnalysisTree(null)).toEqual([]);
+    expect(collectAcknowledgmentsFromAnalysisTree(undefined)).toEqual([]);
+  });
+
+  it("matches by footer alone when categoryIds are omitted", () => {
+    const root = makeAnalysisNode("1:1", [
+      { labelMarkdown: "Note — *raw-value*" },
+    ]);
+    expect(collectAcknowledgmentsFromAnalysisTree(root)).toEqual([
+      { nodeId: "1:1", ruleId: "raw-value" },
+    ]);
+  });
+
+  it("gates on categoryId when canicodeCategoryIds is provided", () => {
+    const root = makeAnalysisNode("1:1", [
+      {
+        labelMarkdown: "Some user note ending — *missing-size-constraint*",
+        categoryId: "user-category",
+      },
+    ]);
+    expect(
+      collectAcknowledgmentsFromAnalysisTree(
+        root,
+        new Set([CATEGORIES.gotcha, CATEGORIES.flag, CATEGORIES.fallback])
+      )
+    ).toEqual([]);
+  });
+
+  it("accumulates matches across nested children in pre-order", () => {
+    const grandchild = makeAnalysisNode("3:3", [
+      { labelMarkdown: "deep — *non-semantic-name*", categoryId: "cat-flag" },
+    ]);
+    const child1 = makeAnalysisNode(
+      "2:1",
+      [
+        {
+          labelMarkdown: "**Q:** … **A:** …\n\n— *missing-size-constraint*",
+          categoryId: "cat-gotcha",
+        },
+      ],
+      [grandchild]
+    );
+    const child2 = makeAnalysisNode("2:2", [
+      { labelMarkdown: "user note ending — *raw-value*", categoryId: "user-category" },
+    ]);
+    const root = makeAnalysisNode("1:1", undefined, [child1, child2]);
+
+    const acks = collectAcknowledgmentsFromAnalysisTree(
+      root,
+      new Set([CATEGORIES.gotcha, CATEGORIES.flag])
+    );
+
+    expect(acks).toEqual([
+      { nodeId: "2:1", ruleId: "missing-size-constraint" },
+      { nodeId: "3:3", ruleId: "non-semantic-name" },
+    ]);
+  });
+
+  it("excludes a node whose annotation carries a non-canicode categoryId while including canicode ones on siblings", () => {
+    const node = makeAnalysisNode("5:5", [
+      {
+        labelMarkdown: "First — *missing-size-constraint*",
+        categoryId: "cat-gotcha",
+      },
+      {
+        labelMarkdown: "Second — *non-semantic-name*",
+        categoryId: "cat-flag",
+      },
+      {
+        labelMarkdown: "Unrelated user note — *raw-value*",
+        categoryId: "user-category",
+      },
+    ]);
+    expect(
+      collectAcknowledgmentsFromAnalysisTree(
+        node,
+        new Set([CATEGORIES.gotcha, CATEGORIES.flag])
+      )
+    ).toEqual([
+      { nodeId: "5:5", ruleId: "missing-size-constraint" },
+      { nodeId: "5:5", ruleId: "non-semantic-name" },
+    ]);
   });
 });

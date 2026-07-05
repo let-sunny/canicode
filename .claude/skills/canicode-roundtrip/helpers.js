@@ -628,6 +628,16 @@ ${footer}`;
     if (legacy) return legacy[1] ?? null;
     return null;
   }
+  function collectAcknowledgmentsFromAnalysisTree(root, canicodeCategoryIds) {
+    if (!root) return [];
+    const out = [];
+    const walkAnalysisNode = (node) => {
+      out.push(...extractAcknowledgmentsFromNode(node, canicodeCategoryIds));
+      for (const child of node.children ?? []) walkAnalysisNode(child);
+    };
+    walkAnalysisNode(root);
+    return out;
+  }
   async function readCanicodeAcknowledgments(rootNodeId, categories) {
     const root = await figma.getNodeByIdAsync(rootNodeId);
     if (!root) return [];
@@ -1246,6 +1256,7 @@ Error: \`${msg}\`. The FRAME has been flagged so the designer can inspect (locke
   exports.applyUnmappedComponentOptOut = applyUnmappedComponentOptOut;
   exports.applyWithInstanceFallback = applyWithInstanceFallback;
   exports.buildIntentionallyUnmappedAnnotationBody = buildIntentionallyUnmappedAnnotationBody;
+  exports.collectAcknowledgmentsFromAnalysisTree = collectAcknowledgmentsFromAnalysisTree;
   exports.computeRoundtripTally = computeRoundtripTally;
   exports.ensureCanicodeCategories = ensureCanicodeCategories;
   exports.extractAcknowledgmentsFromNode = extractAcknowledgmentsFromNode;
