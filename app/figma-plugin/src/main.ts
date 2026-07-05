@@ -112,6 +112,17 @@ function serializeSubObject(
 
 // ---- AnalysisNode shape (matches src/contracts/figma-node.ts) ----
 
+interface PluginAnnotationProperty {
+  type: string;
+}
+
+interface PluginAnnotationEntry {
+  label?: string;
+  labelMarkdown?: string;
+  categoryId?: string;
+  properties?: PluginAnnotationProperty[];
+}
+
 interface AnalysisNode {
   id: string;
   name: string;
@@ -182,6 +193,9 @@ interface AnalysisNode {
   clipsContent?: boolean;
   overflowDirection?: string;
 
+  // Dev Mode annotations (plugin-only, #588)
+  annotations?: PluginAnnotationEntry[];
+
   children?: AnalysisNode[];
 }
 
@@ -218,6 +232,18 @@ const VERTICAL_CONSTRAINT_MAP: Record<string, string> = {
   STRETCH: "TOP_BOTTOM",
   SCALE: "SCALE",
 };
+
+// Canicode-authored annotation category labels (mirrors, intentionally
+// duplicated rather than imported, from `src/core/roundtrip/annotations.ts`'s
+// `ensureCanicodeCategories` — `main.ts` is compiled standalone and cannot
+// import from `src/core/*`). Used to look up which canicode categories exist
+// in this file so `extractAcknowledgmentsFromNode` can gate on `categoryId`.
+const CANICODE_ANNOTATION_LABELS = [
+  "canicode:gotcha",
+  "canicode:flag",
+  "canicode:fallback",
+  "canicode:auto-fix",
+];
 
 // ---- Transform Figma Plugin nodes to AnalysisNode ----
 
@@ -387,6 +413,20 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
   // Corner radius
   if ("cornerRadius" in node && node.cornerRadius !== figma.mixed && typeof node.cornerRadius === "number") {
     result.cornerRadius = node.cornerRadius;
+  }
+
+  // Dev Mode annotations (#588) — annotation getters can throw on locked /
+  // external nodes; omit silently since this only affects ack detection,
+  // not the analysis score (no `recordSkip`).
+  if ("annotations" in node) {
+    try {
+      const raw = (node as unknown as { annotations?: unknown }).annotations;
+      if (Array.isArray(raw) && raw.length > 0) {
+        result.annotations = JSON.parse(JSON.stringify(raw)) as PluginAnnotationEntry[];
+      }
+    } catch {
+      // Locked/external nodes can throw on annotation reads — omit silently.
+    }
   }
 
   // Bound variables (design tokens)
@@ -589,11 +629,29 @@ figma.ui.onmessage = async (msg: { type: string }) => {
     const nodeCount = countNodes(target as unknown as { children?: readonly unknown[] });
     const file = await buildAnalysisFile(target, figma.currentPage.name);
 
+    // Read-only lookup of which canicode annotation categories already exist
+    // in this file (#588) — deliberately does NOT call
+    // `ensureCanicodeCategories()`, which creates missing categories as a
+    // side effect; `analyze-selection` runs on every "Analyze" click and
+    // must not mutate the file just because the panel was opened.
+    let categoryIds: string[] | undefined;
+    try {
+      const existing = await figma.annotations.getAnnotationCategoriesAsync();
+      const matched = existing
+        .filter((c) => CANICODE_ANNOTATION_LABELS.includes(c.label))
+        .map((c) => c.id);
+      if (matched.length > 0) categoryIds = matched;
+    } catch {
+      // No canicode categories yet, or the lookup failed — fall back to
+      // footer-only matching downstream.
+    }
+
     figma.ui.postMessage({
       type: "result",
       data: file,
       nodeCount,
       skipped: skippedNodes,
+      categoryIds,
     });
   }
 

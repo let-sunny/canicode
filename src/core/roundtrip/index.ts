@@ -13,6 +13,7 @@ export type { DefinitionWritabilityProbe } from "./probe-definition-writability.
 export {
   extractAcknowledgmentsFromNode,
   readCanicodeAcknowledgments,
+  collectAcknowledgmentsFromAnalysisTree,
 } from "./read-acknowledgments.js";
 export { buildIntentionallyUnmappedAnnotationBody } from "./annotation-payload.js";
 export { applyUnmappedComponentOptOut } from "./apply-unmapped-component-opt-out.js";

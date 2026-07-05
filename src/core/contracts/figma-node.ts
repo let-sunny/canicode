@@ -65,6 +65,16 @@ export type OverflowDirection = z.infer<typeof OverflowDirectionSchema>;
 export const GridChildAlignSchema = z.enum(["AUTO", "MIN", "CENTER", "MAX"]);
 export type GridChildAlign = z.infer<typeof GridChildAlignSchema>;
 
+// Structurally mirrors `AnnotationEntry` in `src/core/roundtrip/types.ts` so
+// both shapes can be consumed by the same parsing logic without casts.
+export const AnalysisAnnotationEntrySchema = z.object({
+  label: z.string().optional(),
+  labelMarkdown: z.string().optional(),
+  categoryId: z.string().optional(),
+  properties: z.array(z.object({ type: z.string() })).optional(),
+});
+export type AnalysisAnnotationEntry = z.infer<typeof AnalysisAnnotationEntrySchema>;
+
 /**
  * Lightweight FigmaNode type for analysis
  * Contains only properties needed by rules
@@ -171,6 +181,12 @@ const BaseAnalysisNodeSchema = z.object({
 
   // Naming analysis metadata
   isAsset: z.boolean().optional(),
+
+  // Dev Mode annotations. Plugin-only — the REST API's `annotations` field is
+  // still private beta (see ARCHITECTURE.md), so only
+  // `app/figma-plugin/src/main.ts` populates this; the REST/CLI/MCP channels
+  // leave it absent.
+  annotations: z.array(AnalysisAnnotationEntrySchema).optional(),
 });
 
 export type AnalysisNode = z.infer<typeof BaseAnalysisNodeSchema> & {

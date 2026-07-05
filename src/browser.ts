@@ -15,6 +15,7 @@ export { SEVERITY_LABELS } from "./core/contracts/severity.js";
 export type { Severity } from "./core/contracts/severity.js";
 export type { AnalysisFile, AnalysisNode } from "./core/contracts/figma-node.js";
 export type { RuleId } from "./core/contracts/rule.js";
+export { collectAcknowledgmentsFromAnalysisTree } from "./core/roundtrip/read-acknowledgments.js";
 
 // Shared UI constants and helpers (used by app/shared via CanICode.* globals)
 export {

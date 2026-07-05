@@ -191,7 +191,9 @@
         try {
           var analysisStart = Date.now();
           var file = msg.data;
-          var result = CanICode.analyzeFile(file);
+          var categoryIds = (msg.categoryIds && msg.categoryIds.length > 0) ? new Set(msg.categoryIds) : undefined;
+          var acknowledgments = CanICode.collectAcknowledgmentsFromAnalysisTree(file.document, categoryIds);
+          var result = CanICode.analyzeFile(file, acknowledgments.length > 0 ? { acknowledgments: acknowledgments } : {});
           var scores = CanICode.calculateScores(result);
           showResults(file, result, scores, msg.skipped);
 

@@ -1,4 +1,5 @@
 import type { Acknowledgment } from "../contracts/acknowledgment.js";
+import type { AnalysisNode } from "../contracts/figma-node.js";
 import { parseCanicodeJsonPayloadFromMarkdown } from "./annotation-payload.js";
 import type {
   AnnotationEntry,
@@ -8,6 +9,24 @@ import type {
 } from "./types.js";
 
 declare const figma: FigmaGlobal;
+
+// Minimal structural shape `extractAcknowledgmentsFromNode` actually needs.
+// Both the live Plugin-API `FigmaNode` (whose `AnnotationEntry` fields omit
+// explicit `| undefined`) and the already-serialized `AnalysisNode` (whose
+// zod-inferred fields include it under `exactOptionalPropertyTypes`) satisfy
+// this without casts, so one extraction implementation serves both the
+// async roundtrip walk and the synchronous plugin-channel walk below.
+interface AnnotatableEntry {
+  label?: string | undefined;
+  labelMarkdown?: string | undefined;
+  categoryId?: string | undefined;
+  properties?: readonly { type: string }[] | undefined;
+}
+
+interface AnnotatableNode {
+  id: string;
+  annotations?: readonly AnnotatableEntry[] | null | undefined;
+}
 
 // Stable markers planted by `upsertCanicodeAnnotation` so re-analyze can
 // recognise canicode-authored annotations and treat the underlying issue as
@@ -42,9 +61,13 @@ const LEGACY_PREFIX_RE = /^\*\*\[canicode\]\s+([A-Za-z0-9-]+)\*\*/;
  * Returns one acknowledgment per recognised entry. A node with multiple
  * canicode annotations (different ruleIds on the same node) yields multiple
  * acknowledgments.
+ *
+ * Shared by both tree walkers below: the async Plugin-API walk
+ * (`readCanicodeAcknowledgments`) and the synchronous `AnalysisNode` walk
+ * (`collectAcknowledgmentsFromAnalysisTree`, #588).
  */
 export function extractAcknowledgmentsFromNode(
-  node: FigmaNode | null | undefined,
+  node: AnnotatableNode | null | undefined,
   canicodeCategoryIds?: ReadonlySet<string>
 ): Acknowledgment[] {
   if (!node || !("annotations" in node)) return [];
@@ -90,6 +113,27 @@ function extractRuleId(text: string): string | null {
   const legacy = LEGACY_PREFIX_RE.exec(text);
   if (legacy) return legacy[1] ?? null;
   return null;
+}
+
+/**
+ * Pure synchronous walker over an already-serialized `AnalysisNode` tree
+ * (the plugin channel's re-analyze path, #588) — same pre-order traversal
+ * and matching rules as `readCanicodeAcknowledgments`'s Plugin-API walk, but
+ * no try/catch is needed since `AnalysisNode` is plain data with no
+ * throwing getters.
+ */
+export function collectAcknowledgmentsFromAnalysisTree(
+  root: AnalysisNode | null | undefined,
+  canicodeCategoryIds?: ReadonlySet<string>
+): Acknowledgment[] {
+  if (!root) return [];
+  const out: Acknowledgment[] = [];
+  const walkAnalysisNode = (node: AnalysisNode): void => {
+    out.push(...extractAcknowledgmentsFromNode(node, canicodeCategoryIds));
+    for (const child of node.children ?? []) walkAnalysisNode(child);
+  };
+  walkAnalysisNode(root);
+  return out;
 }
 
 /**
